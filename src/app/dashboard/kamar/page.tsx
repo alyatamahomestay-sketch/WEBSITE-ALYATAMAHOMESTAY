@@ -11,7 +11,9 @@ import {
   Wrench, 
   Clock, 
   DollarSign,
-  AlertCircle 
+  AlertCircle,
+  Calendar,
+  Building2
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { Room, RoomOperationalStatus } from '@/lib/types';
@@ -34,9 +36,11 @@ export default function KamarManagementPage() {
   const [capacityAdults, setCapacityAdults] = useState(2);
   const [capacityChildren, setCapacityChildren] = useState(1);
   const [baseRate, setBaseRate] = useState(250000);
+  const [monthlyRate, setMonthlyRate] = useState<number | ''>(2500000);
+  const [yearlyRate, setYearlyRate] = useState<number | ''>(24000000);
   const [operationalStatus, setOperationalStatus] = useState<RoomOperationalStatus>('tersedia');
   const [amenitiesInput, setAmenitiesInput] = useState('AC Dingin, WiFi Berkecepatan Tinggi, Kamar Mandi Dalam, Water Heater');
-  const [photoUrl, setPhotoUrl] = useState('https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80');
+  const [photoUrl, setPhotoUrl] = useState('/images/alyatama-flyer.jpg');
   const [internalNotes, setInternalNotes] = useState('');
 
   const loadRooms = async () => {
@@ -64,9 +68,11 @@ export default function KamarManagementPage() {
     setCapacityAdults(2);
     setCapacityChildren(1);
     setBaseRate(250000);
+    setMonthlyRate(2500000);
+    setYearlyRate(24000000);
     setOperationalStatus('tersedia');
     setAmenitiesInput('AC Dingin, WiFi Berkecepatan Tinggi, Kamar Mandi Dalam, Water Heater');
-    setPhotoUrl('https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80');
+    setPhotoUrl('/images/alyatama-flyer.jpg');
     setInternalNotes('');
     setShowModal(true);
   };
@@ -80,6 +86,8 @@ export default function KamarManagementPage() {
     setCapacityAdults(room.capacity_adults);
     setCapacityChildren(room.capacity_children);
     setBaseRate(room.base_rate);
+    setMonthlyRate(room.monthly_rate ?? '');
+    setYearlyRate(room.yearly_rate ?? '');
     setOperationalStatus(room.operational_status);
     setAmenitiesInput(room.amenities.join(', '));
     setPhotoUrl(room.photos?.[0] || '');
@@ -96,6 +104,9 @@ export default function KamarManagementPage() {
 
     const photosArr = photoUrl.trim() ? [photoUrl.trim()] : [];
 
+    const numMonthly = monthlyRate !== '' ? Number(monthlyRate) : undefined;
+    const numYearly = yearlyRate !== '' ? Number(yearlyRate) : undefined;
+
     try {
       if (editingRoomId) {
         await PmsService.updateRoom(editingRoomId, {
@@ -106,6 +117,8 @@ export default function KamarManagementPage() {
           capacity_adults: capacityAdults,
           capacity_children: capacityChildren,
           base_rate: baseRate,
+          monthly_rate: numMonthly,
+          yearly_rate: numYearly,
           operational_status: operationalStatus,
           amenities: amenitiesArr,
           photos: photosArr,
@@ -121,6 +134,8 @@ export default function KamarManagementPage() {
           capacity_adults: capacityAdults,
           capacity_children: capacityChildren,
           base_rate: baseRate,
+          monthly_rate: numMonthly,
+          yearly_rate: numYearly,
           operational_status: operationalStatus,
           amenities: amenitiesArr,
           photos: photosArr,
@@ -160,17 +175,17 @@ export default function KamarManagementPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-serif font-bold text-stone-900 tracking-tight">
-            Manajemen Kamar & Tarif
+          <h2 className="text-xl font-serif font-bold text-[#392B21] tracking-tight">
+            Manajemen Kamar & Tarif Multi-Masa Sewa
           </h2>
-          <p className="text-xs text-stone-500">
-            Kelola unit fisik homestay, penyesuaian tarif, fasilitas, dan status operasional kamar.
+          <p className="text-xs text-[#756A5F]">
+            Kelola unit homestay, tarif Harian, Bulanan, Tahunan, serta status kebersihan & operasional.
           </p>
         </div>
 
         <button
           onClick={openAddModal}
-          className="bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5 self-start sm:self-auto"
+          className="bg-[#806044] hover:bg-[#6c5037] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm inline-flex items-center gap-1.5 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           Tambah Unit Kamar Baru
@@ -178,44 +193,55 @@ export default function KamarManagementPage() {
       </div>
 
       {feedback && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
-          <span>{feedback}</span>
-          <button onClick={() => setFeedback('')} className="font-bold">&times;</button>
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{feedback}</span>
+          </div>
+          <button onClick={() => setFeedback('')} className="text-emerald-700 font-bold text-xs">&times;</button>
         </div>
       )}
 
       {/* Rooms Table */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E5DCD0] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 uppercase text-[10px] tracking-wider">
+            <thead className="bg-[#FAF7F2] border-b border-[#E5DCD0] text-[#756A5F] uppercase text-[10px] tracking-wider">
               <tr>
-                <th className="py-3 px-4 font-semibold">No. Kamar</th>
-                <th className="py-3 px-4 font-semibold">Nama & Tipe</th>
-                <th className="py-3 px-4 font-semibold">Kapasitas</th>
-                <th className="py-3 px-4 font-semibold text-right">Tarif Dasar / Malam</th>
-                <th className="py-3 px-4 font-semibold text-center">Status Operasional</th>
-                <th className="py-3 px-4 font-semibold text-center">Arsip</th>
-                <th className="py-3 px-4 font-semibold text-right">Tindakan</th>
+                <th className="py-3.5 px-4 font-bold">No. Kamar</th>
+                <th className="py-3.5 px-4 font-bold">Nama & Tipe</th>
+                <th className="py-3.5 px-4 font-bold">Kapasitas</th>
+                <th className="py-3.5 px-4 font-bold text-right">Tarif Harian</th>
+                <th className="py-3.5 px-4 font-bold text-right">Tarif Bulanan</th>
+                <th className="py-3.5 px-4 font-bold text-right">Tarif Tahunan</th>
+                <th className="py-3.5 px-4 font-bold text-center">Status Operasional</th>
+                <th className="py-3.5 px-4 font-bold text-center">Status Arsip</th>
+                <th className="py-3.5 px-4 font-bold text-right">Tindakan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody className="divide-y divide-[#E5DCD0]/60">
               {rooms.map((r) => {
                 const meta = getRoomOperationalStatusMeta(r.operational_status);
                 return (
-                  <tr key={r.id} className="hover:bg-stone-50/60 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-stone-900">
+                  <tr key={r.id} className="hover:bg-[#FAF7F2]/60 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#392B21]">
                       {r.room_number}
                     </td>
                     <td className="py-3.5 px-4">
-                      <strong className="text-stone-900 block">{r.name}</strong>
-                      <span className="text-[11px] text-stone-500">{r.room_type}</span>
+                      <strong className="text-[#392B21] block font-semibold">{r.name}</strong>
+                      <span className="text-[11px] text-[#756A5F]">{r.room_type}</span>
                     </td>
-                    <td className="py-3.5 px-4 text-stone-600">
+                    <td className="py-3.5 px-4 text-[#756A5F]">
                       {r.capacity_adults} Dws{r.capacity_children > 0 ? `, ${r.capacity_children} Anak` : ''}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-semibold text-stone-900">
-                      {formatRupiah(r.base_rate)}
+                    <td className="py-3.5 px-4 text-right font-semibold text-[#392B21]">
+                      {formatRupiah(r.base_rate)}/mlm
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-semibold text-[#806044]">
+                      {r.monthly_rate ? `${formatRupiah(r.monthly_rate)}/bln` : '-'}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-semibold text-[#65715A]">
+                      {r.yearly_rate ? `${formatRupiah(r.yearly_rate)}/thn` : '-'}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <select
@@ -265,148 +291,180 @@ export default function KamarManagementPage() {
         </div>
       </div>
 
-      {/* Add / Edit Room Modal */}
+      {/* Modal Add / Edit */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-              <h3 className="font-semibold text-stone-900 text-sm">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto border border-[#E5DCD0]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#FAF7F2]">
+              <h3 className="font-serif font-bold text-[#392B21] text-base">
                 {editingRoomId ? 'Edit Data Kamar' : 'Tambah Unit Kamar Baru'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-stone-400 hover:text-stone-600 font-bold">&times;</button>
+              <button onClick={() => setShowModal(false)} className="text-stone-400 hover:text-stone-600 font-bold text-lg">&times;</button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Nomor / Kode Kamar</label>
+                  <label className="block font-semibold text-[#392B21] mb-1">Nomor / Kode Kamar</label>
                   <input
                     type="text"
                     required
                     placeholder="Contoh: 101"
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 p-2.5"
+                    className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Nama Kamar</label>
+                  <label className="block font-semibold text-[#392B21] mb-1">Nama Kamar</label>
                   <input
                     type="text"
                     required
                     placeholder="Contoh: Kamar Melati"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 p-2.5"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Tipe Kamar</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Standard Queen"
-                    value={roomType}
-                    onChange={(e) => setRoomType(e.target.value)}
-                    className="w-full rounded-lg border border-stone-300 p-2.5"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Tarif Dasar / Malam (Rp)</label>
-                  <input
-                    type="number"
-                    required
-                    min="50000"
-                    step="5000"
-                    value={baseRate}
-                    onChange={(e) => setBaseRate(Number(e.target.value))}
-                    className="w-full rounded-lg border border-stone-300 p-2.5 font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Kapasitas Dewasa</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={capacityAdults}
-                    onChange={(e) => setCapacityAdults(Number(e.target.value))}
-                    className="w-full rounded-lg border border-stone-300 p-2.5"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Kapasitas Anak</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={capacityChildren}
-                    onChange={(e) => setCapacityChildren(Number(e.target.value))}
-                    className="w-full rounded-lg border border-stone-300 p-2.5"
+                    className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 mb-1">Deskripsi Kamar</label>
+                <label className="block font-semibold text-[#392B21] mb-1">Tipe Kamar</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Standard Queen"
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                />
+              </div>
+
+              {/* 3 Model Sewa Rates */}
+              <div className="bg-[#FAF7F2] p-3.5 rounded-2xl border border-[#E5DCD0] space-y-3">
+                <span className="font-bold text-[#806044] block">Pengaturan Tarif Multi-Masa Sewa (IDR)</span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">Harian / Malam *</label>
+                    <input
+                      type="number"
+                      required
+                      min="50000"
+                      step="5000"
+                      value={baseRate}
+                      onChange={(e) => setBaseRate(Number(e.target.value))}
+                      className="w-full rounded-lg border border-[#E5DCD0] p-2 font-semibold bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">Bulanan (30 hari)</label>
+                    <input
+                      type="number"
+                      min="500000"
+                      step="50000"
+                      placeholder="Contoh: 2500000"
+                      value={monthlyRate}
+                      onChange={(e) => setMonthlyRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full rounded-lg border border-[#E5DCD0] p-2 font-semibold bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">Tahunan (365 hari)</label>
+                    <input
+                      type="number"
+                      min="5000000"
+                      step="500000"
+                      placeholder="Contoh: 24000000"
+                      value={yearlyRate}
+                      onChange={(e) => setYearlyRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full rounded-lg border border-[#E5DCD0] p-2 font-semibold bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-[#392B21] mb-1">Kapasitas Dewasa</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={capacityAdults}
+                    onChange={(e) => setCapacityAdults(Number(e.target.value))}
+                    className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[#392B21] mb-1">Kapasitas Anak</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={capacityChildren}
+                    onChange={(e) => setCapacityChildren(Number(e.target.value))}
+                    className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#392B21] mb-1">Deskripsi Kamar</label>
                 <textarea
                   rows={2}
                   required
                   placeholder="Deskripsi fasilitas, kenyamanan, dan suasana kamar..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 mb-1">Fasilitas (Pisahkan dengan koma)</label>
+                <label className="block font-semibold text-[#392B21] mb-1">Fasilitas (Pisahkan dengan koma)</label>
                 <input
                   type="text"
-                  placeholder="AC, WiFi, Water Heater, Smart TV"
+                  placeholder="AC Dingin, WiFi Gratis, Kamar Mandi Dalam, Water Heater"
                   value={amenitiesInput}
                   onChange={(e) => setAmenitiesInput(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-stone-700 mb-1">URL Foto Kamar (Supabase Storage atau Web)</label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Catatan Internal Staf (Opsional)</label>
+                <label className="block font-semibold text-[#392B21] mb-1">URL Foto Kamar</label>
                 <input
                   type="text"
-                  placeholder="Contoh: Dekat tangga lobi"
-                  value={internalNotes}
-                  onChange={(e) => setInternalNotes(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
+                  placeholder="/images/alyatama-flyer.jpg atau URL Web"
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div>
+                <label className="block font-semibold text-[#392B21] mb-1">Catatan Internal Staf (Opsional)</label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Dekat tangga lobi utama"
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#E5DCD0]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700"
+                  className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium"
+                  className="px-5 py-2.5 rounded-xl bg-[#806044] hover:bg-[#6c5037] text-white font-bold shadow-sm"
                 >
                   Simpan Kamar
                 </button>

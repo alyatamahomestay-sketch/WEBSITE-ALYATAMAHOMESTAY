@@ -191,7 +191,14 @@ function ReservasiListContent() {
                       <span className="text-[11px] text-stone-500">{res.guest?.phone}</span>
                     </td>
                     <td className="py-3.5 px-4 text-stone-800">
-                      {res.rooms?.[0]?.name || '-'}
+                      <div className="font-medium text-[#392B21]">{res.rooms?.[0]?.name || '-'}</div>
+                      <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
+                        res.rental_type === 'monthly' ? 'bg-[#806044]/15 text-[#806044]' :
+                        res.rental_type === 'yearly' ? 'bg-[#65715A]/15 text-[#65715A]' :
+                        'bg-stone-100 text-stone-600'
+                      }`}>
+                        {res.rental_type === 'monthly' ? 'Sewa Bulanan' : res.rental_type === 'yearly' ? 'Sewa Tahunan' : 'Sewa Harian'}
+                      </span>
                     </td>
                     <td className="py-3.5 px-4 text-stone-600">
                       <div>{formatDateIndo(res.checkin_date)} s/d</div>

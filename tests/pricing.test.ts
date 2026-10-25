@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { 
   calculateNights, 
+  calculateRentalDuration,
   calculateNightlyBreakdown, 
   evaluatePromotionDiscount, 
   calculateReservationPricing 
@@ -16,6 +17,26 @@ describe('Pricing Engine & Night Calculations', () => {
     // Same day or reverse should return 0
     expect(calculateNights('2026-10-10', '2026-10-10')).toBe(0);
     expect(calculateNights('2026-10-12', '2026-10-10')).toBe(0);
+  });
+
+  it('calculates rental duration for daily, monthly, and yearly models', () => {
+    // Daily: 3 nights
+    const dailyDur = calculateRentalDuration('2026-10-10', '2026-10-13', 'daily');
+    expect(dailyDur.totalNights).toBe(3);
+    expect(dailyDur.durationUnits).toBe(3);
+    expect(dailyDur.unitLabel).toBe('Malam');
+
+    // Monthly: 2 months (Oct 01 to Dec 01)
+    const monthlyDur = calculateRentalDuration('2026-10-01', '2026-12-01', 'monthly');
+    expect(monthlyDur.totalNights).toBe(61);
+    expect(monthlyDur.durationUnits).toBe(2);
+    expect(monthlyDur.unitLabel).toBe('Bulan');
+
+    // Yearly: 365 nights = 1 year
+    const yearlyDur = calculateRentalDuration('2026-01-01', '2027-01-01', 'yearly');
+    expect(yearlyDur.totalNights).toBe(365);
+    expect(yearlyDur.durationUnits).toBe(1);
+    expect(yearlyDur.unitLabel).toBe('Tahun');
   });
 
   it('calculates nightly breakdown with rate period overrides', () => {
@@ -103,7 +124,7 @@ describe('Pricing Engine & Night Calculations', () => {
     expect(result.discount).toBe(250000);
   });
 
-  it('calculates full reservation pricing, deposit, and balance due', () => {
+  it('calculates full reservation pricing, deposit, and balance due for daily model', () => {
     const pricing = calculateReservationPricing({
       checkinDateStr: '2026-10-20',
       checkoutDateStr: '2026-10-22', // 2 nights
@@ -112,13 +133,53 @@ describe('Pricing Engine & Night Calculations', () => {
       customDiscountReason: 'Potongan ramah tamah',
       depositPercentage: 50,
       totalPaid: 200000,
+      rentalType: 'daily',
     });
 
+    expect(pricing.rentalType).toBe('daily');
     expect(pricing.totalNights).toBe(2);
+    expect(pricing.durationUnits).toBe(2);
+    expect(pricing.unitRate).toBe(300000);
     expect(pricing.baseSubtotal).toBe(600000);
     expect(pricing.discountAmount).toBe(50000);
     expect(pricing.totalAmount).toBe(550000); // 600k - 50k
     expect(pricing.depositRequired).toBe(275000); // 50% of 550k
     expect(pricing.balanceDue).toBe(350000); // 550k - 200k paid
+  });
+
+  it('calculates pricing properly for monthly and yearly rental models', () => {
+    // Monthly: 1 month with monthly_rate = 2.500.000
+    const monthlyPricing = calculateReservationPricing({
+      checkinDateStr: '2026-11-01',
+      checkoutDateStr: '2026-12-01',
+      room: { base_rate: 250000, monthly_rate: 2500000, yearly_rate: 24000000 },
+      rentalType: 'monthly',
+      durationUnits: 1,
+      depositPercentage: 50,
+    });
+
+    expect(monthlyPricing.rentalType).toBe('monthly');
+    expect(monthlyPricing.durationUnits).toBe(1);
+    expect(monthlyPricing.unitRate).toBe(2500000);
+    expect(monthlyPricing.baseSubtotal).toBe(2500000);
+    expect(monthlyPricing.totalAmount).toBe(2500000);
+    expect(monthlyPricing.depositRequired).toBe(1250000); // 50%
+
+    // Yearly: 1 year with yearly_rate = 24.000.000
+    const yearlyPricing = calculateReservationPricing({
+      checkinDateStr: '2026-01-01',
+      checkoutDateStr: '2027-01-01',
+      room: { base_rate: 250000, monthly_rate: 2500000, yearly_rate: 24000000 },
+      rentalType: 'yearly',
+      durationUnits: 1,
+      depositPercentage: 50,
+    });
+
+    expect(yearlyPricing.rentalType).toBe('yearly');
+    expect(yearlyPricing.durationUnits).toBe(1);
+    expect(yearlyPricing.unitRate).toBe(24000000);
+    expect(yearlyPricing.baseSubtotal).toBe(24000000);
+    expect(yearlyPricing.totalAmount).toBe(24000000);
+    expect(yearlyPricing.depositRequired).toBe(12000000); // 50%
   });
 });

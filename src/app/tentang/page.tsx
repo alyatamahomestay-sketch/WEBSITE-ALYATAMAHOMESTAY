@@ -1,85 +1,115 @@
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Heart, Sparkles, MapPin, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Heart, Sparkles, MapPin, ArrowRight, HeartHandshake, BookOpen, Clock, Building2 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
+import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 
 export default function TentangPage() {
   return (
     <>
       <PublicNavbar />
 
-      <main className="flex-1 bg-stone-50 py-16">
+      <main className="flex-1 bg-[#F6F0E7] py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Header */}
           <div className="max-w-2xl mb-12">
-            <span className="text-xs font-semibold uppercase tracking-widest text-brand-700 block mb-2">
-              Tentang Kami
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight mb-4">
-              ALYATAMA HOMESTAY
+            <div className="inline-flex items-center gap-1.5 bg-[#806044]/15 text-[#806044] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Profil & Visi Dakwah</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#392B21] tracking-tight mb-4">
+              Tentang ALYATAMA HOMESTAY
             </h1>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Sebuah hunian peristirahatan di Kota Jambi yang memadukan kehangatan pelayanan khas rumah sendiri dengan standar kebersihan dan fasilitas modern.
+            <p className="text-sm text-[#756A5F] leading-relaxed">
+              Penginapan Syariah di Bangkinang Kota, Kabupaten Kampar, Riau. Menghadirkan kenyamanan istirahat bernuansa Islami sekaligus sarana ibadah jariyah yang mengalirkan keberkahan.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-stone-200 p-8 sm:p-12 shadow-sm space-y-8">
-            <div className="space-y-4 text-xs sm:text-sm text-stone-700 leading-relaxed">
-              <h2 className="font-serif text-xl font-semibold text-stone-900">
-                Komitmen Kenyamanan & Kebersihan
+          <div className="bg-white rounded-3xl border border-[#E5DCD0] p-8 sm:p-12 shadow-sm space-y-8">
+            
+            {/* Tagline & Core Philosophy */}
+            <div className="bg-[#FAF7F2] p-6 rounded-2xl border border-[#E5DCD0] space-y-3">
+              <div className="flex items-center gap-3">
+                <AlyatamaLogo className="w-10 h-10" />
+                <div>
+                  <h2 className="font-serif font-bold text-lg text-[#392B21]">
+                    &ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;
+                  </h2>
+                  <span className="text-xs text-[#806044] font-medium">Bersih, Nyaman dan Berkah</span>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed pt-2">
+                &ldquo;Investasi terbaik adalah saat manfaatnya terus mengalir, bahkan setelah kita tiada.&rdquo; Setiap reservasi yang Anda lakukan bukan semata-mata transaksi komersial, tetapi merupakan kontribusi nyata bagi kelangsungan operasional dan pendidikan santri di <strong>Panti Asuhan Putra Muhammadiyah Bangkinang</strong>.
+              </p>
+            </div>
+
+            {/* Content Details */}
+            <div className="space-y-4 text-xs sm:text-sm text-[#392B21] leading-relaxed">
+              <h2 className="font-serif text-xl font-bold text-[#392B21]">
+                Akomodasi Fleksibel: Harian, Bulanan, dan Tahunan
               </h2>
-              <p>
-                ALYATAMA HOMESTAY didirikan dengan prinsip sederhana: setiap tamu berhak mendapatkan tempat beristirahat yang bersih, tenang, aman, dan menyegarkan kembali energi mereka. Baik Anda yang berkunjung ke Jambi untuk keperluan dinas instansi, menghadiri acara keluarga, maupun liburan santai, kami memastikan setiap kamar siap huni dengan standar tertinggi.
+              <p className="text-[#756A5F]">
+                ALYATAMA HOMESTAY berlokasi strategis di <strong>Jl. Mayor Ali Rasyid No 19 Bangkinang Kota</strong>, tepat di belakang SPBU Bangkinang Kota dan bersebelahan dengan Rumah Sakit Norpa Husada. Posisi ini memberikan kemudahan mobilitas baik bagi Anda yang bertugas dinas, keluarga yang berkunjung atau menjenguk kerabat di rumah sakit, maupun profesional yang membutuhkan hunian jangka panjang.
               </p>
-              <p>
-                Seluruh kamar kami dilengkapi pendingin udara (AC) berkualitas, tempat tidur empuk berstandar hotel, kamar mandi dalam dengan pemanas air (water heater), serta koneksi internet berkecepatan tinggi yang stabil.
+              <p className="text-[#756A5F]">
+                Kami menyediakan fleksibilitas sistem sewa:
               </p>
+              <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#392B21]">
+                <li><strong>Sewa Harian:</strong> Tarif terjangkau untuk kebutuhan transit, kunjungan keluarga, dan pelancong wisata Kampar.</li>
+                <li><strong>Sewa Bulanan:</strong> Solusi hemat dan nyaman bagi staf instansi pemerintah, pegawai BUMN, tenaga kesehatan, atau pekerja proyek di Bangkinang.</li>
+                <li><strong>Sewa Tahunan:</strong> Pilihan hunian eksklusif berfasilitas lengkap dengan lingkungan asri dan aman.</li>
+              </ul>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-stone-100">
+            {/* Core Values */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-[#E5DCD0]">
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-stone-900 text-sm">Higienis & Terinspeksi</h3>
-                <p className="text-xs text-stone-600">
-                  Pembersihan menyeluruh, sanitasi linen, dan inspeksi rutin sebelum kamar diserahkan kepada tamu.
+                <h3 className="font-bold text-[#392B21] text-sm">Prinsip & Adab Syariah</h3>
+                <p className="text-xs text-[#756A5F]">
+                  Menjaga adab bertamu, lingkungan bebas alkohol dan rokok di kamar, serta mengharuskan ikatan sah bagi pasangan suami-istri.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg bg-brand-100 text-brand-800 flex items-center justify-center">
-                  <Heart className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center">
+                  <HeartHandshake className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-stone-900 text-sm">Keramahan Personal</h3>
-                <p className="text-xs text-stone-600">
-                  Staf homestay siap membantu kebutuhan tamu dengan sopan, ramah, dan tanggap.
+                <h3 className="font-bold text-[#392B21] text-sm">Ibadah Jariyah Mengalir</h3>
+                <p className="text-xs text-[#756A5F]">
+                  Mendukung kegiatan dakwah, santri yatim, dan pendidikan Islami di bawah binaan Persyarikatan Muhammadiyah Bangkinang.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center">
-                  <MapPin className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/25 text-[#806044] flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-stone-900 text-sm">Lokasi Bebas Bising</h3>
-                <p className="text-xs text-stone-600">
-                  Terletak di lingkungan yang asri dan hening di Paal Merah, menjamin kualitas istirahat tanpa gangguan suara bising jalan.
+                <h3 className="font-bold text-[#392B21] text-sm">Fasilitas Modern & Terawat</h3>
+                <p className="text-xs text-[#756A5F]">
+                  AC dingin di seluruh kamar, kasur bersih berstandar, kamar mandi higienis, WiFi cepat, dan keamanan 24 jam.
                 </p>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-stone-500">
-                Tertarik menginap di ALYATAMA HOMESTAY?
-              </p>
+            {/* Bottom CTA */}
+            <div className="pt-6 border-t border-[#E5DCD0] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs text-[#756A5F]">
+                <span>Alamat: Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Kampar, Riau.</span>
+              </div>
               <Link
                 href="/booking"
-                className="bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs sm:text-sm px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2"
+                className="bg-[#806044] hover:bg-[#6c5037] text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition shadow-md inline-flex items-center gap-2"
               >
-                Ajukan Reservasi Sekarang
+                Pesan Kamar Sekarang
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
+
           </div>
         </div>
       </main>

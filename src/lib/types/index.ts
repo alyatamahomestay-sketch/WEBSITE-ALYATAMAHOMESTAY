@@ -1,5 +1,7 @@
 export type UserRole = 'owner' | 'admin' | 'reception' | 'finance' | 'housekeeping';
 
+export type RentalType = 'daily' | 'monthly' | 'yearly';
+
 export interface UserProfile {
   id: string;
   full_name: string;
@@ -27,7 +29,9 @@ export interface Room {
   description: string;
   capacity_adults: number;
   capacity_children: number;
-  base_rate: number;
+  base_rate: number; // Daily rate in IDR
+  monthly_rate?: number; // Monthly rate in IDR (optional)
+  yearly_rate?: number; // Yearly rate in IDR (optional)
   operational_status: RoomOperationalStatus;
   amenities: string[];
   photos: string[];
@@ -62,7 +66,7 @@ export interface Guest {
   phone: string;
   normalized_phone: string;
   email?: string | null;
-  category: 'regular' | 'vip' | 'corporate' | 'repeat';
+  category: 'regular' | 'vip' | 'corporate' | 'repeat' | 'santri_keluarga';
   notes?: string | null;
   created_at: string;
   updated_at: string;
@@ -91,6 +95,8 @@ export interface Reservation {
   id: string;
   reservation_number: string;
   guest_id: string;
+  rental_type?: RentalType;
+  duration_units?: number;
   checkin_date: string;
   checkout_date: string;
   adults: number;
@@ -128,6 +134,9 @@ export interface NightlyRateItem {
 export interface ReservationPriceSnapshot {
   id: string;
   reservation_id: string;
+  rental_type?: RentalType;
+  duration_units?: number; // e.g. 2 nights, 1 month, 1 year
+  unit_rate?: number; // Rate per night, month, or year
   total_nights: number;
   base_subtotal: number;
   nightly_breakdown: NightlyRateItem[];
@@ -216,7 +225,7 @@ export interface Deposit {
 export interface Expense {
   id: string;
   expense_number: string;
-  category: 'listrik' | 'air' | 'laundry' | 'kebersihan' | 'perbaikan' | 'perlengkapan' | 'administrasi' | 'lainnya';
+  category: 'listrik' | 'air' | 'laundry' | 'kebersihan' | 'perbaikan' | 'perlengkapan' | 'administrasi' | 'donasi_dakwah' | 'lainnya';
   description: string;
   amount: number;
   expense_date: string;
@@ -356,13 +365,17 @@ export interface AuditLog {
 export interface PropertySettings {
   id: string;
   name: string;
+  category: string;
   tagline: string;
+  secondary_tagline: string;
+  mission_quote: string;
   description: string;
   address: string;
   city: string;
   province: string;
   postal_code: string;
   country: string;
+  landmark: string;
   google_maps_url: string;
   phone: string;
   whatsapp_number: string;
@@ -371,6 +384,7 @@ export interface PropertySettings {
   checkout_time: string;
   currency: string;
   timezone: string;
+  syariah_policy: string;
   booking_policy: string;
   cancellation_policy: string;
   pending_expiration_hours: number;

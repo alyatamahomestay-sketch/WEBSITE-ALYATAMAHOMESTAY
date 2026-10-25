@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Clock, MessageSquare, ExternalLink } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, MessageSquare, ExternalLink, Sparkles, Navigation } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import { PmsService } from '@/lib/services/pms-service';
@@ -14,112 +14,140 @@ export default async function KontakPage() {
     <>
       <PublicNavbar />
 
-      <main className="flex-1 bg-stone-50 py-16">
+      <main className="flex-1 bg-[#F6F0E7] py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
           <div className="max-w-2xl mb-12">
-            <span className="text-xs font-semibold uppercase tracking-widest text-brand-700 block mb-2">
-              Hubungi Kami & Lokasi
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-[#806044]/15 text-[#806044] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Layanan Pelanggan & Lokasi</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#392B21] tracking-tight mb-4">
               Kontak & Lokasi ALYATAMA HOMESTAY
             </h1>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Kami siap melayani kebutuhan akomodasi dan menjawab pertanyaan Anda seputar ketersediaan kamar, fasilitas, maupun rute perjalanan.
+            <p className="text-sm text-[#756A5F] leading-relaxed">
+              Kami siap melayani kebutuhan akomodasi Harian, Bulanan, maupun Tahunan. Jangan ragu menghubungi pengelola untuk konfirmasi ketersediaan kamar, survey lokasi, atau petunjuk jalan.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             {/* Contact Card */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <h3 className="font-serif font-semibold text-lg text-stone-900 pb-3 border-b border-stone-100">
-                Informasi Kontak
+            <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-6">
+              <h3 className="font-serif font-bold text-lg text-[#392B21] pb-3 border-b border-[#FAF7F2]">
+                Informasi Kontak Resmi
               </h3>
 
-              <div className="space-y-4 text-xs sm:text-sm text-stone-700">
+              <div className="space-y-4 text-xs sm:text-sm text-[#756A5F]">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-stone-400 block">Nomor Telepon</span>
-                    <strong className="text-stone-900">{property.phone || 'Tersedia di dashboard'}</strong>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
                     <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-400 block">Layanan WhatsApp</span>
-                    <strong className="text-stone-900">{property.whatsapp_number || property.phone || '-'}</strong>
+                    <span className="text-[11px] text-stone-500 block">WhatsApp Resmi (Fast Response)</span>
+                    <strong className="text-[#392B21] text-base block">0822 8547 2008</strong>
+                    <a
+                      href="https://wa.me/6282285472008"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-700 font-semibold hover:underline inline-flex items-center gap-1 mt-0.5"
+                    >
+                      Chat WhatsApp Pengelola &rarr;
+                    </a>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-stone-500 block">Telepon Kantor</span>
+                    <strong className="text-[#392B21]">0822 8547 2008</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-400 block">Email Resmi</span>
-                    <span className="text-stone-900">{property.email || 'kontak@alyatamahomestay.com'}</span>
+                    <span className="text-[11px] text-stone-500 block">Email Layanan</span>
+                    <span className="text-[#392B21]">alyatamahomestay@gmail.com</span>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-800 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] text-[#392B21] border border-[#E5DCD0] flex items-center justify-center shrink-0">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-400 block">Jam Operasional Pelayanan</span>
-                    <span className="text-stone-900">07:00 - 22:00 WIB</span>
+                    <span className="text-[11px] text-stone-500 block">Jam Operasional Layanan Tamu</span>
+                    <span className="text-[#392B21] font-medium">07:00 - 22:00 WIB (Keamanan Standby 24 Jam)</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Address & Navigation Card */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <h3 className="font-serif font-semibold text-lg text-stone-900 pb-3 border-b border-stone-100">
-                Alamat Terverifikasi
+            <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-6">
+              <h3 className="font-serif font-bold text-lg text-[#392B21] pb-3 border-b border-[#FAF7F2]">
+                Alamat Fisik Bangkinang Kota
               </h3>
 
-              <div className="space-y-4 text-xs sm:text-sm text-stone-700">
+              <div className="space-y-4 text-xs sm:text-sm text-[#756A5F]">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-400 block">Alamat Fisik Homestay</span>
-                    <strong className="text-stone-900 leading-relaxed block">
-                      {property.address}
+                    <span className="text-[11px] text-stone-500 block">Alamat Homestay</span>
+                    <strong className="text-[#392B21] leading-relaxed block">
+                      Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Daerah Kampar
                     </strong>
                     <span className="text-stone-600 block mt-0.5">
-                      {property.city}, {property.province} {property.postal_code}, {property.country}
+                      Kabupaten Kampar, Riau 28411, Indonesia
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 text-xs text-stone-600 space-y-2">
-                  <span className="font-semibold text-stone-900 block text-[11px] uppercase tracking-wider">
-                    Titik Google Maps:
-                  </span>
-                  <p className="leading-relaxed">
-                    Sentra &quot;Alyatama&quot; Jambi, Jl. Sultan Hasanuddin, RT 01 / Bakung Jaya, Paal Merah.
+                <div className="bg-[#FAF7F2] p-3.5 rounded-xl border border-[#E5DCD0] text-xs space-y-1">
+                  <span className="font-bold text-[#806044] block">Patokan Lokasi Penting:</span>
+                  <p className="text-[#392B21]">
+                    Tepat di belakang SPBU Bangkinang Kota, di samping Rumah Sakit Norpa Husada.
                   </p>
+                </div>
+
+                <div className="pt-2">
                   <a
                     href="https://maps.app.goo.gl/M2HcHTp2wSDMNyfj7"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-brand-700 hover:text-brand-800 font-semibold underline underline-offset-4 pt-1"
+                    className="w-full bg-[#392B21] hover:bg-[#2a1f17] text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
                   >
-                    Buka Peta & Rute di Google Maps
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <Navigation className="w-4 h-4 text-[#C9A84C]" />
+                    Buka Panduan Arah di Google Maps
                   </a>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Quick FAQ / Notice */}
+          <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 text-xs text-[#756A5F] space-y-3 shadow-sm">
+            <h4 className="font-serif font-bold text-sm text-[#392B21]">
+              Informasi Penting Sebelum Berkunjung:
+            </h4>
+            <p>
+              1. <strong>Waktu Check-in:</strong> Mulai pukul 14:00 WIB, dan waktu check-out maksimal pukul 12:00 WIB.
+            </p>
+            <p>
+              2. <strong>Kebijakan Tamu Pasangan:</strong> Tamu pasangan pria dan wanita wajib merupakan pasangan sah suami-istri (siap menunjukkan identitas/Buku Nikah).
+            </p>
+            <p>
+              3. <strong>Sewa Jangka Panjang:</strong> Untuk sewa bulanan dan tahunan, Anda dapat menghubungi admin terlebih dahulu untuk menjadwalkan survey kamar.
+            </p>
+          </div>
+
         </div>
       </main>
 

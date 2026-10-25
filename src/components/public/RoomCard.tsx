@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Users, Wifi, Wind, Bath, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { Room } from '@/lib/types';
 import { formatRupiah } from '@/lib/formatters';
 
@@ -9,10 +9,10 @@ interface RoomCardProps {
 }
 
 export default function RoomCard({ room }: RoomCardProps) {
-  const photo = room.photos?.[0] || 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80';
+  const photo = room.photos?.[0] || '/images/alyatama-flyer.jpg';
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+    <div className="bg-white rounded-2xl border border-[#E5DCD0] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group">
       {/* Photo Container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
         <img
@@ -20,11 +20,15 @@ export default function RoomCard({ room }: RoomCardProps) {
           alt={room.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur text-stone-100 text-xs px-2.5 py-1 rounded-md font-medium">
+        <div className="absolute top-3 left-3 bg-[#392B21]/90 backdrop-blur text-[#F6F0E7] text-xs px-2.5 py-1 rounded-md font-medium">
           No. {room.room_number}
         </div>
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-stone-800 text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm">
+        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur text-[#392B21] text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm border border-[#E5DCD0]">
           {room.room_type}
+        </div>
+        <div className="absolute bottom-3 left-3 bg-emerald-900/80 backdrop-blur text-emerald-100 text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-[#C9A84C]" />
+          Syariah Bersih & Tenang
         </div>
       </div>
 
@@ -32,16 +36,16 @@ export default function RoomCard({ room }: RoomCardProps) {
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <h3 className="font-serif font-semibold text-lg text-stone-900 group-hover:text-brand-700 transition-colors">
+            <h3 className="font-serif font-semibold text-lg text-[#392B21] group-hover:text-[#806044] transition-colors">
               {room.name}
             </h3>
-            <div className="flex items-center gap-1 text-xs text-stone-500">
-              <Users className="w-3.5 h-3.5" />
-              <span>{room.capacity_adults} Dws{room.capacity_children > 0 ? `, ${room.capacity_children} Anak` : ''}</span>
+            <div className="flex items-center gap-1 text-xs text-stone-500 bg-[#F6F0E7] px-2 py-1 rounded-md">
+              <Users className="w-3.5 h-3.5 text-[#806044]" />
+              <span>{room.capacity_adults} Dewasa{room.capacity_children > 0 ? `, ${room.capacity_children} Anak` : ''}</span>
             </div>
           </div>
 
-          <p className="text-xs text-stone-600 line-clamp-2 mb-4 leading-relaxed">
+          <p className="text-xs text-[#756A5F] line-clamp-2 mb-4 leading-relaxed">
             {room.description}
           </p>
 
@@ -50,44 +54,71 @@ export default function RoomCard({ room }: RoomCardProps) {
             {room.amenities.slice(0, 4).map((amenity, idx) => (
               <span
                 key={idx}
-                className="inline-block bg-stone-100 text-stone-700 text-[11px] px-2 py-0.5 rounded-full"
+                className="inline-block bg-[#F6F0E7] text-[#392B21] text-[11px] px-2.5 py-1 rounded-md font-medium border border-[#E5DCD0]/60"
               >
                 {amenity}
               </span>
             ))}
             {room.amenities.length > 4 && (
-              <span className="inline-block text-stone-400 text-[11px] px-1 py-0.5">
+              <span className="inline-block text-[#756A5F] text-[11px] px-1.5 py-1 font-medium">
                 +{room.amenities.length - 4} lainnya
               </span>
             )}
           </div>
+
+          {/* Pricing Options Grid (Harian, Bulanan, Tahunan) */}
+          <div className="bg-[#FAF7F2] p-3 rounded-xl border border-[#E5DCD0] space-y-1.5 mb-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-stone-500 flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-[#806044]" />
+                Sewa Harian:
+              </span>
+              <span className="font-semibold text-[#392B21]">
+                {formatRupiah(room.base_rate)} <span className="font-normal text-[11px] text-stone-500">/malam</span>
+              </span>
+            </div>
+
+            {room.monthly_rate && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-500 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#806044]" />
+                  Sewa Bulanan:
+                </span>
+                <span className="font-semibold text-[#806044]">
+                  {formatRupiah(room.monthly_rate)} <span className="font-normal text-[11px] text-stone-500">/bln</span>
+                </span>
+              </div>
+            )}
+
+            {room.yearly_rate && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-500 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#806044]" />
+                  Sewa Tahunan:
+                </span>
+                <span className="font-semibold text-[#65715A]">
+                  {formatRupiah(room.yearly_rate)} <span className="font-normal text-[11px] text-stone-500">/thn</span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Pricing & CTA */}
-        <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-stone-500 block">Mulai dari</span>
-            <div className="text-stone-900 font-semibold text-base sm:text-lg">
-              {formatRupiah(room.base_rate)}
-              <span className="text-xs text-stone-500 font-normal"> / malam</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/kamar/${room.id}`}
-              className="text-xs text-stone-600 hover:text-stone-900 font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 hover:border-stone-400 transition-colors"
-            >
-              Rincian
-            </Link>
-            <Link
-              href={`/booking?room_id=${room.id}`}
-              className="inline-flex items-center gap-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-            >
-              Pesan
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        {/* Action Buttons */}
+        <div className="pt-3 border-t border-[#E5DCD0] flex items-center justify-between gap-2">
+          <Link
+            href={`/kamar/${room.id}`}
+            className="text-xs text-[#392B21] hover:text-[#806044] font-medium px-3 py-2 rounded-lg border border-[#E5DCD0] hover:border-[#806044] transition-colors"
+          >
+            Rincian & Foto
+          </Link>
+          <Link
+            href={`/booking?room_id=${room.id}`}
+            className="inline-flex items-center gap-1.5 bg-[#806044] hover:bg-[#6c5037] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+          >
+            Pesan Sekarang
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     </div>

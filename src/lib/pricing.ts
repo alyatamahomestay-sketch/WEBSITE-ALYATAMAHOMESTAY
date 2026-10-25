@@ -1,7 +1,11 @@
-import { differenceInCalendarDays, eachDayOfInterval, format, parseISO } from 'date-fns';
-import { NightlyRateItem, Promotion, Room, RoomRatePeriod } from './types';
+import { differenceInCalendarDays, differenceInCalendarMonths, differenceInCalendarYears, eachDayOfInterval, format, parseISO } from 'date-fns';
+import { NightlyRateItem, Promotion, RentalType, Room, RoomRatePeriod } from './types';
 
 export interface PricingCalculationResult {
+  rentalType: RentalType;
+  durationUnits: number;
+  unitLabel: string;
+  unitRate: number;
   totalNights: number;
   nightlyBreakdown: NightlyRateItem[];
   baseSubtotal: number;
@@ -19,10 +23,46 @@ export interface PricingCalculationResult {
  * Example: checkin 2026-10-10, checkout 2026-10-12 = 2 nights
  */
 export function calculateNights(checkinDateStr: string, checkoutDateStr: string): number {
+  if (!checkinDateStr || !checkoutDateStr) return 0;
   const checkin = parseISO(checkinDateStr);
   const checkout = parseISO(checkoutDateStr);
   const nights = differenceInCalendarDays(checkout, checkin);
   return nights > 0 ? nights : 0;
+}
+
+/**
+ * Calculates rental duration units based on rental type:
+ * - daily: number of nights
+ * - monthly: number of months (minimum 1 month)
+ * - yearly: number of years (minimum 1 year)
+ */
+export function calculateRentalDuration(
+  checkinDateStr: string,
+  checkoutDateStr: string,
+  rentalType: RentalType = 'daily'
+): { durationUnits: number; totalNights: number; unitLabel: string } {
+  const totalNights = calculateNights(checkinDateStr, checkoutDateStr);
+  if (totalNights <= 0) {
+    return { durationUnits: 0, totalNights: 0, unitLabel: 'Malam' };
+  }
+
+  if (rentalType === 'monthly') {
+    const checkin = parseISO(checkinDateStr);
+    const checkout = parseISO(checkoutDateStr);
+    const rawMonths = differenceInCalendarMonths(checkout, checkin);
+    const durationUnits = Math.max(1, rawMonths > 0 ? rawMonths : Math.ceil(totalNights / 30));
+    return { durationUnits, totalNights, unitLabel: 'Bulan' };
+  }
+
+  if (rentalType === 'yearly') {
+    const checkin = parseISO(checkinDateStr);
+    const checkout = parseISO(checkoutDateStr);
+    const rawYears = differenceInCalendarYears(checkout, checkin);
+    const durationUnits = Math.max(1, rawYears > 0 ? rawYears : Math.ceil(totalNights / 365));
+    return { durationUnits, totalNights, unitLabel: 'Tahun' };
+  }
+
+  return { durationUnits: totalNights, totalNights, unitLabel: 'Malam' };
 }
 
 /**
@@ -121,42 +161,69 @@ export function evaluatePromotionDiscount(
 }
 
 /**
- * Full reservation pricing engine
+ * Full reservation pricing engine with Multi-Rental Model (Daily, Monthly, Yearly)
  */
 export function calculateReservationPricing(params: {
   checkinDateStr: string;
   checkoutDateStr: string;
-  room: Pick<Room, 'base_rate'>;
+  rentalType?: RentalType;
+  durationUnits?: number;
+  room: Pick<Room, 'base_rate'> & { monthly_rate?: number; yearly_rate?: number };
   ratePeriods?: RoomRatePeriod[];
   promotion?: Promotion | null;
   customDiscount?: number;
   customDiscountReason?: string;
   extraCharges?: number;
-  depositPercentage?: number; // e.g. 50 for 50%
+  depositPercentage?: number; // e.g. 50 for 50%, or 30% for monthly
   totalPaid?: number;
 }): PricingCalculationResult {
   const {
     checkinDateStr,
     checkoutDateStr,
+    rentalType = 'daily',
+    durationUnits: explicitUnits,
     room,
     ratePeriods = [],
     promotion = null,
     customDiscount = 0,
     customDiscountReason,
     extraCharges = 0,
-    depositPercentage = 50,
+    depositPercentage = rentalType === 'daily' ? 50 : 30, // 50% for daily, 30% security deposit for monthly/yearly
     totalPaid = 0,
   } = params;
 
-  const totalNights = calculateNights(checkinDateStr, checkoutDateStr);
-  const nightlyBreakdown = calculateNightlyBreakdown(
+  const duration = calculateRentalDuration(
     checkinDateStr,
     checkoutDateStr,
-    room.base_rate,
-    ratePeriods
+    rentalType
   );
+  const durationUnits = explicitUnits && explicitUnits > 0 ? explicitUnits : duration.durationUnits;
+  const totalNights = duration.totalNights;
+  const unitLabel = duration.unitLabel;
 
-  const baseSubtotal = nightlyBreakdown.reduce((sum, item) => sum + item.rate, 0);
+  let baseSubtotal = 0;
+  let unitRate = room.base_rate;
+  let nightlyBreakdown: NightlyRateItem[] = [];
+
+  if (rentalType === 'daily') {
+    nightlyBreakdown = calculateNightlyBreakdown(
+      checkinDateStr,
+      checkoutDateStr,
+      room.base_rate,
+      ratePeriods
+    );
+    baseSubtotal = nightlyBreakdown.reduce((sum, item) => sum + item.rate, 0);
+    unitRate = room.base_rate;
+  } else if (rentalType === 'monthly') {
+    // If monthly rate is explicitly defined on room, use it; otherwise standard 30x with 20% discount
+    unitRate = Number(room.monthly_rate) || Math.round(room.base_rate * 30 * 0.8);
+    baseSubtotal = unitRate * durationUnits;
+  } else if (rentalType === 'yearly') {
+    // If yearly rate is explicitly defined on room, use it; otherwise 10x monthly
+    const monthlyRate = Number(room.monthly_rate) || Math.round(room.base_rate * 30 * 0.8);
+    unitRate = Number(room.yearly_rate) || Math.round(monthlyRate * 10);
+    baseSubtotal = unitRate * durationUnits;
+  }
 
   // Evaluate promo or custom discount
   let discountAmount = 0;
@@ -189,11 +256,15 @@ export function calculateReservationPricing(params: {
   const netRoomAmount = Math.max(0, baseSubtotal - discountAmount);
   const totalAmount = netRoomAmount + Number(extraCharges);
 
-  // Deposit typically 50% of total amount or customized
-  const depositRequired = Math.round((totalAmount * (depositPercentage || 50)) / 100);
+  // Deposit calculation
+  const depositRequired = Math.round((totalAmount * depositPercentage) / 100);
   const balanceDue = Math.max(0, totalAmount - (totalPaid || 0));
 
   return {
+    rentalType,
+    durationUnits,
+    unitLabel,
+    unitRate,
     totalNights,
     nightlyBreakdown,
     baseSubtotal,

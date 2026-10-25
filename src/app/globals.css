@@ -2,22 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
+@layer base {
+  :root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
+  }
+
+  body {
+    background-color: #F6F0E7;
+    color: #392B21;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 }
 
-body {
-  color: #1f2937;
-  background-color: #fbfbf9;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Print styling for professional slips & invoices */
+/* Print styling for professional Syariah slips & invoices */
 @media print {
   body {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: #ffffff !important;
+    color: #000000 !important;
   }
   .no-print {
     display: none !important;
@@ -26,7 +29,7 @@ body {
     display: block !important;
   }
   @page {
-    margin: 1.5cm;
+    margin: 1.2cm;
     size: auto;
   }
 }

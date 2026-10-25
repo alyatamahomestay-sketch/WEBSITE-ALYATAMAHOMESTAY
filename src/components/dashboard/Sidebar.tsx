@@ -19,12 +19,11 @@ import {
   Wrench, 
   FileSpreadsheet, 
   Settings, 
-  ShieldAlert, 
   ChevronDown, 
   Menu, 
-  X,
-  QrCode
+  X
 } from 'lucide-react';
+import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { UserRole } from '@/lib/types';
 
 interface SidebarProps {
@@ -72,7 +71,7 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
       roles: ['owner', 'admin', 'reception'] as UserRole[],
     },
     {
-      title: 'Kamar & Tarif',
+      title: 'Kamar & Tarif (H/B/T)',
       href: '/dashboard/kamar',
       icon: BedDouble,
       roles: ['owner', 'admin'] as UserRole[],
@@ -133,7 +132,7 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
       <div className="lg:hidden fixed top-3 left-3 z-50">
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg bg-stone-900 text-stone-100 shadow-md border border-stone-800"
+          className="p-2 rounded-xl bg-[#392B21] text-[#F6F0E7] shadow-md border border-[#4d3b2e]"
           aria-label="Toggle navigation sidebar"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -142,34 +141,32 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-stone-900 border-r border-stone-800 text-stone-300 flex flex-col transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#392B21] border-r border-[#4d3b2e] text-[#E7D8C5] flex flex-col transition-transform duration-300 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Brand / Logo Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-stone-800">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-[#4d3b2e]">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
-              <Home className="w-4 h-4 text-brand-300" />
-            </div>
+            <AlyatamaLogo className="w-8 h-8" />
             <div>
-              <span className="font-serif font-semibold text-sm text-stone-100 tracking-wide block leading-none">
+              <span className="font-serif font-bold text-sm text-[#F6F0E7] tracking-wide block leading-none">
                 ALYATAMA
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-stone-400 block mt-0.5">
-                PROPERTY PMS
+              <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] block mt-0.5 font-medium">
+                HOMESTAY PMS
               </span>
             </div>
           </Link>
         </div>
 
         {/* Role Indicator & Quick Switcher */}
-        <div className="px-4 py-3 bg-stone-950/60 border-b border-stone-800/80">
+        <div className="px-4 py-3 bg-[#2a1f17] border-b border-[#4d3b2e]">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] uppercase font-semibold text-stone-400 tracking-wider">
               Hak Akses Aktif:
             </span>
-            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-brand-900/60 text-brand-300 border border-brand-700/50">
+            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#806044] text-white border border-[#C9A84C]/40">
               {activeRole}
             </span>
           </div>
@@ -177,7 +174,7 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
           <select
             value={activeRole}
             onChange={(e) => onRoleChange(e.target.value as UserRole)}
-            className="w-full bg-stone-900 border border-stone-700 text-stone-200 text-xs rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full bg-[#392B21] border border-[#4d3b2e] text-[#F6F0E7] text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#806044]"
           >
             <option value="owner">Peran: Owner (Akses Penuh)</option>
             <option value="admin">Peran: Admin Operasional</option>
@@ -199,10 +196,10 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
                   key={item.href}
                   href={`${item.href}${activeRole ? `?role=${activeRole}` : ''}`}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-brand-600 text-white shadow-sm'
-                      : 'text-stone-300 hover:bg-stone-800 hover:text-stone-100'
+                      ? 'bg-[#806044] text-white shadow-sm font-semibold'
+                      : 'text-[#E7D8C5] hover:bg-[#4d3b2e] hover:text-white'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -213,11 +210,11 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
 
           {/* Settings Submenu (Owner & Admin only) */}
           {canAccess(['owner', 'admin']) && (
-            <div className="pt-2 border-t border-stone-800">
+            <div className="pt-2 border-t border-[#4d3b2e]">
               <button
                 type="button"
                 onClick={() => setSettingsOpen(!settingsOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#E7D8C5] hover:bg-[#4d3b2e] transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Settings className="w-4 h-4 text-stone-400" />
@@ -231,28 +228,28 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
                   <Link
                     href={`/dashboard/pengaturan${activeRole ? `?role=${activeRole}` : ''}`}
                     onClick={() => setMobileOpen(false)}
-                    className="block py-1.5 text-xs text-stone-400 hover:text-stone-100"
+                    className="block py-1.5 text-xs text-stone-300 hover:text-white"
                   >
-                    Profil Homestay
+                    Profil Homestay Bangkinang
                   </Link>
                   <Link
                     href={`/dashboard/pengaturan/pembayaran${activeRole ? `?role=${activeRole}` : ''}`}
                     onClick={() => setMobileOpen(false)}
-                    className="block py-1.5 text-xs text-stone-400 hover:text-stone-100"
+                    className="block py-1.5 text-xs text-stone-300 hover:text-white"
                   >
                     Metode & Gambar QRIS
                   </Link>
                   <Link
                     href={`/dashboard/pengaturan/audit${activeRole ? `?role=${activeRole}` : ''}`}
                     onClick={() => setMobileOpen(false)}
-                    className="block py-1.5 text-xs text-stone-400 hover:text-stone-100"
+                    className="block py-1.5 text-xs text-stone-300 hover:text-white"
                   >
                     Audit Log Keamanan
                   </Link>
                   <Link
                     href="/auth/setup"
                     onClick={() => setMobileOpen(false)}
-                    className="block py-1.5 text-xs text-brand-400 hover:text-brand-300"
+                    className="block py-1.5 text-xs text-[#C9A84C] hover:text-[#e4cf8d]"
                   >
                     Status DB Supabase
                   </Link>
@@ -263,16 +260,16 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
         </nav>
 
         {/* Footer info & Website Return */}
-        <div className="p-4 border-t border-stone-800 space-y-2">
+        <div className="p-4 border-t border-[#4d3b2e] space-y-2">
           <Link
             href="/"
             target="_blank"
-            className="w-full block text-center py-2 px-3 rounded-lg bg-stone-800/80 hover:bg-stone-800 text-stone-300 text-xs font-medium transition-colors"
+            className="w-full block text-center py-2 px-3 rounded-xl bg-[#2a1f17] hover:bg-[#4d3b2e] text-[#E7D8C5] text-xs font-semibold transition-colors border border-[#4d3b2e]"
           >
             Buka Website Calon Tamu &rarr;
           </Link>
-          <div className="text-[10px] text-stone-500 text-center">
-            ALYATAMA HOMESTAY v1.0
+          <div className="text-[10px] text-stone-400 text-center">
+            ALYATAMA HOMESTAY PMS v2.0
           </div>
         </div>
       </aside>

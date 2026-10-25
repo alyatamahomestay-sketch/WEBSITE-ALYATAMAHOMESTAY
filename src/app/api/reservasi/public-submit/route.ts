@@ -5,7 +5,7 @@ import { calculateReservationPricing, calculateNights } from '@/lib/pricing';
 import { normalizeIndonesianPhone, isValidIndonesianPhone } from '@/lib/phone';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Reservation } from '@/lib/types';
+import { Reservation, RentalType } from '@/lib/types';
 
 // Validation Schema
 const bookingFormSchema = z.object({
@@ -15,8 +15,11 @@ const bookingFormSchema = z.object({
   checkinDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal check-in tidak valid'),
   checkoutDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal check-out tidak valid'),
   roomId: z.string().min(1, 'Pilihan kamar wajib ditentukan'),
+  rentalType: z.enum(['daily', 'monthly', 'yearly']).default('daily'),
+  durationUnits: z.number().int().min(1).optional(),
   adults: z.number().int().min(1).default(1),
   children: z.number().int().min(0).default(0),
+  marriageConfirmed: z.boolean().optional().default(false),
   promoCode: z.string().optional(),
   specialRequests: z.string().max(500).optional(),
   dataConsent: z.boolean().refine((val) => val === true, {
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Validate phone number
     if (!isValidIndonesianPhone(data.phone)) {
       return NextResponse.json(
-        { success: false, message: 'Nomor WhatsApp harus nomor Indonesia yang valid (contoh: 081234567890).' },
+        { success: false, message: 'Nomor WhatsApp harus nomor Indonesia yang valid (contoh: 081234567890 atau 082285472008).' },
         { status: 400 }
       );
     }
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
     const nights = calculateNights(data.checkinDate, data.checkoutDate);
     if (nights <= 0) {
       return NextResponse.json(
-        { success: false, message: 'Tanggal check-out harus lebih besar dari tanggal check-in (minimal 1 malam).' },
+        { success: false, message: 'Tanggal check-out harus lebih besar dari tanggal check-in.' },
         { status: 400 }
       );
     }
@@ -81,11 +84,13 @@ export async function POST(req: NextRequest) {
       ) || null;
     }
 
-    // Server-side safe price calculation
+    // Server-side safe price calculation according to rentalType
     const pricing = calculateReservationPricing({
       checkinDateStr: data.checkinDate,
       checkoutDateStr: data.checkoutDate,
       room,
+      rentalType: data.rentalType,
+      durationUnits: data.durationUnits,
       promotion: matchedPromo,
     });
 
@@ -136,7 +141,7 @@ export async function POST(req: NextRequest) {
             children: data.children,
             status: 'pending_approval',
             payment_status: 'unpaid',
-            special_requests: data.specialRequests || null,
+            special_requests: data.specialRequests ? `${data.specialRequests}${data.marriageConfirmed ? ' [Status Pasangan Suami Istri Terkonfirmasi Syariah]' : ''}` : (data.marriageConfirmed ? '[Status Pasangan Suami Istri Terkonfirmasi Syariah]' : null),
           }])
           .select('id')
           .single();
@@ -152,6 +157,9 @@ export async function POST(req: NextRequest) {
         // 4. Insert locked price snapshot
         await adminClient.from('reservation_price_snapshots').insert([{
           reservation_id: newRes.id,
+          rental_type: data.rentalType,
+          duration_units: pricing.durationUnits,
+          unit_rate: pricing.unitRate,
           total_nights: pricing.totalNights,
           base_subtotal: pricing.baseSubtotal,
           nightly_breakdown: pricing.nightlyBreakdown,
@@ -193,9 +201,11 @@ export async function POST(req: NextRequest) {
       checkout_date: data.checkoutDate,
       adults: data.adults,
       children: data.children,
+      rental_type: data.rentalType,
+      duration_units: pricing.durationUnits,
       status: 'pending_approval',
       payment_status: 'unpaid',
-      special_requests: data.specialRequests,
+      special_requests: data.specialRequests ? `${data.specialRequests}${data.marriageConfirmed ? ' [Status Pasangan Suami Istri Terkonfirmasi Syariah]' : ''}` : (data.marriageConfirmed ? '[Status Pasangan Suami Istri Terkonfirmasi Syariah]' : null),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       guest: {
@@ -212,6 +222,9 @@ export async function POST(req: NextRequest) {
       price_snapshot: {
         id: 'snp-' + Date.now(),
         reservation_id: memResId,
+        rental_type: data.rentalType,
+        duration_units: pricing.durationUnits,
+        unit_rate: pricing.unitRate,
         total_nights: pricing.totalNights,
         base_subtotal: pricing.baseSubtotal,
         nightly_breakdown: pricing.nightlyBreakdown,

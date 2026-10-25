@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Clock, AlertTriangle, CreditCard, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Clock, AlertTriangle, CreditCard, CheckCircle2, HeartHandshake, Sparkles, Building2 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 
@@ -9,91 +9,113 @@ export default function KebijakanPage() {
     <>
       <PublicNavbar />
 
-      <main className="flex-1 bg-stone-50 py-16">
+      <main className="flex-1 bg-[#F6F0E7] py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
           <div className="max-w-2xl mb-12">
-            <span className="text-xs font-semibold uppercase tracking-widest text-brand-700 block mb-2">
-              Tata Tertib & Ketentuan
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-[#806044]/15 text-[#806044] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Tata Tertib & Kepatuhan Syariah</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#392B21] tracking-tight mb-4">
               Kebijakan Menginap ALYATAMA HOMESTAY
             </h1>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Demi kenyamanan, keamanan, dan ketertiban seluruh tamu, mohon perhatikan ketentuan operasional berikut ini.
+            <p className="text-sm text-[#756A5F] leading-relaxed">
+              Demi kenyamanan bersama, ketertiban lingkungan, dan keberkahan menginap berlandaskan nilai-nilai Syariah di Bangkinang Kota, mohon seluruh calon tamu mematuhi ketentuan operasional berikut.
             </p>
           </div>
 
           <div className="space-y-8">
-            {/* Waktu Check-in & Check-out */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 text-stone-900 font-semibold text-base pb-3 border-b border-stone-100">
-                <Clock className="w-5 h-5 text-brand-600" />
-                <span>1. Waktu Check-in dan Check-out</span>
+            
+            {/* Kebijakan Syariah & Pasangan */}
+            <div id="pasangan" className="bg-white rounded-3xl border border-[#d4c3ad] p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
+                <HeartHandshake className="w-5 h-5 text-[#806044]" />
+                <span>1. Prinsip Syariah & Ketentuan Tamu Pasangan</span>
               </div>
-              <div className="space-y-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
+              <div className="space-y-3 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 <p>
-                  • <strong>Waktu Check-in:</strong> Mulai pukul <strong>14:00 WIB</strong>. Apabila Anda tiba lebih awal, penitipan bagasi dapat dilayani sesuai ketersediaan staf resepsionis.
+                  • <strong>Pasangan Lawan Jenis:</strong> Tamu pria dan wanita yang menginap dalam satu kamar wajib merupakan pasangan sah suami-istri atau mahram keluarga.
                 </p>
                 <p>
-                  • <strong>Waktu Check-out:</strong> Maksimal pukul <strong>12:00 WIB</strong>. Keterlambatan check-out tanpa konfirmasi dapat dikenakan biaya perpanjangan atau penyesuaian tarif setengah hari.
+                  • <strong>Verifikasi Dokumen:</strong> Petugas homestay berhak meminta bukti pernikahan yang sah (seperti Buku Nikah resmi atau KTP suami-istri beralamat sama) saat proses check-in.
                 </p>
                 <p>
-                  • Tamu diwajibkan menunjukkan kartu identitas resmi (KTP / Paspor) yang sah saat proses check-in.
+                  • <strong>Larangan Keras:</strong> Dilarang keras membawa minuman beralkohol, zat terlarang (narkotika), perjudian, dan aktivitas yang bertentangan dengan norma kesusilaan serta hukum Islam.
                 </p>
               </div>
             </div>
 
-            {/* Alur Reservasi & Verifikasi */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 text-stone-900 font-semibold text-base pb-3 border-b border-stone-100">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <span>2. Alur Persetujuan & Masa Berlaku Pemesanan</span>
+            {/* Waktu Check-in & Check-out */}
+            <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
+                <Clock className="w-5 h-5 text-[#806044]" />
+                <span>2. Waktu Check-in dan Check-out</span>
               </div>
-              <div className="space-y-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
+              <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 <p>
-                  • Seluruh pemesanan yang diajukan melalui website berstatus <strong>Menunggu Persetujuan Admin (Pending Approval)</strong>.
+                  • <strong>Waktu Check-in:</strong> Mulai pukul <strong>14:00 WIB</strong>. Bila Anda tiba lebih awal, penitipan bagasi dapat dikoordinasikan terlebih dahulu kepada pengelola.
                 </p>
                 <p>
-                  • Admin akan memeriksa ketersediaan fisik kamar sebelum menyetujui pemesanan guna mencegah tumpang tindih reservasi.
+                  • <strong>Waktu Check-out:</strong> Maksimal pukul <strong>12:00 WIB</strong>. Keterlambatan check-out tanpa konfirmasi dapat dikenakan biaya penyesuaian operasional.
                 </p>
                 <p>
-                  • Setelah disetujui, tamu memiliki tenggat waktu 24 jam untuk melakukan pembayaran uang muka (deposit) atau pelunasan. Permintaan yang tidak dibayarkan hingga batas waktu kedaluwarsa akan dibatalkan otomatis agar kamar dapat dialokasikan kepada tamu lain.
+                  • Seluruh tamu dewasa wajib menunjukkan kartu identitas resmi (KTP/SIM/Paspor) saat check-in.
+                </p>
+              </div>
+            </div>
+
+            {/* Model Sewa: Harian, Bulanan, Tahunan */}
+            <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
+                <Building2 className="w-5 h-5 text-[#65715A]" />
+                <span>3. Ketentuan Masa Sewa (Harian, Bulanan, Tahunan)</span>
+              </div>
+              <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
+                <p>
+                  • <strong>Sewa Harian:</strong> Pembayaran deposit 50% saat reservasi disetujui, dan pelunasan sisa tagihan dilakukan saat check-in.
+                </p>
+                <p>
+                  • <strong>Sewa Bulanan:</strong> Berlaku untuk durasi minimal 1 bulan (30 hari). Termasuk biaya kebersihan berkala dan fasilitas standar. Uang jaminan (security deposit) dikembalikan saat masa sewa berakhir setelah kamar diinspeksi.
+                </p>
+                <p>
+                  • <strong>Sewa Tahunan:</strong> Melalui akad perjanjian sewa tahunan yang jelas, dengan hak prioritas perpanjangan bagi penyewa yang menjaga ketertiban properti.
                 </p>
               </div>
             </div>
 
             {/* Kebijakan Pembatalan & Refund */}
-            <div id="pembatalan" className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 text-stone-900 font-semibold text-base pb-3 border-b border-stone-100">
+            <div id="pembatalan" className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
-                <span>3. Kebijakan Pembatalan & Pengembalian Dana</span>
+                <span>4. Kebijakan Pembatalan & Pengembalian Dana</span>
               </div>
-              <div className="space-y-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
+              <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 <p>
-                  • <strong>Pembatalan Bebas Biaya:</strong> Pembatalan yang diajukan selambat-lambatnya <strong>3 hari (H-3)</strong> sebelum tanggal check-in bebas potongan biaya administrasi.
+                  • <strong>Pembatalan H-3:</strong> Pembatalan yang diajukan selambat-lambatnya 3 hari kalender sebelum tanggal check-in bebas potongan biaya administrasi penuh.
                 </p>
                 <p>
-                  • <strong>Pembatalan H-2 hingga Hari H:</strong> Dikenakan potongan biaya sebesar 50% dari uang muka (deposit) yang telah dibayarkan.
+                  • <strong>Pembatalan H-2 hingga Hari H:</strong> Dikenakan potongan biaya 50% dari uang muka (deposit) yang telah dibayarkan.
                 </p>
                 <p>
-                  • <strong>Tidak Datang (No-Show):</strong> Apabila tamu tidak hadir tanpa pemberitahuan hingga pukul 22:00 WIB pada hari kedatangan, pemesanan dianggap batal dan deposit tidak dapat dikembalikan.
+                  • <strong>Ketidakhadiran (No-Show):</strong> Apabila tamu tidak hadir tanpa pemberitahuan resmi hingga pukul 22:00 WIB pada hari kedatangan, pemesanan dianggap batal demi membuka kesempatan bagi tamu lain yang membutuhkan akomodasi darurat.
                 </p>
               </div>
             </div>
 
-            {/* Larangan & Ketertiban */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 text-stone-900 font-semibold text-base pb-3 border-b border-stone-100">
-                <ShieldCheck className="w-5 h-5 text-purple-600" />
-                <span>4. Ketertiban Lingkungan & Larangan</span>
+            {/* Larangan Merokok & Kebersihan */}
+            <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-4">
+              <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
+                <ShieldCheck className="w-5 h-5 text-[#806044]" />
+                <span>5. Larangan Merokok di Kamar & Kebersihan</span>
               </div>
-              <div className="space-y-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
-                <p>• Dilarang merokok di dalam kamar ber-AC. Area merokok khusus telah disediakan di luar ruangan.</p>
-                <p>• Dilarang membawa hewan peliharaan tanpa izin tertulis dari manajemen.</p>
-                <p>• Dilarang membawa senjata tajam, obat-obatan terlarang, narkotika, atau barang berbahaya yang melanggar hukum Republik Indonesia.</p>
-                <p>• Jam tenang malam hari berlaku mulai pukul 22:00 WIB guna menjaga ketenteraman seluruh penghuni homestay.</p>
+              <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
+                <p>• <strong>Bebas Asap Rokok di Dalam Kamar:</strong> Seluruh unit kamar tidur ber-AC adalah zona bebas rokok demi menjaga aroma segar dan kesehatan para santri serta tamu berikutnya. Area merokok khusus disediakan di luar ruangan.</p>
+                <p>• Dilarang membawa hewan peliharaan.</p>
+                <p>• Jam tenang malam hari berlaku mulai pukul 22:00 WIB guna menjaga kekhusyukan istirahat dan ketenangan lingkungan santri.</p>
               </div>
             </div>
+
           </div>
         </div>
       </main>
