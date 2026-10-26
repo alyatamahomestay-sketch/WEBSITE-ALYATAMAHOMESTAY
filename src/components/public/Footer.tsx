@@ -121,8 +121,13 @@ export default function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-stone-400 hover:text-stone-200 transition-colors">
-                  Portal Staf & Manajemen (PMS)
+                <Link href="/galeri" className="hover:text-white transition-colors">
+                  Galeri & Iklan Homestay
+                </Link>
+              </li>
+              <li>
+                <Link href="/kontak" className="hover:text-white transition-colors">
+                  Kontak & Bantuan Tamu
                 </Link>
               </li>
             </ul>

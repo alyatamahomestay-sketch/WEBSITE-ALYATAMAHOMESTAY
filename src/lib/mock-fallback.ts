@@ -1,4 +1,4 @@
-import { Room, Promotion, PaymentMethod, Reservation, PropertySettings, InventoryItem, HousekeepingTask, MaintenanceTicket, Expense } from './types';
+import { Room, Promotion, PaymentMethod, Reservation, PropertySettings, InventoryItem, HousekeepingTask, MaintenanceTicket, Expense, AdvertisementPhoto } from './types';
 
 export const INITIAL_PROPERTY_SETTINGS: PropertySettings = {
   id: 'a0000000-0000-0000-0000-000000000001',
@@ -8,6 +8,8 @@ export const INITIAL_PROPERTY_SETTINGS: PropertySettings = {
   secondary_tagline: 'Bersih, Nyaman dan Berkah',
   mission_quote: 'Investasi terbaik adalah saat manfaatnya terus mengalir, bahkan setelah kita tiada.',
   description: 'Penginapan syariah yang memberikan kenyamanan, kebersihan, privasi, keamanan, dan suasana Islami dengan pelayanan profesional di Bangkinang Kota, Kabupaten Kampar. Tersedia untuk sewa Harian, Bulanan, dan Tahunan.',
+  announcement_banner: 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian, Bulanan & Tahunan',
+  is_announcement_active: true,
   address: 'Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah',
   landmark: 'Di Belakang SPBU Bangkinang Kota, Samping Rumah Sakit Norpa Husada',
   city: 'Bangkinang Kota, Kabupaten Kampar',
@@ -470,5 +472,68 @@ export const INITIAL_RESERVATIONS: Reservation[] = [
       consent_timestamp: new Date().toISOString(),
       created_at: new Date().toISOString(),
     },
+  },
+];
+
+export const INITIAL_AD_PHOTOS: AdvertisementPhoto[] = [
+  {
+    id: 'ad-001',
+    title: 'Brosur & Flyer Resmi ALYATAMA HOMESTAY',
+    category: 'brosur_flyer',
+    image_url: '/images/alyatama-flyer.jpg',
+    description: 'Flyer promosi resmi memuat informasi sewa harian, bulanan, tahunan, 6 fasilitas utama, dan lokasi di Jl. Mayor Ali Rasyid No 19 Bangkinang Kota.',
+    badge: 'Materi Resmi',
+    is_active: true,
+    display_order: 1,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'ad-002',
+    title: 'Kamar Syariah Deluxe — Fasilitas Bersih & Higienis',
+    category: 'kamar_fasilitas',
+    image_url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    description: 'Suasana kamar tidur berpenyejuk udara (AC dingin), kasur berkualitas, dan kamar mandi dalam dengan pemanas air.',
+    badge: 'Kamar Unggulan',
+    is_active: true,
+    display_order: 2,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'ad-003',
+    title: 'Dukungan Dakwah & Pendidikan Santri Muhammadiyah',
+    category: 'kegiatan_dakwah',
+    image_url: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1200&q=80',
+    description: 'Setiap pemesanan mengalirkan amal jariyah untuk kelangsungan santri Panti Asuhan Putra Muhammadiyah Bangkinang.',
+    badge: 'Amal Jariyah',
+    is_active: true,
+    display_order: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'ad-004',
+    title: 'Promo Sewa Bulanan Spesial Pegawai & Tim Proyek',
+    category: 'promo_khusus',
+    image_url: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+    description: 'Tarif hemat mulai Rp 2.200.000/bulan untuk dinas kerja, staf kantor, maupun keluarga pasien RS Norpa Husada.',
+    badge: 'Hemat Bulanan',
+    is_active: true,
+    display_order: 4,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'ad-005',
+    title: 'Suasana Tenang, Asri & Keamanan 24 Jam',
+    category: 'kamar_fasilitas',
+    image_url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+    description: 'Area lingkungan Islami yang hening, bebas dari kebisingan jalan protokol, dilengkapi tempat parkir mobil dan motor yang aman.',
+    badge: 'Aman 24 Jam',
+    is_active: true,
+    display_order: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];

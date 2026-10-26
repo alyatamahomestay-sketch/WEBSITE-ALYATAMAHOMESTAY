@@ -370,6 +370,8 @@ export interface PropertySettings {
   secondary_tagline: string;
   mission_quote: string;
   description: string;
+  announcement_banner?: string | null;
+  is_announcement_active?: boolean;
   address: string;
   city: string;
   province: string;
@@ -388,6 +390,30 @@ export interface PropertySettings {
   booking_policy: string;
   cancellation_policy: string;
   pending_expiration_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AdCategory = 
+  | 'brosur_flyer' 
+  | 'kamar_fasilitas' 
+  | 'kegiatan_dakwah' 
+  | 'promo_khusus' 
+  | 'flyer' 
+  | 'room' 
+  | 'facility' 
+  | 'activity' 
+  | 'promo';
+
+export interface AdvertisementPhoto {
+  id: string;
+  title: string;
+  category: AdCategory;
+  image_url: string;
+  description?: string | null;
+  badge?: string | null;
+  is_active: boolean;
+  display_order: number;
   created_at: string;
   updated_at: string;
 }

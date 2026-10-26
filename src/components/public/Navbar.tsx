@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Phone, Menu, X, KeyRound, Heart } from 'lucide-react';
+import { Calendar, Phone, Menu, X, Heart, Image as ImageIcon } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 
 export default function PublicNavbar() {
@@ -18,21 +18,25 @@ export default function PublicNavbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-4">
-          {/* Brand Logo with Official Brand Image */}
+          {/* Brand Logo with Official Monochrome White Image */}
           <Link href="/" className="flex items-center shrink-0 group py-1">
-            <AlyatamaLogo variant="light" size="md" />
+            <AlyatamaLogo variant="white" size="md" />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-xs sm:text-sm font-medium text-stone-300">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-xs sm:text-sm font-medium text-stone-300">
             <Link href="/" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
               Beranda
             </Link>
             <Link href="/kamar" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
               Pilihan Kamar
             </Link>
+            <Link href="/galeri" className="hover:text-[#E7D8C5] transition-colors flex items-center gap-1.5 whitespace-nowrap">
+              <ImageIcon className="w-3.5 h-3.5 text-[#C9A84C]" />
+              Galeri & Iklan
+            </Link>
             <Link href="/cek-ketersediaan" className="hover:text-[#E7D8C5] transition-colors flex items-center gap-1.5 whitespace-nowrap">
-              <Calendar className="w-4 h-4 text-[#C9A84C]" />
+              <Calendar className="w-3.5 h-3.5 text-[#C9A84C]" />
               Cek Ketersediaan
             </Link>
             <Link href="/tentang" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
@@ -46,7 +50,7 @@ export default function PublicNavbar() {
             </Link>
           </nav>
 
-          {/* Action Buttons */}
+          {/* Action Buttons (Strictly for Public Visitors - No Admin Keys/Buttons Here!) */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
             <a
               href="https://wa.me/6282285472008"
@@ -63,14 +67,6 @@ export default function PublicNavbar() {
               className="bg-[#806044] hover:bg-[#6e5239] text-[#F6F0E7] text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm whitespace-nowrap"
             >
               Pesan Sekarang
-            </Link>
-
-            <Link
-              href="/dashboard"
-              title="Akses Portal Staf & Pengelola"
-              className="p-2 text-stone-400 hover:text-stone-200 hover:bg-[#806044]/20 rounded-xl transition-colors"
-            >
-              <KeyRound className="w-4 h-4" />
             </Link>
           </div>
 
@@ -111,6 +107,13 @@ export default function PublicNavbar() {
             Daftar & Tarif Kamar
           </Link>
           <Link
+            href="/galeri"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block py-2 text-sm text-stone-200 hover:text-white border-b border-[#4d3b2e]"
+          >
+            Galeri & Foto Iklan
+          </Link>
+          <Link
             href="/cek-ketersediaan"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm text-stone-200 hover:text-white border-b border-[#4d3b2e]"
@@ -139,24 +142,16 @@ export default function PublicNavbar() {
             Kontak & Lokasi Bangkinang
           </Link>
 
-          <div className="pt-2 flex flex-col gap-2">
+          <div className="pt-2">
             <a
               href="https://wa.me/6282285472008"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full text-center py-2.5 rounded-xl border border-[#806044] text-[#E7D8C5] text-xs font-semibold flex items-center justify-center gap-2"
+              className="w-full text-center py-2.5 rounded-xl border border-[#806044] text-[#E7D8C5] text-xs font-semibold flex items-center justify-center gap-2 bg-[#806044]/15"
             >
               <Phone className="w-3.5 h-3.5 text-[#C9A84C]" />
               <span>WhatsApp: 0822 8547 2008</span>
             </a>
-
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2 rounded-xl bg-[#392B21] text-stone-300 text-xs font-medium"
-            >
-              Portal Staf & Manajemen
-            </Link>
           </div>
         </div>
       )}

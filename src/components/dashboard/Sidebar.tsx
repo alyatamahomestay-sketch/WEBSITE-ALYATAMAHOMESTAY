@@ -21,7 +21,10 @@ import {
   Settings, 
   ChevronDown, 
   Menu, 
-  X
+  X,
+  Megaphone,
+  LogOut,
+  Palette
 } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { UserRole } from '@/lib/types';
@@ -74,6 +77,12 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
       title: 'Kamar & Tarif (H/B/T)',
       href: '/dashboard/kamar',
       icon: BedDouble,
+      roles: ['owner', 'admin'] as UserRole[],
+    },
+    {
+      title: 'Foto Iklan & Galeri',
+      href: '/dashboard/iklan',
+      icon: Megaphone,
       roles: ['owner', 'admin'] as UserRole[],
     },
     {
@@ -148,7 +157,7 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
         {/* Brand / Logo Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-[#4d3b2e]">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <AlyatamaLogo variant="light" size="sm" />
+            <AlyatamaLogo variant="white" size="sm" />
             <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] font-bold bg-[#2a1f17] px-1.5 py-0.5 rounded border border-[#4d3b2e]">
               PMS
             </span>
@@ -221,6 +230,13 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
               {settingsOpen && (
                 <div className="pl-9 pr-2 py-1 space-y-1">
                   <Link
+                    href={`/dashboard/pengaturan/tampilan${activeRole ? `?role=${activeRole}` : ''}`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-1.5 text-xs text-[#C9A84C] hover:text-white font-medium"
+                  >
+                    Setup Tampilan Website
+                  </Link>
+                  <Link
                     href={`/dashboard/pengaturan${activeRole ? `?role=${activeRole}` : ''}`}
                     onClick={() => setMobileOpen(false)}
                     className="block py-1.5 text-xs text-stone-300 hover:text-white"
@@ -262,6 +278,13 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
             className="w-full block text-center py-2 px-3 rounded-xl bg-[#2a1f17] hover:bg-[#4d3b2e] text-[#E7D8C5] text-xs font-semibold transition-colors border border-[#4d3b2e]"
           >
             Buka Website Calon Tamu &rarr;
+          </Link>
+          <Link
+            href="/portal"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-transparent hover:bg-stone-800 text-stone-400 hover:text-stone-200 text-[11px] font-medium transition"
+          >
+            <LogOut className="w-3 h-3" />
+            <span>Ganti Peran / Keluar Portal</span>
           </Link>
           <div className="text-[10px] text-stone-400 text-center">
             ALYATAMA HOMESTAY PMS v2.0

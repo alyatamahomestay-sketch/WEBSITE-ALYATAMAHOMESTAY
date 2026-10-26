@@ -92,4 +92,39 @@ describe('PMS Service Operations & Concurrency Handling', () => {
     const afterExpenses = await PmsService.getExpenses();
     expect(afterExpenses.length).toBe(countBefore + 1);
   });
+
+  it('manages advertisement and promotional photos lifecycle for admin & public gallery', async () => {
+    const activePhotos = await PmsService.getAdvertisementPhotos(true);
+    expect(activePhotos.length).toBeGreaterThan(0);
+
+    // Create a new advertisement photo
+    const newAd = await PmsService.createAdvertisementPhoto({
+      title: 'Brosur Ramadhan Syariah 2026',
+      category: 'brosur_flyer',
+      image_url: '/images/alyatama-flyer.jpg',
+      description: 'Diskon khusus menginap mingguan dan bulanan selama bulan suci',
+      badge: 'Spesial Ramadhan',
+      is_active: true,
+      display_order: 99,
+    });
+
+    expect(newAd.id).toBeDefined();
+    expect(newAd.title).toBe('Brosur Ramadhan Syariah 2026');
+
+    // Update the advertisement photo
+    const updated = await PmsService.updateAdvertisementPhoto(newAd.id, {
+      title: 'Brosur Ramadhan Syariah 2026 (Updated)',
+      is_active: false,
+    });
+    expect(updated.title).toBe('Brosur Ramadhan Syariah 2026 (Updated)');
+    expect(updated.is_active).toBe(false);
+
+    // Verify it is excluded when activeOnly is true
+    const activeAfter = await PmsService.getAdvertisementPhotos(true);
+    expect(activeAfter.some((p) => p.id === newAd.id)).toBe(false);
+
+    // Delete the test photo
+    const deleteResult = await PmsService.deleteAdvertisementPhoto(newAd.id);
+    expect(deleteResult).toBe(true);
+  });
 });

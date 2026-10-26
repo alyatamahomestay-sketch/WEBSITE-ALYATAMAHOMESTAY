@@ -10,7 +10,8 @@ import {
   PropertySettings,
   Payment,
   Deposit,
-  AuditLog
+  AuditLog,
+  AdvertisementPhoto
 } from '../types';
 import { 
   INITIAL_ROOMS, 
@@ -21,7 +22,8 @@ import {
   INITIAL_HOUSEKEEPING, 
   INITIAL_MAINTENANCE, 
   INITIAL_INVENTORY, 
-  INITIAL_PROPERTY_SETTINGS 
+  INITIAL_PROPERTY_SETTINGS,
+  INITIAL_AD_PHOTOS
 } from '../mock-fallback';
 import { isSupabaseConfigured } from '../supabase/check-env';
 import { createClient } from '../supabase/client';
@@ -36,6 +38,7 @@ let memHousekeeping: HousekeepingTask[] = [...INITIAL_HOUSEKEEPING];
 let memMaintenance: MaintenanceTicket[] = [...INITIAL_MAINTENANCE];
 let memInventory: InventoryItem[] = [...INITIAL_INVENTORY];
 let memProperty: PropertySettings = { ...INITIAL_PROPERTY_SETTINGS };
+let memAdPhotos: AdvertisementPhoto[] = [...INITIAL_AD_PHOTOS];
 let memAuditLogs: AuditLog[] = [
   {
     id: 'aud-1',
@@ -490,5 +493,63 @@ export const PmsService = {
         details,
       }]);
     }
+  },
+
+  // --- ADVERTISEMENT PHOTOS & GALLERY ---
+  async getAdvertisementPhotos(onlyActive = false): Promise<AdvertisementPhoto[]> {
+    if (!isSupabaseConfigured()) {
+      const list = onlyActive ? memAdPhotos.filter((p) => p.is_active) : memAdPhotos;
+      return [...list].sort((a, b) => a.display_order - b.display_order);
+    }
+    const supabase = createClient();
+    let query = supabase.from('advertisement_photos').select('*').order('display_order', { ascending: true });
+    if (onlyActive) {
+      query = query.eq('is_active', true);
+    }
+    const { data, error } = await query;
+    if (error || !data) {
+      const list = onlyActive ? memAdPhotos.filter((p) => p.is_active) : memAdPhotos;
+      return [...list].sort((a, b) => a.display_order - b.display_order);
+    }
+    return data as AdvertisementPhoto[];
+  },
+
+  async createAdvertisementPhoto(photoData: Omit<AdvertisementPhoto, 'id' | 'created_at' | 'updated_at'>): Promise<AdvertisementPhoto> {
+    const newPhoto: AdvertisementPhoto = {
+      ...photoData,
+      id: 'ad-' + Date.now(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memAdPhotos.push(newPhoto);
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('advertisement_photos').insert([newPhoto]).select().single();
+      if (!error && data) return data as AdvertisementPhoto;
+    }
+    return newPhoto;
+  },
+
+  async updateAdvertisementPhoto(id: string, updates: Partial<AdvertisementPhoto>): Promise<AdvertisementPhoto> {
+    const idx = memAdPhotos.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      memAdPhotos[idx] = { ...memAdPhotos[idx], ...updates, updated_at: new Date().toISOString() };
+    }
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('advertisement_photos').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+      if (!error && data) return data as AdvertisementPhoto;
+    }
+    if (idx !== -1) return memAdPhotos[idx];
+    throw new Error('Foto iklan tidak ditemukan');
+  },
+
+  async deleteAdvertisementPhoto(id: string): Promise<boolean> {
+    memAdPhotos = memAdPhotos.filter((p) => p.id !== id);
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      await supabase.from('advertisement_photos').delete().eq('id', id);
+    }
+    return true;
   }
 };
