@@ -146,17 +146,12 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
         }`}
       >
         {/* Brand / Logo Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-[#4d3b2e]">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <AlyatamaLogo className="w-8 h-8" />
-            <div>
-              <span className="font-serif font-bold text-sm text-[#F6F0E7] tracking-wide block leading-none">
-                ALYATAMA
-              </span>
-              <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] block mt-0.5 font-medium">
-                HOMESTAY PMS
-              </span>
-            </div>
+        <div className="h-16 flex items-center justify-between px-5 border-b border-[#4d3b2e]">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <AlyatamaLogo variant="light" size="sm" />
+            <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] font-bold bg-[#2a1f17] px-1.5 py-0.5 rounded border border-[#4d3b2e]">
+              PMS
+            </span>
           </Link>
         </div>
 

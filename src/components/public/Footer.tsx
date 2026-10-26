@@ -26,16 +26,11 @@ export default function PublicFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand & Summary */}
           <div className="md:col-span-1 space-y-4">
-            <div className="flex items-center gap-3">
-              <AlyatamaLogo className="w-10 h-10 shadow-sm" />
-              <div>
-                <span className="font-serif tracking-wider font-semibold text-lg text-[#F6F0E7] block leading-tight">
-                  ALYATAMA
-                </span>
-                <span className="text-[10px] tracking-widest uppercase text-[#C9A84C] font-medium">
-                  Homestay Syariah
-                </span>
-              </div>
+            <div className="space-y-2">
+              <AlyatamaLogo variant="light" size="lg" />
+              <span className="text-[10px] tracking-widest uppercase text-[#C9A84C] font-semibold block">
+                Penginapan Syariah Bangkinang Kota
+              </span>
             </div>
             <p className="text-xs text-[#d1bfab] leading-relaxed">
               Penginapan Syariah terpercaya di Bangkinang Kota, Kampar, Riau. Melayani sewa harian, bulanan, dan tahunan dengan suasana bersih, tenang, aman, dan penuh keberkahan ibadah jariyah.

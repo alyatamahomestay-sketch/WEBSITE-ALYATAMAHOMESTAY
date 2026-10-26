@@ -111,15 +111,14 @@ export default async function HomePage() {
               {/* Right Column: Authentic Flyer Preview Card */}
               <div className="lg:col-span-5">
                 <div className="bg-[#2a1f17] border-2 border-[#806044]/60 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#4d3b2e]">
-                    <div className="flex items-center gap-2">
-                      <AlyatamaLogo className="w-8 h-8" />
-                      <div>
-                        <span className="font-serif font-bold text-white text-sm block">ALYATAMA HOMESTAY</span>
-                        <span className="text-[10px] text-[#C9A84C]">Bangkinang Kota — Kampar, Riau</span>
-                      </div>
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#4d3b2e] gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <AlyatamaLogo variant="light" size="sm" />
+                      <span className="text-[10px] text-[#C9A84C] font-semibold tracking-wide border-l border-[#4d3b2e] pl-2.5">
+                        Bangkinang Kota
+                      </span>
                     </div>
-                    <span className="text-[11px] bg-[#806044] text-white px-2.5 py-0.5 rounded-full font-medium">
+                    <span className="text-[11px] bg-[#806044] text-white px-2.5 py-0.5 rounded-full font-medium shrink-0">
                       Syariah
                     </span>
                   </div>
@@ -323,12 +322,11 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="lg:col-span-4 flex flex-col items-center justify-center text-center p-6 bg-[#392B21] rounded-2xl border border-[#4d3b2e]">
-                  <AlyatamaLogo className="w-16 h-16 mb-3" />
-                  <span className="font-serif font-bold text-lg text-white">ALYATAMA HOMESTAY</span>
-                  <span className="text-xs text-[#C9A84C] mb-4">Penginapan Syariah Pilihan Umat</span>
+                  <AlyatamaLogo variant="light" size="lg" className="mb-2" />
+                  <span className="text-xs text-[#C9A84C] mb-4 font-semibold">Penginapan Syariah Pilihan Umat</span>
                   <Link
                     href="/tentang"
-                    className="text-xs bg-[#806044] hover:bg-[#6c5037] text-white px-4 py-2.5 rounded-xl font-medium transition"
+                    className="text-xs bg-[#806044] hover:bg-[#6c5037] text-white px-5 py-2.5 rounded-xl font-medium transition shadow-sm"
                   >
                     Pelajari Misi Kami &rarr;
                   </Link>

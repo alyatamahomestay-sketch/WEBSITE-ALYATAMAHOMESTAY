@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Printer, ArrowLeft, CheckCircle2, ShieldCheck, QrCode, CreditCard } from 'lucide-react';
+import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
 import { 
   formatRupiah, 
@@ -62,17 +63,12 @@ export default async function SlipPage({ params }: SlipPageProps) {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b border-stone-200">
             <div>
-              <span className="text-[10px] uppercase tracking-widest text-brand-700 font-semibold block mb-0.5">
-                Dokumen Resmi Homestay
-              </span>
-              <h1 className="font-serif text-2xl font-bold tracking-tight text-stone-900">
-                {property.name || 'ALYATAMA HOMESTAY'}
-              </h1>
-              <p className="text-xs text-stone-500 mt-1 max-w-sm leading-relaxed">
-                {property.address}, {property.city}, {property.province} {property.postal_code}
+              <AlyatamaLogo variant="dark" size="lg" className="mb-2" />
+              <p className="text-xs text-stone-600 max-w-sm leading-relaxed mt-1">
+                Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Kabupaten Kampar, Riau 28411
               </p>
               <p className="text-[11px] text-stone-500 mt-0.5">
-                Telp/WA: {property.phone || '-'} | Email: {property.email || '-'}
+                Telp/WA: 0822 8547 2008 | Syariah & Berkah
               </p>
             </div>
 

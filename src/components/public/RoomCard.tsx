@@ -20,15 +20,20 @@ export default function RoomCard({ room }: RoomCardProps) {
           alt={room.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute top-3 left-3 bg-[#392B21]/90 backdrop-blur text-[#F6F0E7] text-xs px-2.5 py-1 rounded-md font-medium">
-          No. {room.room_number}
+        {/* Top Badges Container - Flex layout prevents any overlapping */}
+        <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 pointer-events-none">
+          <span className="bg-[#392B21]/90 backdrop-blur text-[#F6F0E7] text-xs px-2.5 py-1 rounded-md font-medium shrink-0 shadow-xs">
+            No. {room.room_number}
+          </span>
+          <span className="bg-white/95 backdrop-blur text-[#392B21] text-xs font-semibold px-2.5 py-1 rounded-md shadow-xs border border-[#E5DCD0] truncate max-w-[65%]">
+            {room.room_type}
+          </span>
         </div>
-        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur text-[#392B21] text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm border border-[#E5DCD0]">
-          {room.room_type}
-        </div>
-        <div className="absolute bottom-3 left-3 bg-emerald-900/80 backdrop-blur text-emerald-100 text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-[#C9A84C]" />
-          Syariah Bersih & Tenang
+
+        {/* Bottom Badge */}
+        <div className="absolute bottom-3 left-3 bg-emerald-950/85 backdrop-blur text-emerald-100 text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs border border-emerald-800/40">
+          <Sparkles className="w-3 h-3 text-[#C9A84C] shrink-0" />
+          <span>Syariah Bersih & Tenang</span>
         </div>
       </div>
 

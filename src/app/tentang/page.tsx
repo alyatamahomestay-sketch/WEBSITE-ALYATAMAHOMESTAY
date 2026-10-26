@@ -30,17 +30,19 @@ export default function TentangPage() {
           <div className="bg-white rounded-3xl border border-[#E5DCD0] p-8 sm:p-12 shadow-sm space-y-8">
             
             {/* Tagline & Core Philosophy */}
-            <div className="bg-[#FAF7F2] p-6 rounded-2xl border border-[#E5DCD0] space-y-3">
-              <div className="flex items-center gap-3">
-                <AlyatamaLogo className="w-10 h-10" />
-                <div>
-                  <h2 className="font-serif font-bold text-lg text-[#392B21]">
-                    &ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;
-                  </h2>
-                  <span className="text-xs text-[#806044] font-medium">Bersih, Nyaman dan Berkah</span>
+            <div className="bg-[#FAF7F2] p-6 sm:p-8 rounded-2xl border border-[#E5DCD0] space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#E5DCD0]">
+                <AlyatamaLogo variant="dark" size="lg" />
+                <div className="sm:text-right">
+                  <span className="text-xs bg-[#806044]/15 text-[#806044] px-3 py-1 rounded-full font-bold uppercase tracking-wider inline-block">
+                    Bersih, Nyaman dan Berkah
+                  </span>
                 </div>
               </div>
-              <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed pt-2">
+              <h2 className="font-serif font-bold text-xl text-[#392B21]">
+                &ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;
+              </h2>
+              <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 &ldquo;Investasi terbaik adalah saat manfaatnya terus mengalir, bahkan setelah kita tiada.&rdquo; Setiap reservasi yang Anda lakukan bukan semata-mata transaksi komersial, tetapi merupakan kontribusi nyata bagi kelangsungan operasional dan pendidikan santri di <strong>Panti Asuhan Putra Muhammadiyah Bangkinang</strong>.
               </p>
             </div>
