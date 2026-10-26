@@ -2,22 +2,22 @@ import React from 'react';
 
 interface LogoProps {
   className?: string;
-  variant?: 'light' | 'dark' | 'brand';
+  variant?: 'white' | 'light' | 'dark' | 'brand';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtitle?: boolean;
 }
 
 export default function AlyatamaLogo({
   className = '',
-  variant = 'brand',
+  variant = 'white',
   size = 'md',
   showSubtitle = false,
 }: LogoProps) {
-  // Use light logo on dark backgrounds, standard logo on light backgrounds
+  // Use pure solid white logo on dark backgrounds, solid dark logo on white/light surfaces
   const logoSrc =
-    variant === 'light'
-      ? '/images/alyatama-logo-light.png'
-      : '/images/alyatama-logo.png';
+    variant === 'dark'
+      ? '/images/alyatama-logo-dark.png'
+      : '/images/alyatama-logo-white.png';
 
   const sizeClasses = {
     sm: 'h-8 sm:h-9 w-auto',
@@ -31,10 +31,10 @@ export default function AlyatamaLogo({
       <img
         src={logoSrc}
         alt="ALYATAMA HOMESTAY"
-        className={`${sizeClasses[size]} object-contain drop-shadow-xs`}
+        className={`${sizeClasses[size]} object-contain`}
       />
       {showSubtitle && (
-        <span className="hidden sm:inline-block text-[9px] uppercase tracking-widest font-semibold px-2 py-0.5 rounded bg-[#806044]/15 text-[#C9A84C] border border-[#806044]/30">
+        <span className="hidden sm:inline-block text-[9px] uppercase tracking-widest font-semibold px-2 py-0.5 rounded bg-white/10 text-[#F6F0E7] border border-white/20">
           Syariah
         </span>
       )}
