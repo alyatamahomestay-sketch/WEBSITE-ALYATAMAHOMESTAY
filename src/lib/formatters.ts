@@ -28,6 +28,8 @@ export function formatDateIndo(dateInput: string | Date | null | undefined): str
   }
 }
 
+export const formatTanggalIndo = formatDateIndo;
+
 /**
  * Format short date e.g. "25/10/2026"
  */

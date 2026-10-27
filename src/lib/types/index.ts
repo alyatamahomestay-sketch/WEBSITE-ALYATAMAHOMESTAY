@@ -1,4 +1,35 @@
-export type UserRole = 'owner' | 'admin' | 'reception' | 'finance' | 'housekeeping';
+export type UserRole = 'admin' | 'staff' | 'owner' | 'reception' | 'finance' | 'housekeeping';
+
+export type StaffAccountStatus = 'INVITED' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
+export interface StaffUser {
+  id: string;
+  full_name: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'staff';
+  status: StaffAccountStatus;
+  password_hash?: string;
+  invited_by?: string | null;
+  last_login_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ShiftStatus = 'active' | 'ended';
+
+export interface StaffShift {
+  id: string;
+  staff_user_id: string;
+  staff_name_snapshot: string;
+  started_at: string;
+  ended_at?: string | null;
+  status: ShiftStatus;
+  date_local: string;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export type RentalType = 'daily' | 'monthly' | 'yearly';
 
@@ -113,6 +144,12 @@ export interface Reservation {
   cancelled_reason?: string | null;
   checked_in_at?: string | null;
   checked_out_at?: string | null;
+  // V3.1 Staff Attribution & Booking Source
+  booking_source?: 'online' | 'walk_in' | 'phone' | 'admin';
+  created_by_user_id?: string | null;
+  created_by_role?: 'admin' | 'staff' | 'public';
+  staff_shift_id?: string | null;
+  staff_name_snapshot?: string | null;
   created_at: string;
   updated_at: string;
   // Joined fields

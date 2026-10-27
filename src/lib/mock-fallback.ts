@@ -1,4 +1,4 @@
-import { Room, Promotion, PaymentMethod, Reservation, PropertySettings, InventoryItem, HousekeepingTask, MaintenanceTicket, Expense, AdvertisementPhoto } from './types';
+import { Room, Promotion, PaymentMethod, Reservation, PropertySettings, InventoryItem, HousekeepingTask, MaintenanceTicket, Expense, AdvertisementPhoto, StaffUser, StaffShift } from './types';
 
 export const INITIAL_PROPERTY_SETTINGS: PropertySettings = {
   id: 'a0000000-0000-0000-0000-000000000001',
@@ -534,6 +534,76 @@ export const INITIAL_AD_PHOTOS: AdvertisementPhoto[] = [
     is_active: true,
     display_order: 5,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+export const INITIAL_STAFF_USERS: StaffUser[] = [
+  {
+    id: 'staff-admin-001',
+    full_name: 'Administrator Utama',
+    username: 'admin',
+    email: 'admin@alyatamahomestay.com',
+    role: 'admin',
+    status: 'ACTIVE',
+    password_hash: '1234',
+    invited_by: 'system',
+    last_login_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'staff-user-002',
+    full_name: 'Rahmat Hidayat',
+    username: 'rahmat',
+    email: 'rahmat@alyatamahomestay.com',
+    role: 'staff',
+    status: 'ACTIVE',
+    password_hash: '1234',
+    invited_by: 'staff-admin-001',
+    last_login_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'staff-user-003',
+    full_name: 'Siti Nurhaliza',
+    username: 'siti',
+    email: 'siti@alyatamahomestay.com',
+    role: 'staff',
+    status: 'ACTIVE',
+    password_hash: '1234',
+    invited_by: 'staff-admin-001',
+    last_login_at: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'staff-user-004',
+    full_name: 'Ahmad Fauzi',
+    username: 'ahmad',
+    email: 'ahmad@alyatamahomestay.com',
+    role: 'staff',
+    status: 'INACTIVE',
+    password_hash: '1234',
+    invited_by: 'staff-admin-001',
+    last_login_at: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+export const INITIAL_STAFF_SHIFTS: StaffShift[] = [
+  {
+    id: 'shift-demo-001',
+    staff_user_id: 'staff-user-002',
+    staff_name_snapshot: 'Rahmat Hidayat',
+    started_at: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+    ended_at: null,
+    status: 'active',
+    date_local: new Date().toISOString().split('T')[0],
+    notes: 'Shift Pagi - Siang Front Office',
+    created_at: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
     updated_at: new Date().toISOString(),
   },
 ];

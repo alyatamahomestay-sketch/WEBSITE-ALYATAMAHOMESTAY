@@ -11,7 +11,10 @@ import {
   Payment,
   Deposit,
   AuditLog,
-  AdvertisementPhoto
+  AdvertisementPhoto,
+  StaffUser,
+  StaffShift,
+  StaffAccountStatus
 } from '../types';
 import { 
   INITIAL_ROOMS, 
@@ -23,7 +26,9 @@ import {
   INITIAL_MAINTENANCE, 
   INITIAL_INVENTORY, 
   INITIAL_PROPERTY_SETTINGS,
-  INITIAL_AD_PHOTOS
+  INITIAL_AD_PHOTOS,
+  INITIAL_STAFF_USERS,
+  INITIAL_STAFF_SHIFTS
 } from '../mock-fallback';
 import { isSupabaseConfigured } from '../supabase/check-env';
 import { createClient } from '../supabase/client';
@@ -39,6 +44,8 @@ let memMaintenance: MaintenanceTicket[] = [...INITIAL_MAINTENANCE];
 let memInventory: InventoryItem[] = [...INITIAL_INVENTORY];
 let memProperty: PropertySettings = { ...INITIAL_PROPERTY_SETTINGS };
 let memAdPhotos: AdvertisementPhoto[] = [...INITIAL_AD_PHOTOS];
+let memStaffUsers: StaffUser[] = [...INITIAL_STAFF_USERS];
+let memStaffShifts: StaffShift[] = [...INITIAL_STAFF_SHIFTS];
 let memAuditLogs: AuditLog[] = [
   {
     id: 'aud-1',
@@ -551,5 +558,274 @@ export const PmsService = {
       await supabase.from('advertisement_photos').delete().eq('id', id);
     }
     return true;
+  },
+
+  // --- V3.1 STAFF ACCESS MANAGEMENT ---
+  async getStaffUsers(): Promise<StaffUser[]> {
+    if (!isSupabaseConfigured()) return memStaffUsers;
+    const supabase = createClient();
+    const { data, error } = await supabase.from('staff_users').select('*').order('created_at', { ascending: true });
+    if (error || !data) return memStaffUsers;
+    return data as StaffUser[];
+  },
+
+  async getStaffUserById(id: string): Promise<StaffUser | null> {
+    const list = await this.getStaffUsers();
+    return list.find((u) => u.id === id) || null;
+  },
+
+  async createStaffUser(userData: Omit<StaffUser, 'id' | 'created_at' | 'updated_at'>): Promise<StaffUser> {
+    const existing = memStaffUsers.find(
+      (u) => u.username.toLowerCase() === userData.username.toLowerCase() || u.email.toLowerCase() === userData.email.toLowerCase()
+    );
+    if (existing) {
+      throw new Error('Username atau Email sudah terdaftar dalam sistem');
+    }
+
+    const newUser: StaffUser = {
+      ...userData,
+      id: 'staff-' + Date.now(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memStaffUsers.push(newUser);
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('staff_users').insert([newUser]).select().single();
+      if (!error && data) return data as StaffUser;
+    }
+    return newUser;
+  },
+
+  async updateStaffUser(id: string, updates: Partial<StaffUser>): Promise<StaffUser> {
+    const idx = memStaffUsers.findIndex((u) => u.id === id);
+    if (idx !== -1) {
+      memStaffUsers[idx] = { ...memStaffUsers[idx], ...updates, updated_at: new Date().toISOString() };
+    }
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('staff_users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+      if (!error && data) return data as StaffUser;
+    }
+    if (idx !== -1) return memStaffUsers[idx];
+    throw new Error('Pengguna staf tidak ditemukan');
+  },
+
+  async updateStaffStatus(id: string, status: StaffAccountStatus): Promise<StaffUser> {
+    return this.updateStaffUser(id, { status });
+  },
+
+  async verifyStaffLogin(identifier: string, pinOrPass: string): Promise<{ success: boolean; user?: StaffUser; error?: string }> {
+    const users = await this.getStaffUsers();
+    const cleanId = identifier.trim().toLowerCase();
+    const user = users.find(
+      (u) => u.username.toLowerCase() === cleanId || u.email.toLowerCase() === cleanId
+    );
+
+    if (!user) {
+      return { success: false, error: 'Kredensial staf tidak valid atau akun tidak terdaftar' };
+    }
+
+    if (user.status !== 'ACTIVE') {
+      return { 
+        success: false, 
+        error: `Akses ditolak: Akun staf berstatus ${user.status}. Hubungi Administrator untuk aktivasi.` 
+      };
+    }
+
+    if (user.password_hash && user.password_hash !== pinOrPass.trim()) {
+      return { success: false, error: 'Kredensial staf tidak valid' };
+    }
+
+    await this.updateStaffUser(user.id, { last_login_at: new Date().toISOString() });
+    return { success: true, user };
+  },
+
+  // --- V3.1 STAFF SHIFTS ---
+  async getStaffShifts(staffUserId?: string): Promise<StaffShift[]> {
+    let list = memStaffShifts;
+    if (staffUserId) {
+      list = list.filter((s) => s.staff_user_id === staffUserId);
+    }
+    return [...list].sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+  },
+
+  async getActiveShift(staffUserId: string): Promise<StaffShift | null> {
+    const list = await this.getStaffShifts(staffUserId);
+    return list.find((s) => s.status === 'active') || null;
+  },
+
+  async startShift(staffUserId: string, staffNameSnapshot: string, notes?: string): Promise<StaffShift> {
+    const existing = await this.getActiveShift(staffUserId);
+    if (existing) {
+      return existing;
+    }
+
+    const newShift: StaffShift = {
+      id: 'shift-' + Date.now(),
+      staff_user_id: staffUserId,
+      staff_name_snapshot: staffNameSnapshot,
+      started_at: new Date().toISOString(),
+      ended_at: null,
+      status: 'active',
+      date_local: new Date().toISOString().split('T')[0],
+      notes: notes || 'Shift Operasional Harian',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memStaffShifts.push(newShift);
+    return newShift;
+  },
+
+  async endShift(shiftId: string): Promise<StaffShift> {
+    const idx = memStaffShifts.findIndex((s) => s.id === shiftId);
+    if (idx !== -1) {
+      memStaffShifts[idx] = {
+        ...memStaffShifts[idx],
+        status: 'ended',
+        ended_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return memStaffShifts[idx];
+    }
+    throw new Error('Shift tidak ditemukan');
+  },
+
+  // --- ROOM AVAILABILITY CHECK ---
+  async checkRoomAvailability(
+    roomId: string, 
+    checkinDate: string, 
+    checkoutDate: string, 
+    excludeReservationId?: string
+  ): Promise<boolean> {
+    const rooms = await this.getRooms();
+    const room = rooms.find((r) => r.id === roomId);
+    if (!room || room.operational_status === 'dalam_perawatan' || room.operational_status === 'tidak_dijual_sementara' || room.is_archived) {
+      return false;
+    }
+
+    const inTime = new Date(checkinDate).getTime();
+    const outTime = new Date(checkoutDate).getTime();
+    if (isNaN(inTime) || isNaN(outTime) || inTime >= outTime) {
+      return false;
+    }
+
+    const reservations = await this.getReservations();
+    const hasConflict = reservations.some((res) => {
+      if (excludeReservationId && res.id === excludeReservationId) return false;
+      if (res.status === 'cancelled' || res.status === 'rejected' || res.status === 'expired') {
+        return false;
+      }
+      const roomMatch = res.rooms?.some((r) => r.id === roomId);
+      if (!roomMatch) return false;
+
+      const resIn = new Date(res.checkin_date).getTime();
+      const resOut = new Date(res.checkout_date).getTime();
+      return resIn < outTime && inTime < resOut;
+    });
+
+    return !hasConflict;
+  },
+
+  // --- V3.1 WALK-IN RESERVATION WITH AUTOMATIC ATTRIBUTION ---
+  async createWalkInReservation(params: {
+    guest: { full_name: string; phone: string; email?: string };
+    roomId: string;
+    checkinDate: string;
+    checkoutDate: string;
+    rentalType: 'daily' | 'monthly' | 'yearly';
+    durationUnits?: number;
+    adults: number;
+    children: number;
+    baseSubtotal: number;
+    totalAmount: number;
+    paymentAmount: number;
+    paymentMethod: string;
+    staffUserId: string;
+    staffRole: 'admin' | 'staff';
+    staffShiftId?: string | null;
+    staffNameSnapshot?: string | null;
+    notes?: string;
+  }): Promise<Reservation> {
+    const isAvail = await this.checkRoomAvailability(params.roomId, params.checkinDate, params.checkoutDate);
+    if (!isAvail) {
+      throw new Error('Kamar tidak tersedia pada tanggal yang dipilih');
+    }
+
+    const guestId = 'gst-' + Date.now();
+    const room = (await this.getRooms()).find((r) => r.id === params.roomId);
+
+    const resId = 'res-walkin-' + Date.now();
+    const resNum = 'ALY-W-' + Math.floor(100000 + Math.random() * 900000);
+    const isFullyPaid = params.paymentAmount >= params.totalAmount;
+
+    const newRes: Reservation = {
+      id: resId,
+      reservation_number: resNum,
+      guest_id: guestId,
+      rental_type: params.rentalType,
+      duration_units: params.durationUnits || 1,
+      checkin_date: params.checkinDate,
+      checkout_date: params.checkoutDate,
+      adults: params.adults,
+      children: params.children,
+      status: 'confirmed',
+      payment_status: isFullyPaid ? 'paid' : params.paymentAmount > 0 ? 'partially_paid' : 'unpaid',
+      special_requests: params.notes || null,
+      booking_source: 'walk_in',
+      created_by_user_id: params.staffUserId,
+      created_by_role: params.staffRole,
+      staff_shift_id: params.staffShiftId || null,
+      staff_name_snapshot: params.staffNameSnapshot || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      guest: {
+        id: guestId,
+        full_name: params.guest.full_name,
+        phone: params.guest.phone,
+        normalized_phone: params.guest.phone.replace(/\D/g, ''),
+        email: params.guest.email || null,
+        category: 'regular',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      rooms: room ? [room] : [],
+      price_snapshot: {
+        id: 'snp-' + Date.now(),
+        reservation_id: resId,
+        rental_type: params.rentalType,
+        duration_units: params.durationUnits || 1,
+        total_nights: Math.max(1, Math.round((new Date(params.checkoutDate).getTime() - new Date(params.checkinDate).getTime()) / (1000 * 3600 * 24))),
+        base_subtotal: params.baseSubtotal,
+        nightly_breakdown: [],
+        discount_amount: 0,
+        extra_charges: 0,
+        deposit_required: 0,
+        total_amount: params.totalAmount,
+        total_paid: params.paymentAmount,
+        balance_due: Math.max(0, params.totalAmount - params.paymentAmount),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      payments: params.paymentAmount > 0 ? [
+        {
+          id: 'pay-' + Date.now(),
+          payment_number: 'PAY-W-' + Math.floor(100000 + Math.random() * 900000),
+          reservation_id: resId,
+          amount: params.paymentAmount,
+          payment_method: params.paymentMethod,
+          payment_date: new Date().toISOString().split('T')[0],
+          status: 'verified',
+          verified_by: params.staffNameSnapshot || 'Staf Bertugas',
+          verified_at: new Date().toISOString(),
+          notes: 'Pembayaran walk-in di tempat',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ] : []
+    };
+
+    memReservations.unshift(newRes);
+    return newRes;
   }
 };

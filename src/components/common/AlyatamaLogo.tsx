@@ -2,7 +2,7 @@ import React from 'react';
 
 interface LogoProps {
   className?: string;
-  variant?: 'white' | 'light' | 'dark' | 'brand';
+  variant?: 'white' | 'lightbrown' | 'forest' | 'dark' | 'light';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtitle?: boolean;
 }
@@ -13,11 +13,23 @@ export default function AlyatamaLogo({
   size = 'md',
   showSubtitle = false,
 }: LogoProps) {
-  // Use pure solid white logo on dark backgrounds, solid dark logo on white/light surfaces
-  const logoSrc =
-    variant === 'dark'
-      ? '/images/alyatama-logo-dark.png'
-      : '/images/alyatama-logo-white.png';
+  // Three canonical V3.1 transparent variants + dark espresso print variant
+  const getLogoSrc = () => {
+    switch (variant) {
+      case 'forest':
+        return '/images/alyatama-logo-forest.png';
+      case 'lightbrown':
+        return '/images/alyatama-logo-lightbrown.png';
+      case 'dark':
+        return '/images/alyatama-logo-dark.png';
+      case 'white':
+      case 'light':
+      default:
+        return '/images/alyatama-logo-white.png';
+    }
+  };
+
+  const logoSrc = getLogoSrc();
 
   const sizeClasses = {
     sm: 'h-8 sm:h-9 w-auto',
