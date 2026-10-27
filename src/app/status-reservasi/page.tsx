@@ -65,7 +65,7 @@ function StatusReservasiContent() {
   }, [queryResNum]);
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-12">
@@ -267,7 +267,7 @@ function StatusReservasiContent() {
       </main>
 
       <PublicFooter />
-    </>
+    </div>
   );
 }
 

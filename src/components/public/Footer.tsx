@@ -5,10 +5,10 @@ import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-[#392B21] border-t border-[#4d3b2e] text-[#E7D8C5]">
+    <footer className="w-full bg-[#392B21] border-t border-[#4d3b2e] text-[#E7D8C5] overflow-hidden">
       {/* Islamic Mission & Charity Banner */}
-      <div className="bg-[#2e231b] border-b border-[#4d3b2e] py-4 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+      <div className="w-full bg-[#2e231b] border-b border-[#4d3b2e] py-4 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs w-full">
           <div className="flex items-center gap-2 text-[#C9A84C]">
             <Sparkles className="w-4 h-4 shrink-0" />
             <span className="font-medium tracking-wide">
@@ -22,12 +22,12 @@ export default function PublicFooter() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 w-full">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand & Summary */}
           <div className="md:col-span-1 space-y-4">
             <div className="space-y-2">
-              <AlyatamaLogo variant="light" size="lg" />
+              <AlyatamaLogo variant="white" size="lg" />
               <span className="text-[10px] tracking-widest uppercase text-[#C9A84C] font-semibold block">
                 Penginapan Syariah Bangkinang Kota
               </span>

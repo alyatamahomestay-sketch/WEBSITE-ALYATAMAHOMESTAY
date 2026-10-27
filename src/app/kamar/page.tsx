@@ -12,7 +12,7 @@ export default async function KamarPage() {
   const rooms = await PmsService.getRooms();
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-12 sm:py-16">
@@ -95,6 +95,6 @@ export default async function KamarPage() {
       </main>
 
       <PublicFooter />
-    </>
+    </div>
   );
 }

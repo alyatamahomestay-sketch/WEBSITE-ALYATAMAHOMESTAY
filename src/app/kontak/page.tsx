@@ -11,7 +11,7 @@ export default async function KontakPage() {
   const property = await PmsService.getPropertySettings();
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-16">
@@ -152,6 +152,6 @@ export default async function KontakPage() {
       </main>
 
       <PublicFooter />
-    </>
+    </div>
   );
 }

@@ -100,7 +100,7 @@ export default function PortalLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1F1712] text-stone-100 flex flex-col justify-between selection:bg-[#806044] selection:text-white">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#1F1712] text-stone-100 flex flex-col justify-between selection:bg-[#806044] selection:text-white">
       {/* Top Bar with Security Notice */}
       <header className="border-b border-[#3d2f25] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

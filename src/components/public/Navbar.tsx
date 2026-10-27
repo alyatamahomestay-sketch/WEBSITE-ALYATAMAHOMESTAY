@@ -9,22 +9,22 @@ export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#392B21]/95 backdrop-blur border-b border-[#806044]/30 text-stone-100 shadow-sm">
+    <header className="w-full sticky top-0 z-50 bg-[#392B21]/95 backdrop-blur border-b border-[#806044]/30 text-stone-100 shadow-sm">
       {/* Top Banner: Syariah & Charity Mission from Flyer */}
-      <div className="bg-[#806044] text-[#F6F0E7] text-[11px] py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2 flex-wrap leading-tight">
+      <div className="w-full bg-[#806044] text-[#F6F0E7] text-[11px] py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2 flex-wrap leading-tight">
         <Heart className="w-3.5 h-3.5 text-[#E7D8C5] shrink-0" />
         <span>Penginapan Syariah: <em>&ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;</em> • Pilihan Sewa <strong>Harian, Bulanan & Tahunan</strong></span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center justify-between h-20 gap-3 xl:gap-6">
           {/* Brand Logo with Official Monochrome White Image */}
           <Link href="/" className="flex items-center shrink-0 group py-1">
             <AlyatamaLogo variant="white" size="md" />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-xs sm:text-sm font-medium text-stone-300">
+          <nav className="hidden xl:flex items-center gap-4 2xl:gap-6 text-xs font-medium text-stone-300">
             <Link href="/" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
               Beranda
             </Link>
@@ -37,10 +37,10 @@ export default function PublicNavbar() {
             </Link>
             <Link href="/cek-ketersediaan" className="hover:text-[#E7D8C5] transition-colors flex items-center gap-1.5 whitespace-nowrap">
               <Calendar className="w-3.5 h-3.5 text-[#C9A84C]" />
-              Cek Ketersediaan
+              Ketersediaan
             </Link>
             <Link href="/tentang" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
-              Tentang & Nilai Syariah
+              Tentang Syariah
             </Link>
             <Link href="/kebijakan" className="hover:text-[#E7D8C5] transition-colors whitespace-nowrap">
               Tata Tertib
@@ -51,7 +51,7 @@ export default function PublicNavbar() {
           </nav>
 
           {/* Action Buttons (Strictly for Public Visitors - No Admin Keys/Buttons Here!) */}
-          <div className="hidden md:flex items-center gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-2.5 shrink-0">
             <a
               href="https://wa.me/6282285472008"
               target="_blank"
@@ -59,7 +59,8 @@ export default function PublicNavbar() {
               className="text-xs text-stone-300 hover:text-stone-100 border border-[#806044]/60 hover:border-[#806044] rounded-xl px-3 py-2 transition-colors flex items-center gap-1.5 whitespace-nowrap bg-[#2a1f17]/40"
             >
               <Phone className="w-3.5 h-3.5 text-[#C9A84C]" />
-              <span>0822 8547 2008</span>
+              <span className="hidden lg:inline">0822 8547 2008</span>
+              <span className="lg:hidden">WhatsApp</span>
             </a>
 
             <Link
@@ -70,11 +71,11 @@ export default function PublicNavbar() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Menu Button - shows on screens where xl desktop nav is hidden */}
+          <div className="flex xl:hidden items-center gap-2">
             <Link
               href="/booking"
-              className="bg-[#806044] hover:bg-[#6e5239] text-[#F6F0E7] text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xs"
+              className="md:hidden bg-[#806044] hover:bg-[#6e5239] text-[#F6F0E7] text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xs"
             >
               Pesan
             </Link>
@@ -89,9 +90,9 @@ export default function PublicNavbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile & Tablet Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#2a1f17] border-b border-[#806044]/40 px-4 pt-3 pb-6 space-y-3 shadow-xl">
+        <div className="xl:hidden bg-[#2a1f17] border-b border-[#806044]/40 px-4 pt-3 pb-6 space-y-3 shadow-xl">
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}

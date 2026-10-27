@@ -31,12 +31,12 @@ export default async function HomePage() {
   const property = await PmsService.getPropertySettings();
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7]">
         {/* HERO SECTION */}
-        <section className="relative bg-[#392B21] text-[#F6F0E7] overflow-hidden">
+        <section className="relative w-full bg-[#392B21] text-[#F6F0E7] overflow-hidden">
           {/* Subtle Background Pattern & Flyer Backdrop */}
           <div className="absolute inset-0 opacity-15 mix-blend-luminosity">
             <img
@@ -47,18 +47,18 @@ export default async function HomePage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-[#2a1f17] via-[#392B21]/95 to-[#392B21]/80" />
 
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
               
               {/* Left Column: Headlines & Call to Action */}
-              <div className="lg:col-span-7 space-y-6">
+              <div className="lg:col-span-7 space-y-6 min-w-0">
                 <div className="inline-flex items-center gap-2 bg-[#806044]/30 border border-[#C9A84C]/40 text-[#C9A84C] px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase">
                   <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
                   <span>Penginapan Syariah — Bersih, Nyaman dan Berkah</span>
                 </div>
 
                 <div className="space-y-2">
-                  <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.15]">
+                  <h1 className="font-serif text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-[1.15]">
                     Nikmati Kenyamanan, <br />
                     <span className="text-[#C9A84C] italic font-serif">Raih Ibadah Jariyah.</span>
                   </h1>
@@ -81,7 +81,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* CTAs */}
-                <div className="pt-4 flex flex-wrap items-center gap-4">
+                <div className="pt-4 flex flex-wrap items-center gap-3 sm:gap-4">
                   <Link
                     href="/booking"
                     className="bg-[#806044] hover:bg-[#6c5037] text-white font-medium px-6 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg inline-flex items-center gap-2 text-sm"
@@ -109,11 +109,11 @@ export default async function HomePage() {
               </div>
 
               {/* Right Column: Authentic Flyer Preview Card */}
-              <div className="lg:col-span-5">
-                <div className="bg-[#2a1f17] border-2 border-[#806044]/60 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
+              <div className="lg:col-span-5 min-w-0 w-full">
+                <div className="bg-[#2a1f17] border-2 border-[#806044]/60 rounded-3xl p-5 shadow-2xl relative overflow-hidden w-full max-w-md mx-auto lg:max-w-none">
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#4d3b2e] gap-2">
                     <div className="flex items-center gap-2.5">
-                      <AlyatamaLogo variant="light" size="sm" />
+                      <AlyatamaLogo variant="white" size="sm" />
                       <span className="text-[10px] text-[#C9A84C] font-semibold tracking-wide border-l border-[#4d3b2e] pl-2.5">
                         Bangkinang Kota
                       </span>
@@ -148,8 +148,8 @@ export default async function HomePage() {
         </section>
 
         {/* 3 RENTAL MODELS SELECTOR BANNER */}
-        <section className="bg-[#E7D8C5] border-y border-[#d4c3ad] py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="w-full bg-[#E7D8C5] border-y border-[#d4c3ad] py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               <div className="bg-white p-5 rounded-2xl border border-[#d4c3ad] shadow-sm flex items-start gap-4">
@@ -208,108 +208,110 @@ export default async function HomePage() {
         </section>
 
         {/* 6 CORE FACILITIES (FROM FLYER) */}
-        <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-2">
-              Fasilitas Unggulan Terverifikasi
-            </span>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21] mb-3">
-              Fasilitas Nyaman Berstandar Syariah
-            </h2>
-            <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
-              Semua fasilitas dirancang agar Anda dapat beristirahat dengan tenang, menjaga ibadah, dan merasa aman selama menginap di Bangkinang Kota.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* Facility 1 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                1. Lingkungan Islami & Nyaman
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Suasana syiar yang menenangkan, dekat dengan sarana ibadah, bebas dari hal-hal maksiat dan kebisingan yang mengganggu kekhusyukan.
+        <section className="w-full py-16 sm:py-24 bg-[#F6F0E7]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-2">
+                Fasilitas Unggulan Terverifikasi
+              </span>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21] mb-3">
+                Fasilitas Nyaman Berstandar Syariah
+              </h2>
+              <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
+                Semua fasilitas dirancang agar Anda dapat beristirahat dengan tenang, menjaga ibadah, dan merasa aman selama menginap di Bangkinang Kota.
               </p>
             </div>
 
-            {/* Facility 2 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
-                <Lock className="w-6 h-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              {/* Facility 1 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  1. Lingkungan Islami & Nyaman
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Suasana syiar yang menenangkan, dekat dengan sarana ibadah, bebas dari hal-hal maksiat dan kebisingan yang mengganggu kekhusyukan.
+                </p>
               </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                2. Aman & Privasi Terjaga
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Akses teratur dan terjaga, menjamin privasi tamu keluarga dan perorangan sesuai adab menginap yang santun dan terhormat.
-              </p>
-            </div>
 
-            {/* Facility 3 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
-                <BedDouble className="w-6 h-6" />
+              {/* Facility 2 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  2. Aman & Privasi Terjaga
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Akses teratur dan terjaga, menjamin privasi tamu keluarga dan perorangan sesuai adab menginap yang santun dan terhormat.
+                </p>
               </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                3. Kamar Bersih & Nyaman
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Kasur berkualitas, sprei higienis yang rutin disterilisasi, kamar mandi dalam bersih, serta sirkulasi udara yang sehat.
-              </p>
-            </div>
 
-            {/* Facility 4 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
-                <Wifi className="w-6 h-6" />
+              {/* Facility 3 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
+                  <BedDouble className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  3. Kamar Bersih & Nyaman
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Kasur berkualitas, sprei higienis yang rutin disterilisasi, kamar mandi dalam bersih, serta sirkulasi udara yang sehat.
+                </p>
               </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                4. Wi-Fi Gratis Berkecepatan Tinggi
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Koneksi internet nirkabel lancar di setiap sudut homestay untuk kebutuhan bekerja daring, koordinasi tugas, atau komunikasi keluarga.
-              </p>
-            </div>
 
-            {/* Facility 5 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
-                <Wind className="w-6 h-6" />
+              {/* Facility 4 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
+                  <Wifi className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  4. Wi-Fi Gratis Berkecepatan Tinggi
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Koneksi internet nirkabel lancar di setiap sudut homestay untuk kebutuhan bekerja daring, koordinasi tugas, atau komunikasi keluarga.
+                </p>
               </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                5. AC di Setiap Kamar
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Setiap unit kamar dilengkapi dengan pendingin ruangan (AC) dingin dan terawat demi kenyamanan istirahat maksimal siang dan malam.
-              </p>
-            </div>
 
-            {/* Facility 6 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6" />
+              {/* Facility 5 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-4">
+                  <Wind className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  5. AC di Setiap Kamar
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Setiap unit kamar dilengkapi dengan pendingin ruangan (AC) dingin dan terawat demi kenyamanan istirahat maksimal siang dan malam.
+                </p>
               </div>
-              <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
-                6. Keamanan 24 Jam
-              </h3>
-              <p className="text-xs text-[#756A5F] leading-relaxed">
-                Pengawasan lingkungan terpadu dan keamanan 24 jam dengan area parkir kendaraan yang aman untuk mobil dan motor Anda.
-              </p>
-            </div>
 
+              {/* Facility 6 */}
+              <div className="bg-white p-6 rounded-2xl border border-[#E5DCD0] shadow-sm hover:shadow-md transition">
+                <div className="w-12 h-12 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-4">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif font-semibold text-base text-[#392B21] mb-2">
+                  6. Keamanan 24 Jam
+                </h3>
+                <p className="text-xs text-[#756A5F] leading-relaxed">
+                  Pengawasan lingkungan terpadu dan keamanan 24 jam dengan area parkir kendaraan yang aman untuk mobil dan motor Anda.
+                </p>
+              </div>
+
+            </div>
           </div>
         </section>
 
         {/* CHARITY & DAKWAH ISLAMI BANNER */}
-        <section className="bg-[#392B21] text-[#F6F0E7] py-14 border-y border-[#4d3b2e]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="w-full bg-[#392B21] text-[#F6F0E7] py-14 border-y border-[#4d3b2e]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="bg-[#2a1f17] border border-[#C9A84C]/40 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-8 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
+                <div className="lg:col-span-8 space-y-4 min-w-0">
                   <div className="inline-flex items-center gap-2 bg-[#806044]/40 text-[#C9A84C] text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
                     <HeartHandshake className="w-4 h-4" />
                     <span>Mendukung Dakwah & Pendidikan Islam</span>
@@ -321,8 +323,8 @@ export default async function HomePage() {
                     Setiap pemesanan yang Anda lakukan di ALYATAMA HOMESTAY bukan sekadar sewa kamar, melainkan wujud nyata kontribusi Anda dalam mendukung operasional pembinaan santri dan kegiatan sosial di <strong>Panti Asuhan Putra Muhammadiyah Bangkinang</strong>. Mari menjadi bagian dari kebaikan yang terus mengalir.
                   </p>
                 </div>
-                <div className="lg:col-span-4 flex flex-col items-center justify-center text-center p-6 bg-[#392B21] rounded-2xl border border-[#4d3b2e]">
-                  <AlyatamaLogo variant="light" size="lg" className="mb-2" />
+                <div className="lg:col-span-4 min-w-0 flex flex-col items-center justify-center text-center p-6 bg-[#392B21] rounded-2xl border border-[#4d3b2e]">
+                  <AlyatamaLogo variant="white" size="lg" className="mb-2" />
                   <span className="text-xs text-[#C9A84C] mb-4 font-semibold">Penginapan Syariah Pilihan Umat</span>
                   <Link
                     href="/tentang"
@@ -337,35 +339,37 @@ export default async function HomePage() {
         </section>
 
         {/* ROOMS SHOWCASE */}
-        <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-1">
-                Pilihan Kamar & Tarif
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21]">
-                Kamar Bersih, Tenang, dan Higienis
-              </h2>
+        <section className="w-full py-16 sm:py-24 bg-[#F6F0E7]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-1">
+                  Pilihan Kamar & Tarif
+                </span>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21]">
+                  Kamar Bersih, Tenang, dan Higienis
+                </h2>
+              </div>
+              <Link
+                href="/kamar"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#806044] hover:text-[#392B21] font-semibold group"
+              >
+                Lihat seluruh daftar kamar & harga
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
-            <Link
-              href="/kamar"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#806044] hover:text-[#392B21] font-semibold group"
-            >
-              Lihat seluruh daftar kamar & harga
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {rooms.slice(0, 3).map((room) => (
-              <RoomCard key={room.id} room={room} />
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+              {rooms.slice(0, 3).map((room) => (
+                <RoomCard key={room.id} room={room} />
+              ))}
+            </div>
           </div>
         </section>
 
         {/* VERIFIED LOCATION SECTION BANGKINANG KOTA */}
-        <section className="py-16 sm:py-24 bg-white border-y border-[#E5DCD0]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="w-full py-16 sm:py-24 bg-white border-y border-[#E5DCD0]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               
               <div className="lg:col-span-7 space-y-6">
@@ -471,8 +475,8 @@ export default async function HomePage() {
         </section>
 
         {/* BOOKING CALL TO ACTION */}
-        <section className="bg-[#E7D8C5] py-16 text-center border-t border-[#d4c3ad]">
-          <div className="max-w-3xl mx-auto px-4">
+        <section className="w-full bg-[#E7D8C5] py-16 text-center border-t border-[#d4c3ad]">
+          <div className="max-w-3xl mx-auto px-4 w-full">
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21] mb-3">
               Rencanakan Menginap Bersama ALYATAMA
             </h2>
@@ -498,6 +502,6 @@ export default async function HomePage() {
       </main>
 
       <PublicFooter />
-    </>
+    </div>
   );
 }
