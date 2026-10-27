@@ -616,8 +616,74 @@ export const PmsService = {
   },
 
   async verifyStaffLogin(identifier: string, pinOrPass: string): Promise<{ success: boolean; user?: StaffUser; error?: string }> {
-    const users = await this.getStaffUsers();
     const cleanId = identifier.trim().toLowerCase();
+    const cleanPass = pinOrPass.trim();
+
+    // 1. Try Supabase Auth Authenticator if environment is configured
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        let loginEmail = cleanId;
+
+        // If user logged in using username instead of email, lookup their registered email
+        if (!cleanId.includes('@')) {
+          const { data: staffData } = await supabase
+            .from('staff_users')
+            .select('*')
+            .eq('username', cleanId)
+            .maybeSingle();
+
+          if (staffData?.email) {
+            loginEmail = staffData.email;
+          }
+        }
+
+        // Authenticate with Supabase Authenticator
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: cleanPass,
+        });
+
+        if (!authError && authData.user) {
+          // Find corresponding staff_users record
+          const { data: staffRecord } = await supabase
+            .from('staff_users')
+            .select('*')
+            .or(`id.eq.${authData.user.id},email.eq.${authData.user.email}`)
+            .maybeSingle();
+
+          if (staffRecord) {
+            if (staffRecord.status !== 'ACTIVE') {
+              return { 
+                success: false, 
+                error: `Akses ditolak: Akun staf berstatus ${staffRecord.status}. Hubungi Administrator untuk aktivasi.` 
+              };
+            }
+            await this.updateStaffUser(staffRecord.id, { last_login_at: new Date().toISOString() });
+            return { success: true, user: staffRecord as StaffUser };
+          }
+
+          // Use auth metadata if staff_users table entry is being populated
+          const metaRole = (authData.user.user_metadata?.role as 'admin' | 'staff') || 'admin';
+          const authStaffUser: StaffUser = {
+            id: authData.user.id,
+            full_name: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'Pengelola ALYATAMA',
+            username: authData.user.user_metadata?.username || authData.user.email?.split('@')[0] || 'admin',
+            email: authData.user.email || '',
+            role: metaRole,
+            status: 'ACTIVE',
+            created_at: authData.user.created_at,
+            updated_at: new Date().toISOString(),
+          };
+          return { success: true, user: authStaffUser };
+        }
+      } catch (err) {
+        console.warn('Supabase auth attempt returned error, falling back to local verification:', err);
+      }
+    }
+
+    // 2. Local fallback verification
+    const users = await this.getStaffUsers();
     const user = users.find(
       (u) => u.username.toLowerCase() === cleanId || u.email.toLowerCase() === cleanId
     );
@@ -633,7 +699,7 @@ export const PmsService = {
       };
     }
 
-    if (user.password_hash && user.password_hash !== pinOrPass.trim()) {
+    if (user.password_hash && user.password_hash !== cleanPass) {
       return { success: false, error: 'Kredensial staf tidak valid' };
     }
 

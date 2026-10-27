@@ -88,7 +88,7 @@ export default function PanelOverviewPage() {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 bg-[#355C46]/10 text-[#355C46] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Sistem Operasional V3.1 — Bangkinang Kota</span>
+            <span>Sistem Manajemen Properti Terpadu — Bangkinang Kota</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
             Selamat Bertugas, {userName}

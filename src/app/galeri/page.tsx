@@ -107,28 +107,28 @@ export default function GaleriIklanPage() {
           </div>
 
           {/* Official Management Notice Banner */}
-          <div className="bg-white rounded-2xl border border-[#E5DCD0] p-4 sm:p-5 mb-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl border border-emerald-900/20 p-4 sm:p-5 mb-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 text-[#806044]">
-                <ShieldCheck className="w-5 h-5 text-[#806044]" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0 text-emerald-800">
+                <ShieldCheck className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#392B21]">
-                  Materi Terverifikasi & Terintegrasi Admin
+                <h4 className="text-xs sm:text-sm font-bold text-[#30231A]">
+                  Publikasi & Brosur Resmi Properti
                 </h4>
-                <p className="text-xs text-[#756A5F]">
-                  Foto iklan dan brosur di bawah ini merupakan publikasi resmi untuk kenyamanan dan kejelasan calon tamu.
+                <p className="text-xs text-[#6B5E52]">
+                  Foto iklan, brosur, dan dokumentasi fasilitas di bawah ini merupakan informasi terverifikasi langsung dari pengelola ALYATAMA HOMESTAY.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 self-stretch sm:self-auto">
               <a
-                href="https://wa.me/6282285472008?text=Halo%20Admin%20ALYATAMA%20HOMESTAY,%20saya%20ingin%20menanyakan%20informasi%20brosur%20dan%20ketersediaan%20kamar"
+                href="https://wa.me/6282285472008?text=Halo%20Pengelola%20ALYATAMA%20HOMESTAY,%20saya%20ingin%20menanyakan%20informasi%20brosur%20dan%20ketersediaan%20kamar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs bg-[#806044] hover:bg-[#6c5037] text-white px-4 py-2.5 rounded-xl font-medium transition shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs bg-[#24523B] hover:bg-[#1D4330] text-white px-4 py-2.5 rounded-xl font-medium transition shadow-xs border border-emerald-600/30"
               >
-                <Phone className="w-3.5 h-3.5" />
+                <Phone className="w-3.5 h-3.5 text-emerald-300" />
                 <span>Konsultasi via WA</span>
               </a>
             </div>
@@ -148,14 +148,14 @@ export default function GaleriIklanPage() {
                   onClick={() => setSelectedCategory(tab.key)}
                   className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
                     isActive
-                      ? 'bg-[#392B21] text-white shadow-sm'
-                      : 'bg-white text-[#756A5F] hover:bg-stone-100 hover:text-[#392B21] border border-[#E5DCD0]'
+                      ? 'bg-[#24523B] text-white shadow-sm border border-emerald-600/40'
+                      : 'bg-white text-[#6B5E52] hover:bg-emerald-50 hover:text-emerald-900 border border-[#E5DCD0]'
                   }`}
                 >
                   <span>{tab.label}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                      isActive ? 'bg-[#806044] text-white' : 'bg-stone-200 text-stone-600'
+                      isActive ? 'bg-emerald-700 text-white' : 'bg-stone-200 text-stone-600'
                     }`}
                   >
                     {count}

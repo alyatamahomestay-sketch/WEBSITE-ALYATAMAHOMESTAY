@@ -29,8 +29,8 @@ export default function PanelLoginPage() {
   const [step, setStep] = useState<'credentials' | 'shift_confirmation'>('credentials');
   
   // Login fields
-  const [identifier, setIdentifier] = useState('admin');
-  const [pin, setPin] = useState('1234');
+  const [identifier, setIdentifier] = useState('');
+  const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -111,12 +111,6 @@ export default function PanelLoginPage() {
     }
   };
 
-  const handleQuickPreset = (u: string, p: string) => {
-    setIdentifier(u);
-    setPin(p);
-    setErrorMsg('');
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#30291F] text-stone-100 flex flex-col justify-between overflow-x-hidden selection:bg-[#355C46] selection:text-white">
       {/* Top Header */}
@@ -163,7 +157,7 @@ export default function PanelLoginPage() {
               <div className="flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-white block">Dua Peran Utama (V3.1)</strong>
+                  <strong className="text-white block">Dua Peran Utama (Admin & Staf)</strong>
                   <span className="text-[11px] text-stone-400">Hanya <strong>ADMIN</strong> (kontrol penuh) dan <strong>STAFF</strong> (operasional & walk-in).</span>
                 </div>
               </div>
@@ -176,34 +170,15 @@ export default function PanelLoginPage() {
               </div>
             </div>
 
-            {/* Quick Presets for Evaluator */}
-            <div className="bg-[#241e17]/60 border border-stone-800 p-3.5 rounded-xl space-y-2">
-              <span className="text-[11px] font-semibold text-stone-400 block uppercase tracking-wider">
-                Akun Uji Coba Cepat:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('admin', '1234')}
-                  className="px-2.5 py-1 rounded-lg text-xs bg-[#355C46]/30 hover:bg-[#355C46]/50 text-emerald-300 border border-[#355C46]/50 font-medium transition"
-                >
-                  Admin Utama (admin / 1234)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('rahmat', '1234')}
-                  className="px-2.5 py-1 rounded-lg text-xs bg-[#806044]/30 hover:bg-[#806044]/50 text-amber-200 border border-[#806044]/50 font-medium transition"
-                >
-                  Staf Rahmat (rahmat / 1234)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('ahmad', '1234')}
-                  className="px-2.5 py-1 rounded-lg text-xs bg-red-950/40 hover:bg-red-950/60 text-red-300 border border-red-900/50 font-medium transition"
-                >
-                  Staf Nonaktif (ahmad / 1234)
-                </button>
+            {/* Security & Supabase Authenticator Notice */}
+            <div className="bg-[#1C2C22]/60 border border-emerald-800/40 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-emerald-300 text-xs font-semibold">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Terhubung ke Supabase Authenticator</span>
               </div>
+              <p className="text-[11px] text-stone-400 leading-relaxed">
+                Akses akun pengelola (Admin & Staf) diverifikasi melalui enkripsi aman Supabase Authenticator. Penambahan user dan pengaturan peran dilakukan langsung oleh Super Administrator.
+              </p>
             </div>
           </div>
 

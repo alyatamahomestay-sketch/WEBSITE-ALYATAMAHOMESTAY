@@ -113,13 +113,13 @@ export default function RoomCard({ room }: RoomCardProps) {
         <div className="pt-3 border-t border-[#E5DCD0] flex items-center justify-between gap-2">
           <Link
             href={`/kamar/${room.id}`}
-            className="text-xs text-[#392B21] hover:text-[#806044] font-medium px-3 py-2 rounded-lg border border-[#E5DCD0] hover:border-[#806044] transition-colors"
+            className="text-xs text-[#30231A] hover:text-emerald-800 font-medium px-3 py-2 rounded-lg border border-[#DECFC0] hover:border-emerald-600/40 transition-colors"
           >
             Rincian & Foto
           </Link>
           <Link
             href={`/booking?room_id=${room.id}`}
-            className="inline-flex items-center gap-1.5 bg-[#806044] hover:bg-[#6c5037] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 bg-[#24523B] hover:bg-[#1D4330] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm border border-emerald-600/30"
           >
             Pesan Sekarang
             <ArrowRight className="w-3.5 h-3.5" />

@@ -154,7 +154,7 @@ export default function StaffManagementPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 bg-[#355C46]/10 text-[#355C46] px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Kontrol Eksklusif Administrator (V3.1)</span>
+            <span>Kontrol Eksklusif Administrator</span>
           </div>
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
             Manajemen Akun Staf & Hak Akses
