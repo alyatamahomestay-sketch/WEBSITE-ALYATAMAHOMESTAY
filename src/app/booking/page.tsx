@@ -23,6 +23,7 @@ import { Room, RentalType } from '@/lib/types';
 import { PmsService } from '@/lib/services/pms-service';
 import { calculateReservationPricing, calculateRentalDuration } from '@/lib/pricing';
 import { formatRupiah, formatDateIndo } from '@/lib/formatters';
+import { getTodayDateWIB, getDefaultCheckoutWIB } from '@/lib/date-utils';
 
 function BookingContent() {
   const router = useRouter();
@@ -35,25 +36,15 @@ function BookingContent() {
   const queryRental = (searchParams.get('rental') as RentalType) || 'daily';
   const [rentalType, setRentalType] = useState<RentalType>(queryRental);
 
-  // Form State
+  // Form State with Asia/Jakarta (WIB) default dates
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [checkinDate, setCheckinDate] = useState(
-    searchParams.get('checkin') || new Date().toISOString().split('T')[0]
-  );
-  
-  // Set default checkout according to rental type
-  const getDefaultCheckout = (type: RentalType) => {
-    const d = new Date();
-    if (type === 'daily') d.setDate(d.getDate() + 1);
-    else if (type === 'monthly') d.setMonth(d.getMonth() + 1);
-    else if (type === 'yearly') d.setFullYear(d.getFullYear() + 1);
-    return d.toISOString().split('T')[0];
-  };
+  const initialCheckin = searchParams.get('checkin') || getTodayDateWIB();
+  const [checkinDate, setCheckinDate] = useState(initialCheckin);
 
   const [checkoutDate, setCheckoutDate] = useState(
-    searchParams.get('checkout') || getDefaultCheckout(queryRental)
+    searchParams.get('checkout') || getDefaultCheckoutWIB(initialCheckin, queryRental)
   );
   const [roomId, setRoomId] = useState(searchParams.get('room_id') || '');
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
@@ -88,7 +79,7 @@ function BookingContent() {
   // Handle rental type switch
   const handleRentalTypeChange = (type: RentalType) => {
     setRentalType(type);
-    setCheckoutDate(getDefaultCheckout(type));
+    setCheckoutDate(getDefaultCheckoutWIB(checkinDate, type));
   };
 
   const selectedRoom = rooms.find((r) => r.id === roomId);
