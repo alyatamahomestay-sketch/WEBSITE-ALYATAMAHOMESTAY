@@ -183,3 +183,5 @@ Semua pengujian otomatis berhasil dijalankan dan lolos 100%:
 * `tests/whatsapp.test.ts` (2 pengujian): Pengujian ketat persetujuan pelanggan (*consent*). Pembuatan draft diblokir jika tamu menolak WhatsApp, dan berhasil dibuat jika tamu mengizinkan.
 * `tests/pms-service.test.ts` (5 pengujian): Manajemen kamar, persetujuan atomik status reservasi, pencatatan mutasi kas masuk, siklus housekeeping, dan pencatatan beban pengeluaran operasional.
 * **Production Build Test (`npm run build`):** Seluruh 31 rute aplikasi berhasil terkompilasi dan teroptimasi tanpa error.
+#   W E B S I T E - A L Y A T A M A H O M E S T A Y  
+ 
