@@ -30,27 +30,57 @@ describe('PMS Service Operations & Concurrency Handling', () => {
   });
 
   it('performs atomic reservation approval and status updates', async () => {
-    const reservations = await PmsService.getReservations();
-    const pending = reservations.find((r) => r.status === 'pending_approval');
-    expect(pending).toBeDefined();
+    // Buat reservasi uji coba mandiri
+    const rooms = await PmsService.getRooms();
+    const targetRoom = rooms[0];
+    const testRes = await PmsService.createWalkInReservation({
+      guest: { full_name: 'Tamu Uji Coba Approval', phone: '081234567890' },
+      roomId: targetRoom.id,
+      checkinDate: '2026-12-20',
+      checkoutDate: '2026-12-22',
+      rentalType: 'daily',
+      adults: 1,
+      children: 0,
+      baseSubtotal: targetRoom.base_rate * 2,
+      totalAmount: targetRoom.base_rate * 2,
+      paymentAmount: 0,
+      paymentMethod: 'Tunai',
+      staffUserId: 'staff-user-002',
+      staffRole: 'staff',
+    });
 
-    if (pending) {
-      const approval = await PmsService.approveReservation(pending.id, 'admin-tester');
-      expect(approval.success).toBe(true);
+    // Ubah status ke pending_approval untuk diuji approval-nya
+    await PmsService.updateReservationStatus(testRes.id, 'pending_approval');
 
-      const approvedRes = await PmsService.getReservationById(pending.id);
-      expect(approvedRes?.status).toBe('approved_pending_payment');
-    }
+    const approval = await PmsService.approveReservation(testRes.id, 'admin-tester');
+    expect(approval.success).toBe(true);
+
+    const approvedRes = await PmsService.getReservationById(testRes.id);
+    expect(approvedRes?.status).toBe('approved_pending_payment');
   });
 
   it('records payments and updates balance due accurately', async () => {
-    const reservations = await PmsService.getReservations();
-    const res = reservations[0];
-    expect(res).toBeDefined();
+    const rooms = await PmsService.getRooms();
+    const targetRoom = rooms[0];
+    const testRes = await PmsService.createWalkInReservation({
+      guest: { full_name: 'Tamu Uji Coba Pembayaran', phone: '081234567891' },
+      roomId: targetRoom.id,
+      checkinDate: '2026-12-25',
+      checkoutDate: '2026-12-27',
+      rentalType: 'daily',
+      adults: 1,
+      children: 0,
+      baseSubtotal: targetRoom.base_rate * 2,
+      totalAmount: targetRoom.base_rate * 2,
+      paymentAmount: 0,
+      paymentMethod: 'Tunai',
+      staffUserId: 'staff-user-002',
+      staffRole: 'staff',
+    });
 
-    const previousPaid = res.price_snapshot?.total_paid || 0;
+    const previousPaid = testRes.price_snapshot?.total_paid || 0;
     const paymentResult = await PmsService.addPayment({
-      reservationId: res.id,
+      reservationId: testRes.id,
       amount: 100000,
       paymentMethod: 'qris',
       notes: 'Uji coba pembayaran',
@@ -58,7 +88,7 @@ describe('PMS Service Operations & Concurrency Handling', () => {
 
     expect(paymentResult.success).toBe(true);
 
-    const updatedRes = await PmsService.getReservationById(res.id);
+    const updatedRes = await PmsService.getReservationById(testRes.id);
     expect(updatedRes?.price_snapshot?.total_paid).toBe(previousPaid + 100000);
   });
 
