@@ -172,7 +172,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
             }`}
           >
             <PlusCircle className="w-4 h-4 text-emerald-400" />
-            <span>+ Reservasi Walk-in Baru</span>
+            <span>Reservasi Walk-in Baru</span>
           </Link>
 
           {/* Core Navigation */}

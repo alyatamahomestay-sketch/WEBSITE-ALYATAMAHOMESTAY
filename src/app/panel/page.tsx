@@ -106,7 +106,7 @@ export default function PanelOverviewPage() {
             className="inline-flex items-center gap-2 bg-[#355C46] hover:bg-[#284635] text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs"
           >
             <PlusCircle className="w-4 h-4 text-emerald-300" />
-            <span>+ Reservasi Walk-in Baru</span>
+            <span>Reservasi Walk-in Baru</span>
           </Link>
 
           {userRole === 'admin' && (

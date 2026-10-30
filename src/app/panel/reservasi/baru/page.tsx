@@ -250,7 +250,7 @@ export default function WalkInReservationPage() {
               }}
               className="px-5 py-2.5 rounded-xl border border-stone-300 hover:bg-stone-100 text-xs font-semibold text-stone-700 transition"
             >
-              + Input Tamu Walk-in Lainnya
+              Input Tamu Walk-in Lainnya
             </button>
           </div>
         </div>
