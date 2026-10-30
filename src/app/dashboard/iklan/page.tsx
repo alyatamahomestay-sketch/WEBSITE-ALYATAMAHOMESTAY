@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { AdvertisementPhoto, AdCategory } from '@/lib/types';
+import ImageUploadPicker from '@/components/common/ImageUploadPicker';
 
 const CATEGORIES: { value: AdCategory; label: string }[] = [
   { value: 'brosur_flyer', label: 'Brosur & Flyer Resmi' },
@@ -466,54 +467,33 @@ export default function AdminIklanPage() {
                 />
               </div>
 
-              {/* Image URL with Preset Pickers */}
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  URL / Lokasi Berkas Gambar *
-                </label>
-                <input
-                  type="text"
-                  required
+              {/* Image Upload with Direct File Explorer Picker */}
+              <div className="space-y-2">
+                <ImageUploadPicker
+                  label="Berkas Foto Iklan / Galeri"
                   value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="/images/alyatama-flyer.jpg atau URL online"
-                  className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#806044]"
+                  onChange={setImageUrl}
+                  folder="advertisements"
+                  required
+                  helperText="Pilih foto flyer, brosur, atau dokumentasi kegiatan dari File Explorer Anda"
                 />
 
-                {/* Preset suggestions */}
-                <div className="mt-2">
-                  <span className="text-[11px] text-stone-500 font-medium block mb-1">Pilih Cepat Aset Tersedia:</span>
+                {/* Preset quick suggestions */}
+                <div className="pt-1">
+                  <span className="text-[11px] text-stone-500 font-medium block mb-1">Atau Gunakan Aset Bawaan Resmi:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_IMAGES.map((preset, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setImageUrl(preset.url)}
-                        className="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-700 px-2 py-1 rounded-lg border border-stone-200 transition"
+                        className="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-700 px-2.5 py-1 rounded-lg border border-stone-200 transition cursor-pointer"
                       >
                         {preset.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Live Preview */}
-                {imageUrl && (
-                  <div className="mt-3 p-2 bg-stone-50 rounded-xl border border-stone-200 flex items-center gap-3">
-                    <img
-                      src={imageUrl}
-                      alt="Pratinjau"
-                      className="w-16 h-12 object-cover rounded-lg border border-stone-300 bg-white"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/alyatama-flyer.jpg';
-                      }}
-                    />
-                    <div className="text-[11px] text-stone-600 truncate">
-                      <span className="font-semibold block text-stone-800">Pratinjau Gambar</span>
-                      <span className="truncate">{imageUrl}</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Description */}

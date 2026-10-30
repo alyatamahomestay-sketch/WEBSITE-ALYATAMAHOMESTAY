@@ -19,6 +19,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { Room, RoomOperationalStatus } from '@/lib/types';
 import { formatRupiah, getRoomOperationalStatusMeta } from '@/lib/formatters';
+import ImageUploadPicker from '@/components/common/ImageUploadPicker';
 
 export default function KamarManagementPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -457,13 +458,12 @@ export default function KamarManagementPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#392B21] mb-1">URL Foto Kamar</label>
-                <input
-                  type="text"
-                  placeholder="/images/alyatama-flyer.jpg atau URL Web"
+                <ImageUploadPicker
+                  label="Foto Unit Kamar"
                   value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                  onChange={setPhotoUrl}
+                  folder="rooms"
+                  helperText="Format JPG, PNG, WEBP. Klik untuk memilih foto dari komputer/perangkat Anda."
                 />
               </div>
 
