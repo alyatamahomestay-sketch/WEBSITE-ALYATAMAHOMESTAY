@@ -108,33 +108,23 @@ export default function PanelLoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden select-none bg-[#1C140E]">
-      {/* Background Ambience: Warm Hotel Suite & Wooden Door Key Tag */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/images/panel-login-bg.png')`,
-        }}
-      />
-      {/* Dark warm overlay to enhance focus and contrast */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/70 backdrop-blur-[2px]" />
-
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden select-none bg-[#392B21]">
       {/* Main Center Content */}
-      <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center text-center my-auto">
+      <div className="w-full max-w-[480px] flex flex-col items-center text-center my-auto">
         
-        {/* Brand Logo & Titles (Exact match to reference image) */}
+        {/* Brand Logo & Titles */}
         <div className="mb-6 flex flex-col items-center">
-          <AlyatamaLogo variant="white" size="lg" className="mb-3 drop-shadow-md" />
-          <span className="text-[10px] sm:text-[11px] font-semibold text-[#D4AF37] tracking-[0.2em] uppercase mb-1">
+          <AlyatamaLogo variant="white" size="lg" className="mb-3" />
+          <span className="text-[10px] sm:text-[11px] font-semibold text-[#C9A84C] tracking-[0.2em] uppercase mb-1">
             SISTEM MANAJEMEN PROPERTI TERPADU (PMS)
           </span>
-          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-wide leading-tight drop-shadow-sm">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-wide leading-tight">
             Portal Manajemen<br />Operasional
           </h1>
         </div>
 
-        {/* Glassmorphism Login Card */}
-        <div className="w-full bg-[#1F1710]/75 backdrop-blur-md border border-[#806044]/40 rounded-3xl p-6 sm:p-8 shadow-2xl text-left">
+        {/* Clean Solid Brown Card */}
+        <div className="w-full bg-[#2A1F17] border border-[#806044]/50 rounded-3xl p-6 sm:p-8 shadow-2xl text-left">
           
           {step === 'credentials' && (
             <>
