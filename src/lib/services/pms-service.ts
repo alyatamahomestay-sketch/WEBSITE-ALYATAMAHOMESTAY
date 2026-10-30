@@ -111,6 +111,27 @@ export const PmsService = {
   },
 
   async createRoom(room: Omit<Room, 'id' | 'created_at' | 'updated_at'>): Promise<Room> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', room }),
+        });
+        const json = await res.json();
+        if (json.success && json.room) {
+          return json.room;
+        }
+        if (!json.success && json.error) {
+          throw new Error(json.error);
+        }
+      } catch (err: any) {
+        if (!err.message?.includes('fetch failed')) {
+          throw err;
+        }
+      }
+    }
+
     const newRoom: Room = {
       ...room,
       id: 'room-' + Date.now(),
@@ -128,6 +149,27 @@ export const PmsService = {
   },
 
   async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', id, updates }),
+        });
+        const json = await res.json();
+        if (json.success && json.room) {
+          return json.room;
+        }
+        if (!json.success && json.error) {
+          throw new Error(json.error);
+        }
+      } catch (err: any) {
+        if (!err.message?.includes('fetch failed')) {
+          throw err;
+        }
+      }
+    }
+
     if (!isSupabaseConfigured()) {
       const idx = memRooms.findIndex(r => r.id === id);
       if (idx === -1) throw new Error('Kamar tidak ditemukan');
@@ -143,6 +185,24 @@ export const PmsService = {
       .single();
     if (error) throw new Error(error.message);
     return data as Room;
+  },
+
+  async deleteRoom(id: string): Promise<{ success: boolean; message: string }> {
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/panel/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Gagal menghapus kamar');
+      }
+      return json;
+    }
+    const idx = memRooms.findIndex(r => r.id === id);
+    if (idx !== -1) memRooms.splice(idx, 1);
+    return { success: true, message: 'Kamar berhasil dihapus' };
   },
 
   // --- RESERVATIONS ---

@@ -6,6 +6,7 @@ import {
   Plus, 
   Edit, 
   Archive, 
+  Trash2,
   Users, 
   CheckCircle2, 
   Wrench, 
@@ -152,13 +153,25 @@ export default function KamarManagementPage() {
   };
 
   const handleArchive = async (room: Room) => {
-    if (!confirm(`Arsipkan kamar ${room.name}? Kamar tidak akan ditampilkan di website publik.`)) return;
+    const actionLabel = room.is_archived ? 'Pulihkan kamar ini agar kembali aktif' : 'Arsipkan kamar ini (tidak akan muncul di website publik)';
+    if (!confirm(`${actionLabel}: ${room.name}?`)) return;
     try {
       await PmsService.updateRoom(room.id, { is_archived: !room.is_archived });
-      setFeedback(`Status arsip kamar ${room.name} diperbarui.`);
+      setFeedback(`Status arsip kamar ${room.name} berhasil diperbarui.`);
       loadRooms();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Gagal mengubah status arsip');
+    }
+  };
+
+  const handleDelete = async (room: Room) => {
+    if (!confirm(`Hapus permanen unit kamar "${room.name}" (No. ${room.room_number})?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const res = await PmsService.deleteRoom(room.id);
+      setFeedback(res.message || `Kamar ${room.name} berhasil dihapus.`);
+      loadRooms();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus kamar');
     }
   };
 
@@ -270,16 +283,27 @@ export default function KamarManagementPage() {
                         <button
                           onClick={() => openEditModal(r)}
                           title="Edit Kamar"
-                          className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700"
+                          className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition cursor-pointer"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleArchive(r)}
-                          title={r.is_archived ? 'Pulihkan dari Arsip' : 'Arsipkan Kamar'}
-                          className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700"
+                          title={r.is_archived ? 'Pulihkan dari Arsip' : 'Arsipkan Kamar (Sembunyikan dari Publik)'}
+                          className={`p-1.5 rounded-lg transition cursor-pointer ${
+                            r.is_archived 
+                              ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' 
+                              : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                          }`}
                         >
                           <Archive className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(r)}
+                          title="Hapus Kamar Permanen"
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
