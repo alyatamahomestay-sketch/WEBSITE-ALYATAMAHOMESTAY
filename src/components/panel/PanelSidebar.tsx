@@ -27,7 +27,8 @@ import {
   ShieldCheck,
   PlusCircle,
   Clock,
-  ExternalLink
+  ExternalLink,
+  PanelLeftClose
 } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
@@ -36,12 +37,17 @@ import { StaffShift } from '@/lib/types';
 interface PanelSidebarProps {
   currentRole: 'admin' | 'staff';
   onRoleChange?: (newRole: 'admin' | 'staff') => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
-export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
+export default function PanelSidebar({ 
+  currentRole, 
+  isOpen = true, 
+  onToggle 
+}: PanelSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeShift, setActiveShift] = useState<StaffShift | null>(null);
   const [staffName, setStaffName] = useState<string>('');
@@ -76,7 +82,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
       }
       setActiveShift(null);
       alert('Shift kerja telah berhasil diakhiri.');
-      router.push('/panel/login');
+      router.push('/login');
     } catch (err: any) {
       alert(`Gagal mengakhiri shift: ${err?.message || err}`);
     }
@@ -87,35 +93,49 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
       localStorage.removeItem('alyatama_staff_session');
       localStorage.removeItem('alyatama_active_shift');
     }
-    router.push('/panel/login');
+    router.push('/login');
+  };
+
+  const handleNavClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onToggle?.();
+    }
   };
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <div className="lg:hidden fixed top-3 left-3 z-50">
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-xl bg-[#30291F] text-[#F7F4ED] shadow-md border border-[#44382c]"
-          aria-label="Toggle navigasi panel"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
+      {/* Mobile Backdrop Overlay when Sidebar is open */}
+      {isOpen && (
+        <div
+          onClick={onToggle}
+          className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs transition-opacity"
+          aria-hidden="true"
+        />
+      )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#30291F] border-r border-[#44382c] text-[#F7F4ED] flex flex-col transition-transform duration-300 ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#30291F] border-r border-[#44382c] text-[#F7F4ED] flex flex-col transition-transform duration-300 ease-in-out shadow-2xl ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Logo Brand Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-[#44382c]">
-          <Link href="/panel" className="flex items-center gap-2">
-            <AlyatamaLogo variant="white" size="sm" />
-            <span className="text-[9px] uppercase tracking-widest text-[#C6A47B] font-bold bg-[#241e17] px-1.5 py-0.5 rounded border border-[#44382c]">
-              PANEL
-            </span>
+        {/* Logo Brand Header — Centered with Larger Logo & Close Button */}
+        <div className="relative py-4 px-4 border-b border-[#44382c] flex items-center justify-center">
+          <Link href="/panel" className="flex items-center justify-center" aria-label="Portal ALYATAMA">
+            <AlyatamaLogo variant="white" size="md" />
           </Link>
+
+          {/* Close Sidebar Toggle Button */}
+          {onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-stone-400 hover:text-white hover:bg-[#44382c] transition cursor-pointer"
+              title="Tutup Sidebar Menu"
+              aria-label="Tutup Sidebar Menu"
+            >
+              <PanelLeftClose className="w-5 h-5 text-[#C6A47B]" />
+            </button>
+          )}
         </div>
 
         {/* Role & Active Shift Banner */}
@@ -164,7 +184,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
           {/* Quick Action Walk-in (Both Admin & Staff) */}
           <Link
             href="/panel/reservasi/baru"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold transition shadow-xs ${
               pathname === '/panel/reservasi/baru'
                 ? 'bg-[#355C46] text-white'
@@ -178,7 +198,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
           {/* Core Navigation */}
           <Link
             href="/panel"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -191,7 +211,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <Link
             href="/panel/reservasi"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel/reservasi'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -204,7 +224,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <Link
             href="/panel/check-in-out"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel/check-in-out'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -217,7 +237,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <Link
             href="/panel/kalender"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel/kalender'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -230,7 +250,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <Link
             href="/panel/pembayaran"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel/pembayaran'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -243,7 +263,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <Link
             href="/panel/tamu"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
               pathname === '/panel/tamu'
                 ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -265,7 +285,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/staff"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/staff'
                     ? 'bg-[#355C46] text-white font-semibold shadow-xs'
@@ -278,7 +298,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/kamar"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/kamar'
                     ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -291,7 +311,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/promo"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/promo'
                     ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -304,7 +324,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/keuangan"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/keuangan'
                     ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -317,7 +337,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/laporan"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/laporan'
                     ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -330,7 +350,7 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
               <Link
                 href="/panel/iklan"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl transition ${
                   pathname === '/panel/iklan'
                     ? 'bg-[#806044] text-white font-semibold shadow-xs'
@@ -359,21 +379,21 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
                   <div className="pl-9 pr-2 py-1 space-y-1 text-stone-400">
                     <Link
                       href="/panel/pengaturan/tampilan"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-[#C6A47B]"
                     >
                       Setup Tampilan Website
                     </Link>
                     <Link
                       href="/panel/pengaturan"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-white"
                     >
                       Profil Homestay Bangkinang
                     </Link>
                     <Link
                       href="/panel/pengaturan/audit"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-white"
                     >
                       Audit Log Keamanan
@@ -387,6 +407,18 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
         {/* Footer Area */}
         <div className="p-3 border-t border-[#44382c] space-y-2">
+          {onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="hidden lg:flex w-full items-center justify-center gap-2 py-1.5 px-3 rounded-xl bg-[#241e17] hover:bg-[#3d3326] text-stone-300 hover:text-white text-xs font-medium transition border border-[#44382c] cursor-pointer"
+              title="Tutup Sidebar Menu"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5 text-[#C6A47B]" />
+              <span>Tutup Sidebar Menu</span>
+            </button>
+          )}
+
           <Link
             href="/"
             target="_blank"
@@ -398,10 +430,10 @@ export default function PanelSidebar({ currentRole }: PanelSidebarProps) {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-stone-400 hover:text-red-300 hover:bg-red-950/30 text-xs font-medium transition"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-stone-400 hover:text-red-300 hover:bg-red-950/30 text-xs font-medium transition cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Keluar Sesi (/panel)</span>
+            <span>Keluar Akun Staf</span>
           </button>
         </div>
       </aside>

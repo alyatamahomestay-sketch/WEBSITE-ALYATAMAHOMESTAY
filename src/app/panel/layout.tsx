@@ -13,9 +13,32 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
 
   const [role, setRole] = useState<'admin' | 'staff'>('admin');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // If we are directly on /panel/login, bypass sidebar & gatekeeper
-  const isLoginPage = pathname === '/panel/login';
+  // If we are directly on /panel/login or /login, bypass sidebar & gatekeeper
+  const isLoginPage = pathname === '/panel/login' || pathname === '/login';
+
+  useEffect(() => {
+    // Restore sidebar state from localStorage or default responsive state
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alyatama_sidebar_open');
+      if (saved !== null) {
+        setIsSidebarOpen(saved === 'true');
+      } else if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
+    }
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('alyatama_sidebar_open', String(next));
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (isLoginPage) {
@@ -39,9 +62,9 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // No active session found -> redirect to /panel/login
+      // No active session found -> redirect to /login
       setIsAuthenticated(false);
-      router.replace(`/panel/login?from=${encodeURIComponent(pathname)}`);
+      router.replace(`/login?from=${encodeURIComponent(pathname)}`);
     }
   }, [pathname, isLoginPage, router]);
 
@@ -87,13 +110,23 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 4. Authenticated: render full management panel with sidebar & header
+  // 4. Authenticated: render full management panel with collapsible sidebar & header
   return (
     <div className="min-h-screen bg-[#F7F4ED] flex flex-col font-sans">
-      <PanelSidebar currentRole={role} onRoleChange={handleRoleChange} />
+      <PanelSidebar 
+        currentRole={role} 
+        onRoleChange={handleRoleChange} 
+        isOpen={isSidebarOpen}
+        onToggle={handleToggleSidebar}
+      />
 
-      <div className="lg:pl-64 flex flex-col flex-1">
-        <PanelHeader currentRole={role} title="ALYATAMA HOMESTAY — Operations PMS (/panel)" />
+      <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}>
+        <PanelHeader 
+          currentRole={role} 
+          title="ALYATAMA HOMESTAY — Operations PMS" 
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={handleToggleSidebar}
+        />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}

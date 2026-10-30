@@ -10,17 +10,26 @@ import {
   Clock, 
   ShieldCheck, 
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import { StaffShift } from '@/lib/types';
 
 interface PanelHeaderProps {
   currentRole: 'admin' | 'staff';
-  title: string;
+  title?: string;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export default function PanelHeader({ currentRole, title }: PanelHeaderProps) {
+export default function PanelHeader({ 
+  currentRole, 
+  title = 'ALYATAMA HOMESTAY — Operations PMS',
+  isSidebarOpen = true,
+  onToggleSidebar
+}: PanelHeaderProps) {
   const router = useRouter();
   const dbConnected = isSupabaseConfigured();
   const [activeShift, setActiveShift] = useState<StaffShift | null>(null);
@@ -50,12 +59,34 @@ export default function PanelHeader({ currentRole, title }: PanelHeaderProps) {
       localStorage.removeItem('alyatama_staff_session');
       localStorage.removeItem('alyatama_active_shift');
     }
-    router.push('/panel/login');
+    router.push('/login');
   };
 
   return (
-    <header className="h-16 bg-white border-b border-stone-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
-      <div className="flex items-center gap-3 pl-10 lg:pl-0 min-w-0">
+    <header className="h-16 bg-white border-b border-stone-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+      <div className="flex items-center gap-3 min-w-0">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="p-2 sm:px-3 sm:py-1.5 rounded-xl text-stone-700 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition-colors flex items-center gap-2 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
+            title={isSidebarOpen ? "Tutup Sidebar Menu" : "Buka Sidebar Menu"}
+            aria-label={isSidebarOpen ? "Tutup Sidebar Menu" : "Buka Sidebar Menu"}
+          >
+            {isSidebarOpen ? (
+              <>
+                <PanelLeftClose className="w-4 h-4 text-[#806044]" />
+                <span className="hidden md:inline text-stone-700 font-medium">Tutup Menu</span>
+              </>
+            ) : (
+              <>
+                <PanelLeftOpen className="w-4 h-4 text-[#806044]" />
+                <span className="text-stone-800 font-bold">Buka Menu</span>
+              </>
+            )}
+          </button>
+        )}
+
         <h1 className="text-sm sm:text-base font-bold text-stone-900 tracking-tight truncate">
           {title}
         </h1>
@@ -102,8 +133,8 @@ export default function PanelHeader({ currentRole, title }: PanelHeaderProps) {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="p-2 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
-          title="Keluar Sesi (/panel/login)"
+          className="p-2 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+          title="Keluar Sesi (/login)"
         >
           <LogOut className="w-4 h-4" />
         </button>
