@@ -564,24 +564,69 @@ export const PmsService = {
 
   // --- ADVERTISEMENT PHOTOS & GALLERY ---
   async getAdvertisementPhotos(onlyActive = false): Promise<AdvertisementPhoto[]> {
-    if (!isSupabaseConfigured()) {
-      const list = onlyActive ? memAdPhotos.filter((p) => p.is_active) : memAdPhotos;
-      return [...list].sort((a, b) => a.display_order - b.display_order);
+    // 1. Client-side fetch via server API with localStorage sync
+    if (typeof window !== 'undefined') {
+      try {
+        const deletedIdsStr = localStorage.getItem('alyatama_deleted_ad_ids');
+        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+
+        const res = await fetch(`/api/panel/photos?active=${onlyActive}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.photos)) {
+            const cleanList = json.photos.filter((p: AdvertisementPhoto) => !deletedIds.includes(p.id));
+            return cleanList;
+          }
+        }
+      } catch (err) {
+        console.warn('Photos API fetch error, falling back to local store:', err);
+      }
     }
-    const supabase = createClient();
-    let query = supabase.from('advertisement_photos').select('*').order('display_order', { ascending: true });
-    if (onlyActive) {
-      query = query.eq('is_active', true);
+
+    // 2. Direct Supabase query (Server or Fallback)
+    const localDeletedIds: string[] = typeof window !== 'undefined' && localStorage.getItem('alyatama_deleted_ad_ids')
+      ? JSON.parse(localStorage.getItem('alyatama_deleted_ad_ids') || '[]')
+      : [];
+
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      let query = supabase.from('advertisement_photos').select('*').order('display_order', { ascending: true });
+      if (onlyActive) {
+        query = query.eq('is_active', true);
+      }
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return (data as AdvertisementPhoto[]).filter((p) => !localDeletedIds.includes(p.id));
+      }
     }
-    const { data, error } = await query;
-    if (error || !data) {
-      const list = onlyActive ? memAdPhotos.filter((p) => p.is_active) : memAdPhotos;
-      return [...list].sort((a, b) => a.display_order - b.display_order);
-    }
-    return data as AdvertisementPhoto[];
+
+    // 3. In-memory fallback with deleted items strictly excluded
+    const list = onlyActive ? memAdPhotos.filter((p) => p.is_active) : memAdPhotos;
+    return [...list]
+      .filter((p) => !localDeletedIds.includes(p.id))
+      .sort((a, b) => a.display_order - b.display_order);
   },
 
   async createAdvertisementPhoto(photoData: Omit<AdvertisementPhoto, 'id' | 'created_at' | 'updated_at'>): Promise<AdvertisementPhoto> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', photo: photoData }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.photo) {
+            memAdPhotos.push(json.photo);
+            return json.photo;
+          }
+        }
+      } catch (err) {
+        console.warn('API create photo error, fallback to direct Supabase:', err);
+      }
+    }
+
     const newPhoto: AdvertisementPhoto = {
       ...photoData,
       id: 'ad-' + Date.now(),
@@ -598,6 +643,26 @@ export const PmsService = {
   },
 
   async updateAdvertisementPhoto(id: string, updates: Partial<AdvertisementPhoto>): Promise<AdvertisementPhoto> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', id, updates }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.photo) {
+            const idx = memAdPhotos.findIndex((p) => p.id === id);
+            if (idx !== -1) memAdPhotos[idx] = json.photo;
+            return json.photo;
+          }
+        }
+      } catch (err) {
+        console.warn('API update photo error, fallback to direct Supabase:', err);
+      }
+    }
+
     const idx = memAdPhotos.findIndex((p) => p.id === id);
     if (idx !== -1) {
       memAdPhotos[idx] = { ...memAdPhotos[idx], ...updates, updated_at: new Date().toISOString() };
@@ -612,10 +677,38 @@ export const PmsService = {
   },
 
   async deleteAdvertisementPhoto(id: string): Promise<boolean> {
+    // 1. Persist deletion in client localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const deletedIdsStr = localStorage.getItem('alyatama_deleted_ad_ids');
+        const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+        if (!deletedIds.includes(id)) {
+          deletedIds.push(id);
+          localStorage.setItem('alyatama_deleted_ad_ids', JSON.stringify(deletedIds));
+        }
+
+        // 2. Call server-side API to delete from database and server cache
+        await fetch('/api/panel/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', id }),
+        });
+      } catch (err) {
+        console.warn('API delete photo notice:', err);
+      }
+    }
+
+    // 3. Remove from memory
     memAdPhotos = memAdPhotos.filter((p) => p.id !== id);
+
+    // 4. Delete directly from Supabase if client-accessible
     if (isSupabaseConfigured()) {
-      const supabase = createClient();
-      await supabase.from('advertisement_photos').delete().eq('id', id);
+      try {
+        const supabase = createClient();
+        await supabase.from('advertisement_photos').delete().eq('id', id);
+      } catch (e) {
+        console.warn('Supabase delete error:', e);
+      }
     }
     return true;
   },
