@@ -27,8 +27,7 @@ import {
   ShieldCheck,
   PlusCircle,
   Clock,
-  ExternalLink,
-  PanelLeftClose
+  ExternalLink
 } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
@@ -118,24 +117,11 @@ export default function PanelSidebar({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Logo Brand Header — Centered with Larger Logo & Close Button */}
-        <div className="relative py-4 px-4 border-b border-[#44382c] flex items-center justify-center">
+        {/* Logo Brand Header — Centered with Larger Logo */}
+        <div className="py-5 px-4 border-b border-[#44382c] flex items-center justify-center">
           <Link href="/panel" className="flex items-center justify-center" aria-label="Portal ALYATAMA">
             <AlyatamaLogo variant="white" size="md" />
           </Link>
-
-          {/* Close Sidebar Toggle Button */}
-          {onToggle && (
-            <button
-              type="button"
-              onClick={onToggle}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-stone-400 hover:text-white hover:bg-[#44382c] transition cursor-pointer"
-              title="Tutup Sidebar Menu"
-              aria-label="Tutup Sidebar Menu"
-            >
-              <PanelLeftClose className="w-5 h-5 text-[#C6A47B]" />
-            </button>
-          )}
         </div>
 
         {/* Role & Active Shift Banner */}
@@ -407,18 +393,6 @@ export default function PanelSidebar({
 
         {/* Footer Area */}
         <div className="p-3 border-t border-[#44382c] space-y-2">
-          {onToggle && (
-            <button
-              type="button"
-              onClick={onToggle}
-              className="hidden lg:flex w-full items-center justify-center gap-2 py-1.5 px-3 rounded-xl bg-[#241e17] hover:bg-[#3d3326] text-stone-300 hover:text-white text-xs font-medium transition border border-[#44382c] cursor-pointer"
-              title="Tutup Sidebar Menu"
-            >
-              <PanelLeftClose className="w-3.5 h-3.5 text-[#C6A47B]" />
-              <span>Tutup Sidebar Menu</span>
-            </button>
-          )}
-
           <Link
             href="/"
             target="_blank"
