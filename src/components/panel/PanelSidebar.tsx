@@ -364,6 +364,13 @@ export default function PanelSidebar({
                 {settingsOpen && (
                   <div className="pl-9 pr-2 py-1 space-y-1 text-stone-400">
                     <Link
+                      href="/panel/pengaturan/masa-sewa"
+                      onClick={handleNavClick}
+                      className="block py-1 text-xs hover:text-[#C6A47B] font-semibold text-stone-200"
+                    >
+                      Setup Masa Sewa &amp; Tarif
+                    </Link>
+                    <Link
                       href="/panel/pengaturan/tampilan"
                       onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-[#C6A47B]"

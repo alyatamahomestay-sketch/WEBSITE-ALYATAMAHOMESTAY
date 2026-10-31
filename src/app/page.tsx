@@ -21,7 +21,7 @@ import {
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import RoomCard from '@/components/public/RoomCard';
-import RentalSectionWithAdminSetup from '@/components/public/RentalSectionWithAdminSetup';
+import RentalSection from '@/components/public/RentalSection';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
 import { formatRupiah } from '@/lib/formatters';
@@ -216,8 +216,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* PILIHAN MASA SEWA FLEKSIBEL DENGAN SETUP ADMIN KHUSUS */}
-        <RentalSectionWithAdminSetup initialRooms={rooms} />
+        {/* PILIHAN MASA SEWA FLEKSIBEL: REGULER & VIP */}
+        <RentalSection initialRooms={rooms} />
 
         {/* ROOMS SHOWCASE */}
         <section className="w-full py-16 sm:py-20 bg-[#F6F0E7]">
