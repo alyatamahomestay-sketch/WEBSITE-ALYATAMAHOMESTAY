@@ -32,11 +32,15 @@ interface SectionConfig {
   regulerTitle: string;
   regulerDescription: string;
   regulerFacilities: string[];
+  regulerDailyRate?: number;
+  regulerMonthlyRate?: number;
   vipBadge: string;
   vipTagline: string;
   vipTitle: string;
   vipDescription: string;
   vipFacilities: string[];
+  vipDailyRate?: number;
+  vipMonthlyRate?: number;
 }
 
 const DEFAULT_CONFIG: SectionConfig = {
@@ -51,6 +55,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Akses Wi-Fi gratis berkecepatan tinggi',
     'Lingkungan Islami, aman & privasi terjaga 24 jam'
   ],
+  regulerDailyRate: 200000,
+  regulerMonthlyRate: 2200000,
   vipBadge: 'Tipe Kamar VIP',
   vipTagline: 'Prioritas & Nyaman',
   vipTitle: 'Kamar Syariah VIP',
@@ -60,7 +66,9 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Kamar mandi dalam luas + Water Heater (Pemanas Air)',
     'AC dingin, Smart TV, dan meja kerja eksklusif',
     'Area parkir mobil luas & dekat unit kamar'
-  ]
+  ],
+  vipDailyRate: 350000,
+  vipMonthlyRate: 3600000
 };
 
 export default function SetupMasaSewaPage() {
@@ -68,6 +76,7 @@ export default function SetupMasaSewaPage() {
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<SectionConfig>(DEFAULT_CONFIG);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [syncingType, setSyncingType] = useState<'REGULER' | 'VIP' | null>(null);
 
   // Active Tab: 'appearance' (teks seksi), 'rooms' (kelola kamar & tarif), 'preview' (pratinjau)
   const [activeTab, setActiveTab] = useState<'appearance' | 'rooms' | 'preview'>('appearance');
@@ -152,7 +161,7 @@ export default function SetupMasaSewaPage() {
     );
   });
 
-  // Rates for REGULER
+  // Rates for REGULER: Prioritize explicit admin rate setting
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
   const regulerMonthlyRates = regulerRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
@@ -161,15 +170,19 @@ export default function SetupMasaSewaPage() {
   const regulerMonthlyMin = regulerMonthlyRates.length > 0 ? Math.min(...regulerMonthlyRates) : 2200000;
   const regulerMonthlyMax = regulerMonthlyRates.length > 0 ? Math.max(...regulerMonthlyRates) : 2900000;
 
-  const regulerDailyDisplay = regulerDailyMin === regulerDailyMax
-    ? formatRupiah(regulerDailyMin)
-    : `${formatRupiah(regulerDailyMin)} - ${formatRupiah(regulerDailyMax)}`;
+  const regulerDailyDisplay = (config.regulerDailyRate && config.regulerDailyRate > 0)
+    ? formatRupiah(config.regulerDailyRate)
+    : (regulerDailyMin === regulerDailyMax
+        ? formatRupiah(regulerDailyMin)
+        : `${formatRupiah(regulerDailyMin)} - ${formatRupiah(regulerDailyMax)}`);
 
-  const regulerMonthlyDisplay = regulerMonthlyMin === regulerMonthlyMax
-    ? formatRupiah(regulerMonthlyMin)
-    : `${formatRupiah(regulerMonthlyMin)} - ${formatRupiah(regulerMonthlyMax)}`;
+  const regulerMonthlyDisplay = (config.regulerMonthlyRate && config.regulerMonthlyRate > 0)
+    ? formatRupiah(config.regulerMonthlyRate)
+    : (regulerMonthlyMin === regulerMonthlyMax
+        ? formatRupiah(regulerMonthlyMin)
+        : `${formatRupiah(regulerMonthlyMin)} - ${formatRupiah(regulerMonthlyMax)}`);
 
-  // Rates for VIP
+  // Rates for VIP: Prioritize explicit admin rate setting
   const vipDailyRates = vipRooms.map((r) => r.base_rate).filter(Boolean);
   const vipMonthlyRates = vipRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
@@ -178,20 +191,68 @@ export default function SetupMasaSewaPage() {
   const vipMonthlyMin = vipMonthlyRates.length > 0 ? Math.min(...vipMonthlyRates) : 3600000;
   const vipMonthlyMax = vipMonthlyRates.length > 0 ? Math.max(...vipMonthlyRates) : 4500000;
 
-  const vipDailyDisplay = vipDailyMin === vipDailyMax
-    ? formatRupiah(vipDailyMin)
-    : `${formatRupiah(vipDailyMin)} - ${formatRupiah(vipDailyMax)}`;
+  const vipDailyDisplay = (config.vipDailyRate && config.vipDailyRate > 0)
+    ? formatRupiah(config.vipDailyRate)
+    : (vipDailyMin === vipDailyMax
+        ? formatRupiah(vipDailyMin)
+        : `${formatRupiah(vipDailyMin)} - ${formatRupiah(vipDailyMax)}`);
 
-  const vipMonthlyDisplay = vipMonthlyMin === vipMonthlyMax
-    ? formatRupiah(vipMonthlyMin)
-    : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`;
+  const vipMonthlyDisplay = (config.vipMonthlyRate && config.vipMonthlyRate > 0)
+    ? formatRupiah(config.vipMonthlyRate)
+    : (vipMonthlyMin === vipMonthlyMax
+        ? formatRupiah(vipMonthlyMin)
+        : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`);
 
   // Save Content Config
   const handleSaveConfig = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('alyatama_rental_section_config', JSON.stringify(config));
+      window.dispatchEvent(new Event('storage'));
     }
     showNotification('Pengaturan tampilan seksi Masa Sewa berhasil disimpan!');
+  };
+
+  // Direct Save Specific Rates from Card
+  const handleSaveSpecificRates = (type: 'REGULER' | 'VIP') => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('alyatama_rental_section_config', JSON.stringify(config));
+      window.dispatchEvent(new Event('storage'));
+    }
+    const daily = type === 'VIP' ? config.vipDailyRate : config.regulerDailyRate;
+    const monthly = type === 'VIP' ? config.vipMonthlyRate : config.regulerMonthlyRate;
+    showNotification(`Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan) dan langsung aktif di halaman pengunjung!`);
+  };
+
+  // Sync rates to database room records
+  const handleSyncRatesToRooms = async (type: 'REGULER' | 'VIP') => {
+    const targetRooms = type === 'VIP' ? vipRooms : regulerRooms;
+    const daily = type === 'VIP' ? (config.vipDailyRate || 350000) : (config.regulerDailyRate || 200000);
+    const monthly = type === 'VIP' ? (config.vipMonthlyRate || 3600000) : (config.regulerMonthlyRate || 2200000);
+
+    if (targetRooms.length === 0) {
+      alert(`Tidak ada data unit kamar ${type} aktif untuk disinkronkan.`);
+      return;
+    }
+
+    if (!confirm(`Terapkan tarif ${formatRupiah(daily)}/malam dan ${formatRupiah(monthly)}/bulan ke seluruh ${targetRooms.length} unit kamar ${type} di database?`)) {
+      return;
+    }
+
+    setSyncingType(type);
+    try {
+      for (const rm of targetRooms) {
+        await PmsService.updateRoom(rm.id, {
+          base_rate: daily,
+          monthly_rate: monthly
+        });
+      }
+      await loadData();
+      showNotification(`Berhasil menyinkronkan tarif ke seluruh ${targetRooms.length} unit kamar ${type} di database!`);
+    } catch (err: any) {
+      alert(`Gagal menyinkronkan tarif: ${err?.message || err}`);
+    } finally {
+      setSyncingType(null);
+    }
   };
 
   const handleResetConfig = () => {
@@ -199,6 +260,7 @@ export default function SetupMasaSewaPage() {
       setConfig(DEFAULT_CONFIG);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('alyatama_rental_section_config');
+        window.dispatchEvent(new Event('storage'));
       }
       showNotification('Pengaturan tampilan dikembalikan ke standar awal.');
     }
@@ -355,58 +417,242 @@ export default function SetupMasaSewaPage() {
         </div>
       )}
 
-      {/* Overview Cards: Kamar & Tarif Terpantau */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Card REGULER Info */}
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#30291F] text-white">
-              Tipe REGULER
-            </span>
-            <span className="text-xs text-stone-500 font-medium">
-              {regulerRooms.length} Unit Kamar Aktif
-            </span>
+      {/* Overview Cards: Edit Tarif Langsung & Pantau Unit */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        {/* Card REGULER */}
+        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#30291F] text-white">
+                {config.regulerBadge || 'Tipe Kamar Reguler'}
+              </span>
+              <span className="text-xs text-stone-500 font-medium bg-stone-100 px-2.5 py-0.5 rounded-full">
+                {regulerRooms.length} Unit Kamar Aktif
+              </span>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-serif font-bold text-stone-900">
+                {config.regulerTitle || 'Kamar Syariah Reguler'}
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Tentukan harga sewa harian dan bulanan yang langsung tampil pada card Reguler halaman pengunjung.
+              </p>
+            </div>
+
+            {/* Input Form Edit Tarif Langsung */}
+            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+                  <Edit3 className="w-3.5 h-3.5 text-[#806044]" />
+                  Edit Tarif Ditampilkan:
+                </span>
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  Langsung Tampil di Web
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Tarif Harian Input */}
+                <div className="bg-white p-3 rounded-xl border border-stone-200 space-y-1">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    Tarif Harian (Per Malam):
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-stone-400 font-bold text-xs">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="5000"
+                      value={config.regulerDailyRate ?? 200000}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          regulerDailyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#806044] focus:outline-hidden focus:ring-1 focus:ring-[#806044]"
+                      placeholder="200000"
+                    />
+                  </div>
+                  <span className="text-[10px] text-stone-500 block">
+                    Tampil: <strong className="text-[#806044]">{formatRupiah(config.regulerDailyRate || 0)}</strong> / malam
+                  </span>
+                </div>
+
+                {/* Tarif Bulanan Input */}
+                <div className="bg-white p-3 rounded-xl border border-stone-200 space-y-1">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    Tarif Bulanan (30 Hari):
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-stone-400 font-bold text-xs">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="50000"
+                      value={config.regulerMonthlyRate ?? 2200000}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          regulerMonthlyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#65715A] focus:outline-hidden focus:ring-1 focus:ring-[#65715A]"
+                      placeholder="2200000"
+                    />
+                  </div>
+                  <span className="text-[10px] text-stone-500 block">
+                    Tampil: <strong className="text-[#65715A]">{formatRupiah(config.regulerMonthlyRate || 0)}</strong> / bulan
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <h3 className="text-base font-bold text-stone-900">
-            {config.regulerTitle}
-          </h3>
-          <div className="pt-2 border-t border-stone-100 grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 bg-stone-50 rounded-xl">
-              <span className="text-[10px] text-stone-500 block">Tarif Harian Terpantau:</span>
-              <span className="font-bold text-[#806044] text-sm">{regulerDailyDisplay}</span>
-            </div>
-            <div className="p-2.5 bg-stone-50 rounded-xl">
-              <span className="text-[10px] text-stone-500 block">Tarif Bulanan Terpantau:</span>
-              <span className="font-bold text-[#65715A] text-sm">{regulerMonthlyDisplay}</span>
-            </div>
+
+          {/* Action Buttons on Card */}
+          <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSaveSpecificRates('REGULER')}
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#30291F] hover:bg-[#201A13] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Simpan Tarif REGULER
+            </button>
+            <button
+              type="button"
+              disabled={syncingType === 'REGULER'}
+              onClick={() => handleSyncRatesToRooms('REGULER')}
+              className="w-full sm:w-auto py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+              title="Terapkan tarif ini ke seluruh data unit kamar REGULER di database"
+            >
+              <RotateCcw className={'w-3.5 h-3.5 ' + (syncingType === 'REGULER' ? 'animate-spin' : '')} />
+              <span>{syncingType === 'REGULER' ? 'Menyinkronkan...' : ('Sinkron DB (' + regulerRooms.length + ' Kamar)')}</span>
+            </button>
           </div>
         </div>
 
-        {/* Card VIP Info */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-[#806044]/60 shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-[#C9A84C]" />
-              Tipe VIP
-            </span>
-            <span className="text-xs text-stone-500 font-medium">
-              {vipRooms.length} Unit Kamar Aktif
-            </span>
+        {/* Card VIP */}
+        <div className="bg-white p-6 rounded-3xl border-2 border-[#806044] shadow-xs flex flex-col justify-between space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 bg-[#806044] text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded-bl-xl tracking-wider">
+            {config.vipTagline || 'Prioritas & Nyaman'}
           </div>
-          <h3 className="text-base font-bold text-stone-900">
-            {config.vipTitle}
-          </h3>
-          <div className="pt-2 border-t border-stone-100 grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 bg-[#FAF7F2] rounded-xl">
-              <span className="text-[10px] text-stone-500 block">Tarif Harian Terpantau:</span>
-              <span className="font-bold text-[#806044] text-sm">{vipDailyDisplay}</span>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
+                {config.vipBadge || 'Tipe Kamar VIP'}
+              </span>
+              <span className="text-xs text-stone-500 font-medium bg-amber-50 border border-amber-200 text-amber-800 px-2.5 py-0.5 rounded-full pr-24 sm:pr-28">
+                {vipRooms.length} Unit Kamar Aktif
+              </span>
             </div>
-            <div className="p-2.5 bg-[#FAF7F2] rounded-xl">
-              <span className="text-[10px] text-stone-500 block">Tarif Bulanan Terpantau:</span>
-              <span className="font-bold text-[#65715A] text-sm">{vipMonthlyDisplay}</span>
+
+            <div>
+              <h3 className="text-lg font-serif font-bold text-stone-900">
+                {config.vipTitle || 'Kamar Syariah VIP'}
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Tentukan harga sewa harian dan bulanan yang langsung tampil pada card VIP halaman pengunjung.
+              </p>
             </div>
+
+            {/* Input Form Edit Tarif Langsung */}
+            <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-[#E5DCD0] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#806044] flex items-center gap-1.5">
+                  <Edit3 className="w-3.5 h-3.5 text-[#806044]" />
+                  Edit Tarif Ditampilkan:
+                </span>
+                <span className="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                  Langsung Tampil di Web
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Tarif Harian Input */}
+                <div className="bg-white p-3 rounded-xl border border-[#E5DCD0] space-y-1">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    Tarif Harian VIP (Per Malam):
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-stone-400 font-bold text-xs">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="5000"
+                      value={config.vipDailyRate ?? 350000}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          vipDailyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#806044] focus:outline-hidden focus:ring-1 focus:ring-[#806044]"
+                      placeholder="350000"
+                    />
+                  </div>
+                  <span className="text-[10px] text-stone-500 block">
+                    Tampil: <strong className="text-[#806044]">{formatRupiah(config.vipDailyRate || 0)}</strong> / malam
+                  </span>
+                </div>
+
+                {/* Tarif Bulanan Input */}
+                <div className="bg-white p-3 rounded-xl border border-[#E5DCD0] space-y-1">
+                  <label className="text-[11px] font-bold text-stone-700 block">
+                    Tarif Bulanan VIP (30 Hari):
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-stone-400 font-bold text-xs">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="50000"
+                      value={config.vipMonthlyRate ?? 3600000}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          vipMonthlyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#65715A] focus:outline-hidden focus:ring-1 focus:ring-[#65715A]"
+                      placeholder="3600000"
+                    />
+                  </div>
+                  <span className="text-[10px] text-stone-500 block">
+                    Tampil: <strong className="text-[#65715A]">{formatRupiah(config.vipMonthlyRate || 0)}</strong> / bulan
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons on Card */}
+          <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSaveSpecificRates('VIP')}
+              className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#806044] hover:bg-[#684D36] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Simpan Tarif VIP
+            </button>
+            <button
+              type="button"
+              disabled={syncingType === 'VIP'}
+              onClick={() => handleSyncRatesToRooms('VIP')}
+              className="w-full sm:w-auto py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+              title="Terapkan tarif ini ke seluruh data unit kamar VIP di database"
+            >
+              <RotateCcw className={'w-3.5 h-3.5 ' + (syncingType === 'VIP' ? 'animate-spin' : '')} />
+              <span>{syncingType === 'VIP' ? 'Menyinkronkan...' : ('Sinkron DB (' + vipRooms.length + ' Kamar)')}</span>
+            </button>
           </div>
         </div>
+
       </div>
 
       {/* Tabs */}
@@ -537,6 +783,46 @@ export default function SetupMasaSewaPage() {
                   className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-mono"
                 />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-0.5">
+                    Tarif Harian Reguler (Rp/malam):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="5000"
+                    value={config.regulerDailyRate ?? 200000}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        regulerDailyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                    className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-bold text-[#806044]"
+                  />
+                  <span className="text-[10px] text-stone-500">{formatRupiah(config.regulerDailyRate || 0)} / malam</span>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-0.5">
+                    Tarif Bulanan Reguler (Rp/bulan):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50000"
+                    value={config.regulerMonthlyRate ?? 2200000}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        regulerMonthlyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                    className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-bold text-[#65715A]"
+                  />
+                  <span className="text-[10px] text-stone-500">{formatRupiah(config.regulerMonthlyRate || 0)} / bulan</span>
+                </div>
+              </div>
             </div>
 
             {/* VIP Config Box */}
@@ -597,6 +883,46 @@ export default function SetupMasaSewaPage() {
                   }
                   className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-mono"
                 />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-0.5">
+                    Tarif Harian VIP (Rp/malam):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="5000"
+                    value={config.vipDailyRate ?? 350000}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        vipDailyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                    className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-bold text-[#806044]"
+                  />
+                  <span className="text-[10px] text-stone-500">{formatRupiah(config.vipDailyRate || 0)} / malam</span>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-0.5">
+                    Tarif Bulanan VIP (Rp/bulan):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50000"
+                    value={config.vipMonthlyRate ?? 3600000}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        vipMonthlyRate: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                    className="w-full text-xs p-2 rounded-lg border border-stone-300 bg-white font-bold text-[#65715A]"
+                  />
+                  <span className="text-[10px] text-stone-500">{formatRupiah(config.vipMonthlyRate || 0)} / bulan</span>
+                </div>
               </div>
             </div>
           </div>

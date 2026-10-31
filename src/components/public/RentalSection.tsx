@@ -19,11 +19,15 @@ interface SectionConfig {
   regulerTitle: string;
   regulerDescription: string;
   regulerFacilities: string[];
+  regulerDailyRate?: number;
+  regulerMonthlyRate?: number;
   vipBadge: string;
   vipTagline: string;
   vipTitle: string;
   vipDescription: string;
   vipFacilities: string[];
+  vipDailyRate?: number;
+  vipMonthlyRate?: number;
 }
 
 const DEFAULT_CONFIG: SectionConfig = {
@@ -38,6 +42,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Akses Wi-Fi gratis berkecepatan tinggi',
     'Lingkungan Islami, aman & privasi terjaga 24 jam'
   ],
+  regulerDailyRate: 200000,
+  regulerMonthlyRate: 2200000,
   vipBadge: 'Tipe Kamar VIP',
   vipTagline: 'Prioritas & Nyaman',
   vipTitle: 'Kamar Syariah VIP',
@@ -47,7 +53,9 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Kamar mandi dalam luas + Water Heater (Pemanas Air)',
     'AC dingin, Smart TV, dan meja kerja eksklusif',
     'Area parkir mobil luas & dekat unit kamar'
-  ]
+  ],
+  vipDailyRate: 350000,
+  vipMonthlyRate: 3600000
 };
 
 interface RentalSectionProps {
@@ -60,14 +68,27 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
 
   // Load custom content config set by admin in panel if available
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedConfig = localStorage.getItem('alyatama_rental_section_config');
-      if (savedConfig) {
-        try {
-          setConfig(JSON.parse(savedConfig));
-        } catch (e) {}
+    const readConfig = () => {
+      if (typeof window !== 'undefined') {
+        const savedConfig = localStorage.getItem('alyatama_rental_section_config');
+        if (savedConfig) {
+          try {
+            setConfig(JSON.parse(savedConfig));
+          } catch (e) {}
+        }
       }
-    }
+    };
+
+    readConfig();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'alyatama_rental_section_config') {
+        readConfig();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   // Group rooms into REGULER and VIP
@@ -104,7 +125,7 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
     );
   });
 
-  // Rates for REGULER
+  // Rates for REGULER: Admin explicit setting takes highest priority
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
   const regulerMonthlyRates = regulerRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
@@ -113,15 +134,19 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
   const regulerMonthlyMin = regulerMonthlyRates.length > 0 ? Math.min(...regulerMonthlyRates) : 2200000;
   const regulerMonthlyMax = regulerMonthlyRates.length > 0 ? Math.max(...regulerMonthlyRates) : 2900000;
 
-  const regulerDailyDisplay = regulerDailyMin === regulerDailyMax
-    ? formatRupiah(regulerDailyMin)
-    : `${formatRupiah(regulerDailyMin)} - ${formatRupiah(regulerDailyMax)}`;
+  const regulerDailyDisplay = (config.regulerDailyRate && config.regulerDailyRate > 0)
+    ? formatRupiah(config.regulerDailyRate)
+    : (regulerDailyMin === regulerDailyMax
+        ? formatRupiah(regulerDailyMin)
+        : `${formatRupiah(regulerDailyMin)} - ${formatRupiah(regulerDailyMax)}`);
 
-  const regulerMonthlyDisplay = regulerMonthlyMin === regulerMonthlyMax
-    ? formatRupiah(regulerMonthlyMin)
-    : `${formatRupiah(regulerMonthlyMin)} - ${formatRupiah(regulerMonthlyMax)}`;
+  const regulerMonthlyDisplay = (config.regulerMonthlyRate && config.regulerMonthlyRate > 0)
+    ? formatRupiah(config.regulerMonthlyRate)
+    : (regulerMonthlyMin === regulerMonthlyMax
+        ? formatRupiah(regulerMonthlyMin)
+        : `${formatRupiah(regulerMonthlyMin)} - ${formatRupiah(regulerMonthlyMax)}`);
 
-  // Rates for VIP
+  // Rates for VIP: Admin explicit setting takes highest priority
   const vipDailyRates = vipRooms.map((r) => r.base_rate).filter(Boolean);
   const vipMonthlyRates = vipRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
@@ -130,13 +155,17 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
   const vipMonthlyMin = vipMonthlyRates.length > 0 ? Math.min(...vipMonthlyRates) : 3600000;
   const vipMonthlyMax = vipMonthlyRates.length > 0 ? Math.max(...vipMonthlyRates) : 4500000;
 
-  const vipDailyDisplay = vipDailyMin === vipDailyMax
-    ? formatRupiah(vipDailyMin)
-    : `${formatRupiah(vipDailyMin)} - ${formatRupiah(vipDailyMax)}`;
+  const vipDailyDisplay = (config.vipDailyRate && config.vipDailyRate > 0)
+    ? formatRupiah(config.vipDailyRate)
+    : (vipDailyMin === vipDailyMax
+        ? formatRupiah(vipDailyMin)
+        : `${formatRupiah(vipDailyMin)} - ${formatRupiah(vipDailyMax)}`);
 
-  const vipMonthlyDisplay = vipMonthlyMin === vipMonthlyMax
-    ? formatRupiah(vipMonthlyMin)
-    : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`;
+  const vipMonthlyDisplay = (config.vipMonthlyRate && config.vipMonthlyRate > 0)
+    ? formatRupiah(config.vipMonthlyRate)
+    : (vipMonthlyMin === vipMonthlyMax
+        ? formatRupiah(vipMonthlyMin)
+        : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`);
 
   return (
     <section className="w-full bg-[#E7D8C5] border-b border-[#D4C3AD] py-14 sm:py-18">
