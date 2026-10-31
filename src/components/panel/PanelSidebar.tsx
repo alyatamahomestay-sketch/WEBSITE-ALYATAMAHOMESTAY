@@ -371,6 +371,13 @@ export default function PanelSidebar({
                       Setup Masa Sewa &amp; Tarif
                     </Link>
                     <Link
+                      href="/panel/pengaturan/fasilitas"
+                      onClick={handleNavClick}
+                      className="block py-1 text-xs hover:text-[#C6A47B] font-semibold text-stone-200"
+                    >
+                      Setup Fasilitas Homestay
+                    </Link>
+                    <Link
                       href="/panel/pengaturan/tampilan"
                       onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-[#C6A47B]"

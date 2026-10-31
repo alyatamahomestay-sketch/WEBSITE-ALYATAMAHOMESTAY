@@ -165,6 +165,49 @@ export default function SetupTampilanWebsitePage() {
         </div>
       )}
 
+      {/* Quick Setup Modules (Masa Sewa & Fasilitas) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          href="/panel/pengaturan/fasilitas"
+          className="bg-white p-5 rounded-2xl border border-stone-200 hover:border-[#806044] shadow-xs hover:shadow-md transition group flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-[#806044]/15 text-[#806044] group-hover:bg-[#806044] group-hover:text-white transition shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-stone-900 group-hover:text-[#806044]">
+                Setup Fasilitas Homestay
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-1 transition" />
+            </div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              Kontrol penuh teks 6 kartu fasilitas syariah, ganti ikon, tambah atau hapus fasilitas yang tampil di homepage.
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/panel/pengaturan/masa-sewa"
+          className="bg-white p-5 rounded-2xl border border-stone-200 hover:border-[#806044] shadow-xs hover:shadow-md transition group flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-[#30291F]/15 text-[#30291F] group-hover:bg-[#30291F] group-hover:text-white transition shrink-0">
+            <BedDouble className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-stone-900 group-hover:text-[#806044]">
+                Setup Masa Sewa &amp; Tarif
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-1 transition" />
+            </div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              Atur tarif harian dan bulanan langsung pada card tipe REGULER &amp; VIP serta fasilitas tiap tipe kamar.
+            </p>
+          </div>
+        </Link>
+      </div>
+
       <form onSubmit={handleSave} className="space-y-6">
         
         {/* 1. Pengumuman Atas (Top Announcement Bar) */}

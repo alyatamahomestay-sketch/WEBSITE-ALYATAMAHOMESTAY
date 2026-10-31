@@ -22,6 +22,7 @@ import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import RoomCard from '@/components/public/RoomCard';
 import RentalSection from '@/components/public/RentalSection';
+import FacilitiesSection from '@/components/public/FacilitiesSection';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
 import { formatRupiah } from '@/lib/formatters';
@@ -248,98 +249,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 6 CORE FACILITIES (FROM OFFICIAL FLYER) */}
-        <section className="w-full py-16 sm:py-20 bg-white border-y border-[#E5DCD0]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-2">
-                Fasilitas Homestay
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21] mb-2">
-                Fasilitas Nyaman Berstandar Syariah
-              </h2>
-              <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
-                Dirancang untuk mendukung istirahat yang berkualitas dan menjaga kenyamanan ibadah selama menginap.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-3">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  1. Lingkungan Islami & Nyaman
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Suasana tenang dan tertib, bebas dari kebisingan serta aktivitas yang bertentangan dengan norma kesusilaan.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-3">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  2. Aman & Privasi Terjaga
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Akses teratur yang menjamin privasi keluarga maupun tamu perorangan sesuai adab menginap yang santun.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-3">
-                  <BedDouble className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  3. Kamar Bersih & Nyaman
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Kasur empuk, sprei higienis yang rutin disterilisasi, kamar mandi dalam bersih, serta sirkulasi udara baik.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-3">
-                  <Wifi className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  4. Wi-Fi Gratis di Setiap Area
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Koneksi internet nirkabel stabil untuk bekerja daring, koordinasi tugas kantor, maupun komunikasi keluarga.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center mb-3">
-                  <Wind className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  5. AC di Setiap Kamar
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Setiap unit kamar dilengkapi pendingin udara (AC) yang terawat untuk kenyamanan istirahat maksimal.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-[#E5DCD0] bg-[#FAF7F2] space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center mb-3">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif font-semibold text-base text-[#392B21]">
-                  6. Keamanan Lingkungan 24 Jam
-                </h3>
-                <p className="text-xs text-[#756A5F] leading-relaxed">
-                  Pengawasan lingkungan homestay terpadu dengan area parkir kendaraan yang aman bagi mobil dan motor tamu.
-                </p>
-              </div>
-
-            </div>
-          </div>
-        </section>
+        {/* 6 CORE FACILITIES (FROM OFFICIAL FLYER & ADMIN CONTROLLED) */}
+        <FacilitiesSection />
 
         {/* SOCIAL MISSION & CHARITY */}
         <section className="w-full bg-[#392B21] text-[#F6F0E7] py-14 border-b border-[#4D3B2E]">
