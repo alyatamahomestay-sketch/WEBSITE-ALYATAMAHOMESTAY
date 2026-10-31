@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Printer, ArrowLeft, CheckCircle2, ShieldCheck, QrCode, CreditCard } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
+import SlipActionButtons from '@/components/public/SlipActionButtons';
 import { PmsService } from '@/lib/services/pms-service';
 import { 
   formatRupiah, 
@@ -37,26 +38,11 @@ export default async function SlipPage({ params }: SlipPageProps) {
   return (
     <div className="min-h-screen bg-stone-100 py-6 sm:py-12 print:bg-white print:py-0 text-stone-900 font-sans">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        {/* Print & Back Controls (Hidden in Print) */}
-        <div className="no-print mb-6 flex items-center justify-between gap-4">
-          <Link
-            href={`/status-reservasi?res_num=${reservation.reservation_number}`}
-            className="text-xs text-stone-600 hover:text-stone-900 font-medium inline-flex items-center gap-1.5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Kembali ke Status Reservasi
-          </Link>
-
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') window.print();
-            }}
-            className="bg-stone-900 hover:bg-stone-800 text-stone-100 text-xs font-medium px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm"
-          >
-            <Printer className="w-4 h-4 text-brand-400" />
-            Cetak / Simpan PDF
-          </button>
-        </div>
+        <SlipActionButtons
+          reservation={reservation}
+          propertySettings={property}
+          paymentMethods={paymentMethods}
+        />
 
         {/* Official Document Card */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-8 sm:p-12 print:border-none print:shadow-none print:p-0 space-y-8">

@@ -18,7 +18,9 @@ import {
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import { PmsService } from '@/lib/services/pms-service';
-import { Reservation } from '@/lib/types';
+import { Reservation, PropertySettings, PaymentMethod } from '@/lib/types';
+import { downloadReservationSlipJpg, getGuestToAdminWhatsAppUrl } from '@/lib/services/slip-image-generator';
+import { Download, MessageSquare } from 'lucide-react';
 import { 
   formatRupiah, 
   formatDateIndo, 
@@ -36,6 +38,42 @@ function StatusReservasiContent() {
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [searched, setSearched] = useState(false);
   const [notFoundMessage, setNotFoundMessage] = useState('');
+  const [propertySettings, setPropertySettings] = useState<PropertySettings | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [downloadingJpg, setDownloadingJpg] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [prop, pm] = await Promise.all([
+          PmsService.getPropertySettings(),
+          PmsService.getPaymentMethods(),
+        ]);
+        setPropertySettings(prop);
+        setPaymentMethods(pm);
+      } catch (e) {}
+    }
+    loadMeta();
+  }, []);
+
+  const handleDownloadJpg = async () => {
+    if (!reservation) return;
+    setDownloadingJpg(true);
+    try {
+      const res = await downloadReservationSlipJpg(reservation, propertySettings, paymentMethods);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 6000);
+    } catch (err: any) {
+      alert(`Gagal mengunduh gambar bukti reservasi: ${err?.message || err}`);
+    } finally {
+      setDownloadingJpg(false);
+    }
+  };
+
+  const adminWaUrl = reservation
+    ? getGuestToAdminWhatsAppUrl({ reservation, propertySettings })
+    : '#';
 
   const handleSearch = async (numToSearch: string) => {
     if (!numToSearch.trim()) return;
@@ -143,6 +181,66 @@ function StatusReservasiContent() {
 
               {reservation && (
                 <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-6">
+                  {/* Kirim Bukti Pemesanan ke WhatsApp Admin (.JPG) */}
+                  <div className="p-6 bg-[#FAF7F2] border-2 border-[#806044]/40 rounded-2xl space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044]/15 text-[#806044] mb-2">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Langkah Wajib Pengunjung
+                        </span>
+                        <h3 className="font-serif font-bold text-lg sm:text-xl text-[#392B21]">
+                          Kirimkan Bukti Pemesanan ke WhatsApp Admin
+                        </h3>
+                        <p className="text-xs text-[#756A5F] mt-1 leading-relaxed max-w-xl">
+                          Silakan unduh file bukti pemesanan berformat <strong>.JPG</strong> di bawah ini, lalu klik tombol WhatsApp untuk diarahkan langsung ke WhatsApp admin resmi ALYATAMA dan lampirkan gambar tersebut.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <button
+                        onClick={handleDownloadJpg}
+                        disabled={downloadingJpg}
+                        className="inline-flex items-center gap-2 bg-[#392B21] hover:bg-[#231a14] text-white text-xs sm:text-sm font-bold px-5 py-3 rounded-xl transition shadow-xs cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-[#C9A84C]" />
+                        <span>{downloadingJpg ? 'Menyiapkan Gambar...' : 'Download Bukti Pemesanan (.JPG)'}</span>
+                      </button>
+
+                      <a
+                        href={adminWaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold px-5 py-3 rounded-xl transition shadow-xs"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Kirim Bukti via WhatsApp Admin</span>
+                      </a>
+
+                      <Link
+                        href={`/slip/${reservation.id}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-2 bg-white hover:bg-stone-50 text-[#806044] border border-[#D4C3AD] text-xs font-semibold px-4 py-3 rounded-xl transition shadow-2xs"
+                      >
+                        <FileText className="w-4 h-4 text-[#806044]" />
+                        <span>Buka Slip & PDF</span>
+                      </Link>
+                    </div>
+
+                    {downloadSuccess && (
+                      <div className="p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-xs text-emerald-950 flex items-center gap-2 animate-in fade-in">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <span>File <strong>Bukti-Reservasi-{reservation.reservation_number}.jpg</strong> berhasil diunduh! Klik <strong>Kirim Bukti via WhatsApp Admin</strong> untuk mengirimkannya ke pengelola.</span>
+                      </div>
+                    )}
+
+                    <div className="text-[11px] text-[#756A5F] flex items-center gap-1.5 pt-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Nomor WhatsApp Admin Resmi: <strong>{propertySettings?.whatsapp_number || propertySettings?.phone || '0822-8547-2008'}</strong> (Terkoneksi langsung ke menu Pengaturan Properti).</span>
+                    </div>
+                  </div>
+
                   {/* Status Badges Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#FAF7F2]">
                     <div>

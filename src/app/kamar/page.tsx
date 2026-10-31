@@ -9,7 +9,7 @@ import { PmsService } from '@/lib/services/pms-service';
 export const revalidate = 0;
 
 export default async function KamarPage() {
-  const rooms = await PmsService.getRooms();
+  const [rooms, reservations] = await Promise.all([PmsService.getRooms(), PmsService.getReservations()]);
 
   return (
     <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
@@ -72,7 +72,7 @@ export default async function KamarPage() {
           {/* Grid Rooms */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {rooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
+              <RoomCard key={room.id} room={room} reservations={reservations} />
             ))}
           </div>
 

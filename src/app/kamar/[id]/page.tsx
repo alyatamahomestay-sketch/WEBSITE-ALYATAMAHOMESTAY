@@ -21,6 +21,8 @@ import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import { PmsService } from '@/lib/services/pms-service';
 import { formatRupiah } from '@/lib/formatters';
+import { evaluateRoomAvailability } from '@/lib/room-availability';
+import { XCircle } from 'lucide-react';
 
 interface RoomDetailPageProps {
   params: { id: string };
@@ -29,12 +31,17 @@ interface RoomDetailPageProps {
 export const revalidate = 0;
 
 export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
-  const room = await PmsService.getRoomById(params.id);
+  const [room, reservations] = await Promise.all([
+    PmsService.getRoomById(params.id),
+    PmsService.getReservations(),
+  ]);
 
   if (!room) {
     notFound();
   }
 
+  const availability = evaluateRoomAvailability(room, reservations);
+  const isAvail = availability.isAvailable;
   const primaryPhoto = room.photos?.[0] || '/images/alyatama-flyer.jpg';
   const secondaryPhotos = room.photos?.slice(1) || [];
 
@@ -98,6 +105,17 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                     <span className="bg-[#806044]/15 text-[#806044] border border-[#806044]/30 text-xs font-semibold px-2.5 py-1 rounded-md">
                       {room.room_type}
                     </span>
+                    {isAvail ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                        Tersedia
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
+                        <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                        Tidak Tersedia
+                      </span>
+                    )}
                     <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-md flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
                       Prinsip Syariah

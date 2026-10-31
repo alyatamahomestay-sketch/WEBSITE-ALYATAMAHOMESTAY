@@ -68,9 +68,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (room.operational_status === 'dalam_perawatan' || room.operational_status === 'tidak_dijual_sementara') {
+    if (room.operational_status === 'dalam_perawatan' || room.operational_status === 'tidak_dijual_sementara' || room.operational_status === 'ditempati') {
       return NextResponse.json(
-        { success: false, message: 'Kamar saat ini dalam masa perbaikan dan belum dapat dipesan.' },
+        { success: false, message: 'Kamar saat ini berstatus Tidak Tersedia (sedang ditempati tamu atau dalam perawatan) dan belum dapat dipesan sampai tamu check-out.' },
         { status: 400 }
       );
     }

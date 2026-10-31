@@ -46,6 +46,69 @@ let memProperty: PropertySettings = { ...INITIAL_PROPERTY_SETTINGS };
 let memAdPhotos: AdvertisementPhoto[] = [...INITIAL_AD_PHOTOS];
 let memStaffUsers: StaffUser[] = [...INITIAL_STAFF_USERS];
 
+function syncMemPropertyToStorage(property: PropertySettings) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alyatama_property_settings', JSON.stringify(property));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+  }
+}
+
+function loadMemPropertyFromStorage(): PropertySettings | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('alyatama_property_settings');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+  }
+  return null;
+}
+
+function syncMemRoomsToStorage(rooms: Room[]) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alyatama_rooms_data', JSON.stringify(rooms));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+  }
+}
+
+function loadMemRoomsFromStorage(): Room[] | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('alyatama_rooms_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+function syncMemReservationsToStorage(reservations: Reservation[]) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alyatama_reservations_data', JSON.stringify(reservations));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+  }
+}
+
+function loadMemReservationsFromStorage(): Reservation[] | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('alyatama_reservations_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
 function syncMemStaffUsersToStorage(users: StaffUser[]) {
   if (typeof window !== 'undefined') {
     try {
@@ -84,34 +147,55 @@ let memAuditLogs: AuditLog[] = [
 export const PmsService = {
   // --- PROPERTIES ---
   async getPropertySettings(): Promise<PropertySettings> {
+    const fromStorage = loadMemPropertyFromStorage();
+    if (fromStorage) {
+      memProperty = fromStorage;
+      return memProperty;
+    }
     if (!isSupabaseConfigured()) {
+      syncMemPropertyToStorage(memProperty);
       return memProperty;
     }
     const supabase = createClient();
     const { data, error } = await supabase.from('properties').select('*').limit(1).single();
-    if (error || !data) return memProperty;
-    return data as PropertySettings;
+    if (error || !data) {
+      syncMemPropertyToStorage(memProperty);
+      return memProperty;
+    }
+    memProperty = data as PropertySettings;
+    syncMemPropertyToStorage(memProperty);
+    return memProperty;
   },
 
   async updatePropertySettings(updates: Partial<PropertySettings>): Promise<PropertySettings> {
-    if (!isSupabaseConfigured()) {
-      memProperty = { ...memProperty, ...updates, updated_at: new Date().toISOString() };
-      return memProperty;
+    memProperty = { ...memProperty, ...updates, updated_at: new Date().toISOString() };
+    syncMemPropertyToStorage(memProperty);
+
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('properties')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', memProperty.id)
+        .select()
+        .single();
+      if (!error && data) {
+        memProperty = data as PropertySettings;
+        syncMemPropertyToStorage(memProperty);
+      }
     }
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('properties')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', memProperty.id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data as PropertySettings;
+    return memProperty;
   },
 
   // --- ROOMS ---
   async getRooms(includeArchived = false): Promise<Room[]> {
+    const fromStorage = loadMemRoomsFromStorage();
+    if (fromStorage && fromStorage.length > 0) {
+      memRooms = fromStorage;
+      return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
+    }
     if (!isSupabaseConfigured()) {
+      syncMemRoomsToStorage(memRooms);
       return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
     }
     const supabase = createClient();
@@ -120,21 +204,31 @@ export const PmsService = {
       query = query.eq('is_archived', false);
     }
     const { data, error } = await query;
-    if (error) return memRooms.filter(r => includeArchived || !r.is_archived);
-    return data as Room[];
+    if (error || !data || data.length === 0) {
+      syncMemRoomsToStorage(memRooms);
+      return memRooms.filter(r => includeArchived || !r.is_archived);
+    }
+    memRooms = data as Room[];
+    syncMemRoomsToStorage(memRooms);
+    return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
   },
 
   async getRoomById(id: string): Promise<Room | null> {
-    if (!isSupabaseConfigured()) {
-      return memRooms.find(r => r.id === id) || null;
-    }
-    const supabase = createClient();
-    const { data, error } = await supabase.from('rooms').select('*').eq('id', id).single();
-    if (error) return memRooms.find(r => r.id === id) || null;
-    return data as Room;
+    const rooms = await this.getRooms(true);
+    return rooms.find(r => r.id === id) || null;
   },
 
   async createRoom(room: Omit<Room, 'id' | 'created_at' | 'updated_at'>): Promise<Room> {
+    const newRoom: Room = {
+      ...room,
+      id: 'room-' + Date.now(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    memRooms = [...memRooms, newRoom];
+    syncMemRoomsToStorage(memRooms);
+
     if (typeof window !== 'undefined') {
       try {
         const res = await fetch('/api/panel/rooms', {
@@ -144,35 +238,34 @@ export const PmsService = {
         });
         const json = await res.json();
         if (json.success && json.room) {
+          const idx = memRooms.findIndex(r => r.id === newRoom.id);
+          if (idx !== -1) memRooms[idx] = json.room;
+          syncMemRoomsToStorage(memRooms);
           return json.room;
         }
-        if (!json.success && json.error) {
-          throw new Error(json.error);
-        }
-      } catch (err: any) {
-        if (!err.message?.includes('fetch failed')) {
-          throw err;
-        }
-      }
+      } catch (err: any) {}
     }
 
-    const newRoom: Room = {
-      ...room,
-      id: 'room-' + Date.now(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    if (!isSupabaseConfigured()) {
-      memRooms.push(newRoom);
-      return newRoom;
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('rooms').insert([room]).select().single();
+      if (!error && data) {
+        const idx = memRooms.findIndex(r => r.id === newRoom.id);
+        if (idx !== -1) memRooms[idx] = data as Room;
+        syncMemRoomsToStorage(memRooms);
+        return data as Room;
+      }
     }
-    const supabase = createClient();
-    const { data, error } = await supabase.from('rooms').insert([room]).select().single();
-    if (error) throw new Error(error.message);
-    return data as Room;
+    return newRoom;
   },
 
   async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {
+    const idx = memRooms.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      memRooms[idx] = { ...memRooms[idx], ...updates, updated_at: new Date().toISOString() };
+      syncMemRoomsToStorage(memRooms);
+    }
+
     if (typeof window !== 'undefined') {
       try {
         const res = await fetch('/api/panel/rooms', {
@@ -182,56 +275,67 @@ export const PmsService = {
         });
         const json = await res.json();
         if (json.success && json.room) {
+          if (idx !== -1) memRooms[idx] = json.room;
+          syncMemRoomsToStorage(memRooms);
           return json.room;
         }
-        if (!json.success && json.error) {
-          throw new Error(json.error);
-        }
-      } catch (err: any) {
-        if (!err.message?.includes('fetch failed')) {
-          throw err;
-        }
+      } catch (err: any) {}
+    }
+
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('rooms')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (!error && data) {
+        if (idx !== -1) memRooms[idx] = data as Room;
+        syncMemRoomsToStorage(memRooms);
+        return data as Room;
       }
     }
 
-    if (!isSupabaseConfigured()) {
-      const idx = memRooms.findIndex(r => r.id === id);
-      if (idx === -1) throw new Error('Kamar tidak ditemukan');
-      memRooms[idx] = { ...memRooms[idx], ...updates, updated_at: new Date().toISOString() };
-      return memRooms[idx];
-    }
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data as Room;
+    if (idx !== -1) return memRooms[idx];
+    throw new Error('Kamar tidak ditemukan');
   },
 
   async deleteRoom(id: string): Promise<{ success: boolean; message: string }> {
-    if (typeof window !== 'undefined') {
-      const res = await fetch('/api/panel/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id }),
-      });
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || 'Gagal menghapus kamar');
-      }
-      return json;
-    }
     const idx = memRooms.findIndex(r => r.id === id);
-    if (idx !== -1) memRooms.splice(idx, 1);
+    if (idx !== -1) {
+      memRooms.splice(idx, 1);
+      syncMemRoomsToStorage(memRooms);
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', id }),
+        });
+        const json = await res.json();
+        if (json.success) return json;
+      } catch (err: any) {}
+    }
+
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      await supabase.from('rooms').delete().eq('id', id);
+    }
     return { success: true, message: 'Kamar berhasil dihapus' };
   },
 
   // --- RESERVATIONS ---
   async getReservations(statusFilter?: string): Promise<Reservation[]> {
+    const fromStorage = loadMemReservationsFromStorage();
+    if (fromStorage && fromStorage.length > 0) {
+      memReservations = fromStorage;
+    }
+
     if (!isSupabaseConfigured()) {
+      syncMemReservationsToStorage(memReservations);
       if (statusFilter && statusFilter !== 'all') {
         return memReservations.filter(r => r.status === statusFilter);
       }
@@ -255,6 +359,16 @@ export const PmsService = {
       query = query.eq('status', statusFilter);
     }
     const { data, error } = await query;
+    if (error || !data || data.length === 0) {
+      syncMemReservationsToStorage(memReservations);
+      if (statusFilter && statusFilter !== 'all') {
+        return memReservations.filter(r => r.status === statusFilter);
+      }
+      return memReservations;
+    }
+    memReservations = data as unknown as Reservation[];
+    syncMemReservationsToStorage(memReservations);
+    return memReservations;
     if (error) {
       if (statusFilter && statusFilter !== 'all') {
         return memReservations.filter(r => r.status === statusFilter);
@@ -297,6 +411,7 @@ export const PmsService = {
       res.approved_at = new Date().toISOString();
       res.approved_by = adminId || 'admin-demo';
       res.updated_at = new Date().toISOString();
+      syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
     }
 
@@ -308,6 +423,11 @@ export const PmsService = {
     });
 
     if (error) return { success: false, message: error.message };
+    const rIdx = memReservations.findIndex(r => r.id === reservationId);
+    if (rIdx !== -1) {
+      memReservations[rIdx].status = 'approved_pending_payment';
+      syncMemReservationsToStorage(memReservations);
+    }
     return { success: true, message: 'Reservasi disetujui secara aman dan atomik.' };
   },
 
@@ -319,6 +439,7 @@ export const PmsService = {
       res.rejected_at = new Date().toISOString();
       res.rejected_reason = reason;
       res.updated_at = new Date().toISOString();
+      syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Reservasi ditolak.' };
     }
     const supabase = createClient();
@@ -332,6 +453,11 @@ export const PmsService = {
       })
       .eq('id', reservationId);
     if (error) return { success: false, message: error.message };
+    const rIdx = memReservations.findIndex(r => r.id === reservationId);
+    if (rIdx !== -1) {
+      memReservations[rIdx].status = 'rejected';
+      syncMemReservationsToStorage(memReservations);
+    }
     return { success: true, message: 'Reservasi ditolak.' };
   },
 
@@ -347,6 +473,7 @@ export const PmsService = {
       if (newStatus === 'checked_in') res.checked_in_at = opts?.checkedInAt || new Date().toISOString();
       if (newStatus === 'checked_out') res.checked_out_at = opts?.checkedOutAt || new Date().toISOString();
       res.updated_at = new Date().toISOString();
+      syncMemReservationsToStorage(memReservations);
       return { success: true, message: `Status reservasi berhasil diubah ke ${newStatus}.` };
     }
     const supabase = createClient();

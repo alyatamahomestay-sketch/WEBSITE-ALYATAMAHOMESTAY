@@ -9,7 +9,9 @@ import {
   CheckCircle2, 
   ArrowRight
 } from 'lucide-react';
-import { Room } from '@/lib/types';
+import { Room, Reservation } from '@/lib/types';
+import { evaluateRoomAvailability } from '@/lib/room-availability';
+import { XCircle } from 'lucide-react';
 import { formatRupiah } from '@/lib/formatters';
 
 interface SectionConfig {
@@ -60,9 +62,10 @@ const DEFAULT_CONFIG: SectionConfig = {
 
 interface RentalSectionProps {
   initialRooms: Room[];
+  reservations?: Reservation[];
 }
 
-export default function RentalSection({ initialRooms }: RentalSectionProps) {
+export default function RentalSection({ initialRooms, reservations = [] }: RentalSectionProps) {
   const [rooms] = useState<Room[]>(initialRooms);
   const [config, setConfig] = useState<SectionConfig>(DEFAULT_CONFIG);
 
@@ -124,6 +127,17 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
       !regulerRooms.some((reg) => reg.id === r.id)
     );
   });
+
+  // Calculate live availability for each category
+  const regulerAvailableUnits = regulerRooms.filter(
+    (r) => evaluateRoomAvailability(r, reservations).isAvailable
+  );
+  const isRegulerAvailable = regulerAvailableUnits.length > 0;
+
+  const vipAvailableUnits = vipRooms.filter(
+    (r) => evaluateRoomAvailability(r, reservations).isAvailable
+  );
+  const isVipAvailable = vipAvailableUnits.length > 0;
 
   // Rates for REGULER: Admin explicit setting takes highest priority
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
@@ -189,12 +203,25 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
           {/* Card 1: TIPE REGULER */}
           <div className="bg-white rounded-3xl border border-[#D4C3AD] p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#392B21] text-white">
-                  {config.regulerBadge}
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#392B21] text-white shadow-2xs">
+                    {config.regulerBadge}
+                  </span>
+                  {isRegulerAvailable ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Tersedia ({regulerAvailableUnits.length} Unit)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      Tidak Tersedia
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-[#756A5F] font-medium pr-2">
-                  {regulerRooms.length > 0 ? `${regulerRooms.length} Unit Kamar` : 'Unit Tersedia'}
+                  Total {regulerRooms.length} Unit
                 </span>
               </div>
 
@@ -269,14 +296,30 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
             </div>
 
             {/* Tombol COKLAT Identik dengan Card VIP */}
-            <div className="pt-5 mt-5 border-t border-[#E5DCD0]">
-              <Link
-                href="/kamar"
-                className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
-              >
-                Lihat Pilihan Kamar Reguler
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <div className="pt-5 mt-5 border-t border-[#E5DCD0] space-y-2">
+              {isRegulerAvailable ? (
+                <Link
+                  href="/kamar"
+                  className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
+                >
+                  Lihat Pilihan Kamar Reguler
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-rose-50 text-rose-700 border border-rose-300 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 opacity-90"
+                >
+                  <XCircle className="w-4 h-4 text-rose-600" />
+                  Seluruh Kamar Reguler Penuh (Tidak Tersedia)
+                </button>
+              )}
+              {!isRegulerAvailable && (
+                <p className="text-[11px] text-rose-600 text-center font-medium">
+                  Seluruh unit tipe Reguler sedang ditempati/dipesan sampai jadwal check-out tamu.
+                </p>
+              )}
             </div>
           </div>
 
@@ -287,13 +330,26 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-[#C9A84C]" />
-                  {config.vipBadge}
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1.5 shadow-2xs">
+                    <Sparkles className="w-3 h-3 text-[#C9A84C]" />
+                    {config.vipBadge}
+                  </span>
+                  {isVipAvailable ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Tersedia ({vipAvailableUnits.length} Unit)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      Tidak Tersedia
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-[#756A5F] font-medium pr-24 sm:pr-28">
-                  {vipRooms.length > 0 ? `${vipRooms.length} Unit Kamar` : 'Unit Prioritas'}
+                  Total {vipRooms.length} Unit
                 </span>
               </div>
 
@@ -368,14 +424,30 @@ export default function RentalSection({ initialRooms }: RentalSectionProps) {
             </div>
 
             {/* Tombol COKLAT */}
-            <div className="pt-5 mt-5 border-t border-[#E5DCD0]">
-              <Link
-                href="/kamar"
-                className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
-              >
-                Lihat Pilihan Kamar VIP
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <div className="pt-5 mt-5 border-t border-[#E5DCD0] space-y-2">
+              {isVipAvailable ? (
+                <Link
+                  href="/kamar"
+                  className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
+                >
+                  Lihat Pilihan Kamar VIP
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-rose-50 text-rose-700 border border-rose-300 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 opacity-90"
+                >
+                  <XCircle className="w-4 h-4 text-rose-600" />
+                  Seluruh Kamar VIP Penuh (Tidak Tersedia)
+                </button>
+              )}
+              {!isVipAvailable && (
+                <p className="text-[11px] text-rose-600 text-center font-medium">
+                  Seluruh unit tipe VIP sedang ditempati/dipesan sampai jadwal check-out tamu.
+                </p>
+              )}
             </div>
           </div>
 

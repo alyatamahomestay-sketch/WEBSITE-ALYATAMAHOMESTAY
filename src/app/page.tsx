@@ -30,7 +30,7 @@ import { formatRupiah } from '@/lib/formatters';
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const rooms = await PmsService.getRooms();
+  const [rooms, reservations] = await Promise.all([PmsService.getRooms(), PmsService.getReservations()]);
 
   // Group rooms into REGULER and VIP
   const activeRooms = rooms.filter((r) => !r.is_archived);
@@ -218,7 +218,7 @@ export default async function HomePage() {
         </section>
 
         {/* PILIHAN MASA SEWA FLEKSIBEL: REGULER & VIP */}
-        <RentalSection initialRooms={rooms} />
+        <RentalSection initialRooms={rooms} reservations={reservations} />
 
         {/* ROOMS SHOWCASE */}
         <section className="w-full py-16 sm:py-20 bg-[#F6F0E7]">
@@ -243,7 +243,7 @@ export default async function HomePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
               {rooms.slice(0, 3).map((room) => (
-                <RoomCard key={room.id} room={room} />
+                <RoomCard key={room.id} room={room} reservations={reservations} />
               ))}
             </div>
           </div>

@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
-import { Room, RentalType } from '@/lib/types';
+import { Room, RentalType, Reservation } from '@/lib/types';
+import { evaluateRoomAvailability } from '@/lib/room-availability';
 import { PmsService } from '@/lib/services/pms-service';
 import { calculateReservationPricing, calculateRentalDuration } from '@/lib/pricing';
 import { formatRupiah, formatDateIndo } from '@/lib/formatters';
