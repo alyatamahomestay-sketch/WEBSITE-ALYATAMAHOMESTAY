@@ -107,13 +107,13 @@ export default function PanelSidebar({
       {isOpen && (
         <div
           onClick={onToggle}
-          className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs transition-opacity"
+          className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs transition-opacity print:hidden"
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#30291F] border-r border-[#44382c] text-[#F7F4ED] flex flex-col transition-transform duration-300 ease-in-out shadow-2xl ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-[#30291F] border-r border-[#44382c] text-[#F7F4ED] flex flex-col transition-transform duration-300 ease-in-out shadow-2xl print:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

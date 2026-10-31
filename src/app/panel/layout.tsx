@@ -112,7 +112,7 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
 
   // 4. Authenticated: render full management panel with collapsible sidebar & header
   return (
-    <div className="min-h-screen bg-[#F7F4ED] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F7F4ED] print:bg-white print:min-h-0 flex flex-col font-sans">
       <PanelSidebar 
         currentRole={role} 
         onRoleChange={handleRoleChange} 
@@ -120,7 +120,7 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
         onToggle={handleToggleSidebar}
       />
 
-      <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}>
+      <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'} print:pl-0 print:m-0`}>
         <PanelHeader 
           currentRole={role} 
           title="ALYATAMA HOMESTAY — Operations PMS" 
@@ -128,7 +128,7 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
           onToggleSidebar={handleToggleSidebar}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0">
           {children}
         </main>
       </div>

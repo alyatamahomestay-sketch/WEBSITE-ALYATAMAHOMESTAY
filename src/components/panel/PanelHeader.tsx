@@ -63,7 +63,7 @@ export default function PanelHeader({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-stone-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+    <header className="h-16 bg-white border-b border-stone-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xs print:hidden">
       <div className="flex items-center gap-3 min-w-0">
         {onToggleSidebar && (
           <button

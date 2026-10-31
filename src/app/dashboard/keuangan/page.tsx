@@ -181,7 +181,18 @@ export default function KeuanganPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {expenses.map((exp) => (
+              {expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-stone-400">
+                    <DollarSign className="w-8 h-8 mx-auto mb-2 text-stone-300 stroke-[1.5]" />
+                    <p className="font-semibold text-stone-600 text-xs">Belum Ada Riwayat Beban Pengeluaran Operasional</p>
+                    <p className="text-[11px] text-stone-400 mt-0.5">
+                      Riwayat beban pengeluaran masih dikosongkan karena homestay belum beroperasi aktif.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                expenses.map((exp) => (
                 <tr key={exp.id} className="hover:bg-stone-50/60 transition-colors">
                   <td className="py-3.5 px-4 font-mono font-medium text-stone-900">
                     {exp.expense_number}
@@ -207,7 +218,7 @@ export default function KeuanganPage() {
                     {formatRupiah(exp.amount)}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

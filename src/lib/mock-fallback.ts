@@ -296,7 +296,8 @@ export const INITIAL_MAINTENANCE: MaintenanceTicket[] = [
   },
 ];
 
-export const INITIAL_EXPENSES: Expense[] = [
+export const INITIAL_EXPENSES: Expense[] = [];
+const DEPRECATED_EXPENSES = [
   {
     id: 'exp-1',
     expense_number: 'EXP-2026-001',
@@ -445,7 +446,8 @@ export const INITIAL_STAFF_USERS: StaffUser[] = [
   },
 ];
 
-export const INITIAL_STAFF_SHIFTS: StaffShift[] = [
+export const INITIAL_STAFF_SHIFTS: StaffShift[] = [];
+const DEPRECATED_SHIFTS = [
   {
     id: 'shift-demo-001',
     staff_user_id: 'staff-user-002',

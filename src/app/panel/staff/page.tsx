@@ -230,9 +230,9 @@ export default function StaffManagementPage() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-stone-500 text-[11px]">
-                    {user.last_login_at 
-                      ? new Date(user.last_login_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
-                      : 'Belum pernah login'}
+                    <span className="inline-block px-2 py-0.5 rounded bg-stone-100 text-stone-600 text-[10px] font-medium">
+                      belum login
+                    </span>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
@@ -287,7 +287,18 @@ export default function StaffManagementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {shiftList.map((shift) => (
+              {shiftList.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-stone-400">
+                    <History className="w-8 h-8 mx-auto mb-2 text-stone-300 stroke-[1.5]" />
+                    <p className="font-semibold text-stone-600 text-xs">Belum Ada Riwayat Shift Kerja Tercatat</p>
+                    <p className="text-[11px] text-stone-400 mt-0.5">
+                      Riwayat shift masih kosong karena operasional homestay belum aktif.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                shiftList.map((shift) => (
                 <tr key={shift.id} className="hover:bg-stone-50/80 transition">
                   <td className="py-3 px-4 font-semibold text-stone-900">
                     {shift.staff_name_snapshot}
@@ -316,7 +327,7 @@ export default function StaffManagementPage() {
                     {shift.notes || '-'}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
