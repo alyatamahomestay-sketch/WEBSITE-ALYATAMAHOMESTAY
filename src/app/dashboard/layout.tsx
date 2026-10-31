@@ -8,6 +8,7 @@ import { UserRole } from '@/lib/types';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import Link from 'next/link';
 import { AlertCircle, ArrowRight } from 'lucide-react';
+import AdminToast from '@/components/common/AdminToast';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -24,6 +25,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col font-sans">
+      <AdminToast />
       <DashboardSidebar currentRole={role} onRoleChange={handleRoleChange} />
 
       <div className="lg:pl-64 flex flex-col flex-1">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { QrCode, CreditCard, Save, Image, CheckCircle2 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { PaymentMethod } from '@/lib/types';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function PengaturanPembayaranPage() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
@@ -64,6 +65,7 @@ export default function PengaturanPembayaranPage() {
         instructions: qrisInstructions.trim(),
         is_active: qrisActive,
       });
+      showAdminToast('edit', 'Pengaturan QRIS berhasil diperbarui!');
       setFeedback('Pengaturan QRIS berhasil diperbarui!');
       loadData();
     } catch (err: any) {
@@ -82,6 +84,7 @@ export default function PengaturanPembayaranPage() {
         account_name: bankAccountName.trim(),
         account_number: bankAccountNumber.trim(),
       });
+      showAdminToast('edit', 'Pengaturan Transfer Bank berhasil diperbarui!');
       setFeedback('Pengaturan Transfer Bank berhasil diperbarui!');
       loadData();
     } catch (err: any) {

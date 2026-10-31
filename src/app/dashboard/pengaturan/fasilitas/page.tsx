@@ -34,6 +34,7 @@ import {
   DEFAULT_FACILITIES_CONFIG, 
   renderFacilityIcon 
 } from '@/components/public/FacilitiesSection';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 const AVAILABLE_ICONS = [
   { value: 'Sparkles', label: 'Bintang / Sparkles' },
@@ -81,7 +82,8 @@ export default function SetupFasilitasPage() {
       localStorage.setItem('alyatama_facilities_section_config', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
     }
-    showNotification('Seluruh perubahan fasilitas berhasil disimpan dan langsung aktif di halaman pengunjung!');
+    showAdminToast('edit', 'Seluruh perubahan fasilitas homestay berhasil disimpan dan langsung aktif di homepage.');
+    showNotification('Berhasil Diubah: Seluruh perubahan fasilitas berhasil disimpan dan langsung aktif di halaman pengunjung!');
   };
 
   const handleReset = () => {
@@ -91,7 +93,8 @@ export default function SetupFasilitasPage() {
         localStorage.removeItem('alyatama_facilities_section_config');
         window.dispatchEvent(new Event('storage'));
       }
-      showNotification('Pengaturan Fasilitas Homestay berhasil dikembalikan ke standar awal.');
+      showAdminToast('edit', 'Pengaturan Fasilitas Homestay berhasil dikembalikan ke standar awal.');
+      showNotification('Berhasil Diubah: Pengaturan Fasilitas Homestay berhasil dikembalikan ke standar awal.');
     }
   };
 
@@ -111,14 +114,16 @@ export default function SetupFasilitasPage() {
       description: 'Tuliskan deskripsi keunggulan fasilitas homestay di sini.'
     };
     setConfig({ ...config, items: [...config.items, newItem] });
-    showNotification('Kartu fasilitas baru berhasil ditambahkan di urutan terbawah.');
+    showAdminToast('add', `Kartu fasilitas baru "${newItem.title}" berhasil ditambahkan.`);
+    showNotification('Berhasil Menambahkan: Kartu fasilitas baru berhasil ditambahkan di urutan terbawah.');
   };
 
   const handleDeleteItem = (index: number, title: string) => {
     if (confirm(`Yakin ingin menghapus kartu fasilitas "${title}"?`)) {
       const updated = config.items.filter((_, idx) => idx !== index);
       setConfig({ ...config, items: updated });
-      showNotification(`Kartu fasilitas "${title}" berhasil dihapus.`);
+      showAdminToast('delete', `Kartu fasilitas "${title}" berhasil dihapus.`);
+      showNotification(`Berhasil Dihapus: Kartu fasilitas "${title}" berhasil dihapus.`);
     }
   };
 

@@ -14,6 +14,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { Expense, Reservation } from '@/lib/types';
 import { formatRupiah, formatDateIndo } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function KeuanganPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -62,7 +63,8 @@ export default function KeuanganPage() {
         notes: notes.trim() || null,
       });
       setShowAddModal(false);
-      setFeedback('Pengeluaran berhasil dicatat.');
+      showAdminToast('add', `Catatan pengeluaran "${description}" (${formatRupiah(amount)}) berhasil ditambahkan.`);
+      setFeedback(`Berhasil Menambahkan: Pengeluaran "${description}" berhasil dicatat.`);
       loadData();
     } catch (err: any) {
       alert(err.message);

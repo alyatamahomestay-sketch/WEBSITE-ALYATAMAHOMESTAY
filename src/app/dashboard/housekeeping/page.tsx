@@ -5,6 +5,7 @@ import { Sparkles, CheckCircle2, Clock, AlertTriangle, Play, Check } from 'lucid
 import { PmsService } from '@/lib/services/pms-service';
 import { HousekeepingTask } from '@/lib/types';
 import { formatDateTimeIndo } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function HousekeepingPage() {
   const [tasks, setTasks] = useState<HousekeepingTask[]>([]);
@@ -30,6 +31,7 @@ export default function HousekeepingPage() {
   const handleUpdateStatus = async (taskId: string, newStatus: HousekeepingTask['status']) => {
     try {
       await PmsService.updateHousekeepingStatus(taskId, newStatus);
+      showAdminToast('edit', `Status kebersihan berhasil diperbarui menjadi ${newStatus}.`);
       setFeedback(`Status kebersihan berhasil diperbarui menjadi ${newStatus}.`);
       loadTasks();
     } catch (err: any) {

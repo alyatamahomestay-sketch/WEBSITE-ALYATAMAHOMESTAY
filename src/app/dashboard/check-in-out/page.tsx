@@ -15,6 +15,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { Reservation } from '@/lib/types';
 import { formatRupiah, formatDateIndo } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function CheckInOutPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -48,6 +49,7 @@ export default function CheckInOutPage() {
       if (res.rooms?.[0]?.id) {
         await PmsService.updateRoom(res.rooms[0].id, { operational_status: 'ditempati' });
       }
+      showAdminToast('edit', `Check-in berhasil! Kamar No. ${res.rooms?.[0]?.room_number} kini berstatus Ditempati.`);
       setFeedback(`Check-in berhasil! Kamar No. ${res.rooms?.[0]?.room_number} kini berstatus Ditempati.`);
       loadData();
     }
@@ -67,6 +69,7 @@ export default function CheckInOutPage() {
       if (res.rooms?.[0]?.id) {
         await PmsService.updateRoom(res.rooms[0].id, { operational_status: 'menunggu_dibersihkan' });
       }
+      showAdminToast('edit', `Check-out selesai! Kamar No. ${res.rooms?.[0]?.room_number} otomatis ditandai Menunggu Dibersihkan.`);
       setFeedback(`Check-out selesai! Kamar No. ${res.rooms?.[0]?.room_number} otomatis ditandai Menunggu Dibersihkan.`);
       loadData();
     }

@@ -20,6 +20,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { StaffUser, StaffShift, StaffAccountStatus } from '@/lib/types';
 import { formatDateIndo } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function StaffManagementPage() {
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
@@ -98,7 +99,8 @@ export default function StaffManagementPage() {
           status,
           password_hash: pinPassword.trim(),
         });
-        setFeedback(`Akun staf "${fullName}" berhasil diperbarui.`);
+        showAdminToast('edit', `Data akun pengelola/staf "${fullName}" berhasil diperbarui.`);
+        setFeedback(`Berhasil Diubah: Akun staf "${fullName}" berhasil diperbarui.`);
       } else {
         await PmsService.createStaffUser({
           full_name: fullName.trim(),
@@ -110,7 +112,8 @@ export default function StaffManagementPage() {
           invited_by: 'admin-panel',
           last_login_at: null,
         });
-        setFeedback(`Akun staf baru "${fullName}" berhasil didaftarkan.`);
+        showAdminToast('add', `Akun staf baru "${fullName}" berhasil ditambahkan.`);
+        setFeedback(`Berhasil Menambahkan: Akun staf baru "${fullName}" berhasil didaftarkan.`);
       }
 
       setShowModal(false);
@@ -125,10 +128,24 @@ export default function StaffManagementPage() {
     try {
       await PmsService.updateStaffStatus(user.id, newStatus);
       await loadData();
-      setFeedback(`Status akun "${user.full_name}" diubah menjadi ${newStatus}.`);
+      showAdminToast('edit', `Status akun "${user.full_name}" diubah menjadi ${newStatus}.`);
+      setFeedback(`Berhasil Diubah: Status akun "${user.full_name}" diubah menjadi ${newStatus}.`);
       setTimeout(() => setFeedback(''), 3000);
     } catch (err: any) {
       alert(`Gagal mengubah status: ${err?.message || err}`);
+    }
+  };
+
+  const handleDeleteUser = async (user: StaffUser) => {
+    if (!confirm(`Hapus permanen akun "${user.full_name}" (@${user.username})? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await PmsService.deleteStaffUser(user.id);
+      await loadData();
+      showAdminToast('delete', `Akun "${user.full_name}" berhasil dihapus.`);
+      setFeedback(`Berhasil Dihapus: Akun "${user.full_name}" berhasil dihapus.`);
+      setTimeout(() => setFeedback(''), 3000);
+    } catch (err: any) {
+      alert(`Gagal menghapus akun: ${err?.message || err}`);
     }
   };
 
@@ -202,7 +219,7 @@ export default function StaffManagementPage() {
                 <th className="py-3 px-4 font-semibold">Peran</th>
                 <th className="py-3 px-4 font-semibold">Status Akun</th>
                 <th className="py-3 px-4 font-semibold">Login Terakhir</th>
-                <th className="py-3 px-4 font-semibold text-right">Aksi Administrator</th>
+                <th className="py-3 px-4 font-semibold text-right w-44 min-w-[170px] whitespace-nowrap">Aksi Administrator</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -234,12 +251,12 @@ export default function StaffManagementPage() {
                       belum login
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="py-3 px-4 text-right w-44 min-w-[170px] whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5 shrink-0">
                       <select
                         value={user.status}
                         onChange={(e) => handleStatusChange(user, e.target.value as StaffAccountStatus)}
-                        className="text-[11px] bg-stone-100 border border-stone-300 rounded px-2 py-1 text-stone-700"
+                        className="text-[11px] bg-stone-100 border border-stone-300 rounded-lg px-2 py-1 text-stone-700 shrink-0 cursor-pointer"
                         title="Ubah status akun"
                       >
                         <option value="ACTIVE">ACTIVE (Boleh Login)</option>
@@ -250,11 +267,21 @@ export default function StaffManagementPage() {
 
                       <button
                         onClick={() => handleOpenEdit(user)}
-                        className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-200 rounded transition"
+                        className="w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center justify-center shrink-0 cursor-pointer"
                         title="Edit Data / Reset Password"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-3.5 h-3.5 text-[#806044]" />
                       </button>
+
+                      {user.username !== 'admin' && (
+                        <button
+                          onClick={() => handleDeleteUser(user)}
+                          className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition flex items-center justify-center shrink-0 cursor-pointer"
+                          title="Hapus Akun Staf"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

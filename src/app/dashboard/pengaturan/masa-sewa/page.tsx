@@ -24,6 +24,7 @@ import { PmsService } from '@/lib/services/pms-service';
 import { Room } from '@/lib/types';
 import { formatRupiah } from '@/lib/formatters';
 import ImageUploadPicker from '@/components/common/ImageUploadPicker';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 interface SectionConfig {
   sectionTitle: string;
@@ -209,7 +210,8 @@ export default function SetupMasaSewaPage() {
       localStorage.setItem('alyatama_rental_section_config', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
     }
-    showNotification('Pengaturan tampilan seksi Masa Sewa berhasil disimpan!');
+    showAdminToast('edit', 'Pengaturan teks & tampilan seksi Masa Sewa berhasil disimpan.');
+    showNotification('Berhasil Diubah: Pengaturan tampilan seksi Masa Sewa berhasil disimpan!');
   };
 
   // Direct Save Specific Rates from Card
@@ -220,7 +222,8 @@ export default function SetupMasaSewaPage() {
     }
     const daily = type === 'VIP' ? config.vipDailyRate : config.regulerDailyRate;
     const monthly = type === 'VIP' ? config.vipMonthlyRate : config.regulerMonthlyRate;
-    showNotification(`Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan) dan langsung aktif di halaman pengunjung!`);
+    showAdminToast('edit', `Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan) dan langsung aktif di homepage.`);
+    showNotification(`Berhasil Diubah: Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan).`);
   };
 
   // Sync rates to database room records
@@ -247,7 +250,8 @@ export default function SetupMasaSewaPage() {
         });
       }
       await loadData();
-      showNotification(`Berhasil menyinkronkan tarif ke seluruh ${targetRooms.length} unit kamar ${type} di database!`);
+      showAdminToast('edit', `Tarif seluruh ${targetRooms.length} unit kamar ${type} berhasil disinkronkan ke database.`);
+      showNotification(`Berhasil Diubah: Berhasil menyinkronkan tarif ke seluruh ${targetRooms.length} unit kamar ${type} di database!`);
     } catch (err: any) {
       alert(`Gagal menyinkronkan tarif: ${err?.message || err}`);
     } finally {
@@ -262,7 +266,8 @@ export default function SetupMasaSewaPage() {
         localStorage.removeItem('alyatama_rental_section_config');
         window.dispatchEvent(new Event('storage'));
       }
-      showNotification('Pengaturan tampilan dikembalikan ke standar awal.');
+      showAdminToast('edit', 'Pengaturan tampilan dikembalikan ke standar awal.');
+      showNotification('Berhasil Diubah: Pengaturan tampilan dikembalikan ke standar awal.');
     }
   };
 
@@ -328,7 +333,8 @@ export default function SetupMasaSewaPage() {
           amenities: amenitiesArr,
           photos: photosArr,
         });
-        showNotification(`Kamar No. ${roomNumber} (${name}) berhasil diperbarui.`);
+        showAdminToast('edit', `Kamar No. ${roomNumber} (${name}) berhasil diperbarui.`);
+        showNotification(`Berhasil Diubah: Kamar No. ${roomNumber} (${name}) berhasil diperbarui.`);
       } else {
         await PmsService.createRoom({
           room_number: roomNumber,
@@ -344,7 +350,8 @@ export default function SetupMasaSewaPage() {
           photos: photosArr,
           is_archived: false,
         });
-        showNotification(`Kamar baru No. ${roomNumber} (${name}) berhasil ditambahkan.`);
+        showAdminToast('add', `Kamar baru No. ${roomNumber} (${name}) berhasil ditambahkan.`);
+        showNotification(`Berhasil Menambahkan: Kamar baru No. ${roomNumber} (${name}) berhasil ditambahkan.`);
       }
 
       await loadData();
@@ -364,7 +371,8 @@ export default function SetupMasaSewaPage() {
 
     try {
       await PmsService.deleteRoom(roomId);
-      showNotification(`Kamar No. ${rNum} berhasil dihapus.`);
+      showAdminToast('delete', `Kamar No. ${rNum} berhasil dihapus.`);
+      showNotification(`Berhasil Dihapus: Kamar No. ${rNum} berhasil dihapus.`);
       await loadData();
     } catch (err: any) {
       alert(`Gagal menghapus kamar: ${err?.message || err}`);

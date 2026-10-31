@@ -5,6 +5,7 @@ import { Tag, Plus, CheckCircle2, XCircle, Calendar, DollarSign, ToggleLeft, Tog
 import { PmsService } from '@/lib/services/pms-service';
 import { Promotion } from '@/lib/types';
 import { formatRupiah, formatDateIndo } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function PromoManagementPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -44,7 +45,8 @@ export default function PromoManagementPage() {
   const handleToggle = async (promo: Promotion) => {
     try {
       const newState = await PmsService.togglePromotionActive(promo.id);
-      setFeedback(`Promo ${promo.name} kini ${newState ? 'AKTIF' : 'NONAKTIF'}.`);
+      showAdminToast('edit', `Status promo "${promo.name}" diubah menjadi ${newState ? 'AKTIF' : 'NONAKTIF'}.`);
+      setFeedback(`Berhasil Diubah: Promo ${promo.name} kini ${newState ? 'AKTIF' : 'NONAKTIF'}.`);
       loadPromos();
     } catch (err: any) {
       alert(err.message);
@@ -68,7 +70,8 @@ export default function PromoManagementPage() {
         is_active: true,
         priority: 1,
       });
-      setFeedback(`Promo baru ${name} berhasil dibuat.`);
+      showAdminToast('add', `Kode promo "${name}" (${code || 'Otomatis'}) berhasil ditambahkan.`);
+      setFeedback(`Berhasil Menambahkan: Promo baru ${name} berhasil dibuat.`);
       setShowModal(false);
       loadPromos();
     } catch (err: any) {

@@ -20,6 +20,7 @@ import { PmsService } from '@/lib/services/pms-service';
 import { Room, RoomOperationalStatus } from '@/lib/types';
 import { formatRupiah, getRoomOperationalStatusMeta } from '@/lib/formatters';
 import ImageUploadPicker from '@/components/common/ImageUploadPicker';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function KamarManagementPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -126,7 +127,8 @@ export default function KamarManagementPage() {
           photos: photosArr,
           internal_notes: internalNotes,
         });
-        setFeedback(`Kamar ${name} berhasil diperbarui.`);
+        showAdminToast('edit', `Data kamar "${name}" (No. ${roomNumber}) berhasil diperbarui.`);
+        setFeedback(`Berhasil Diubah: Kamar "${name}" berhasil diperbarui.`);
       } else {
         await PmsService.createRoom({
           room_number: roomNumber,
@@ -144,7 +146,8 @@ export default function KamarManagementPage() {
           internal_notes: internalNotes,
           is_archived: false,
         });
-        setFeedback(`Kamar baru No. ${roomNumber} berhasil ditambahkan.`);
+        showAdminToast('add', `Kamar baru No. ${roomNumber} (${name}) berhasil ditambahkan.`);
+        setFeedback(`Berhasil Menambahkan: Kamar baru No. ${roomNumber} berhasil ditambahkan.`);
       }
       setShowModal(false);
       loadRooms();
@@ -158,7 +161,11 @@ export default function KamarManagementPage() {
     if (!confirm(`${actionLabel}: ${room.name}?`)) return;
     try {
       await PmsService.updateRoom(room.id, { is_archived: !room.is_archived });
-      setFeedback(`Status arsip kamar ${room.name} berhasil diperbarui.`);
+      const actionMsg = room.is_archived 
+        ? `Kamar No. ${room.room_number} berhasil dipulihkan dari arsip.`
+        : `Kamar No. ${room.room_number} berhasil diarsipkan.`;
+      showAdminToast('edit', actionMsg);
+      setFeedback(`Berhasil Diubah: ${actionMsg}`);
       loadRooms();
     } catch (err: any) {
       alert(err.message || 'Gagal mengubah status arsip');
@@ -169,7 +176,8 @@ export default function KamarManagementPage() {
     if (!confirm(`Hapus permanen unit kamar "${room.name}" (No. ${room.room_number})?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
       const res = await PmsService.deleteRoom(room.id);
-      setFeedback(res.message || `Kamar ${room.name} berhasil dihapus.`);
+      showAdminToast('delete', `Kamar No. ${room.room_number} (${room.name}) berhasil dihapus.`);
+      setFeedback(`Berhasil Dihapus: Kamar ${room.name} berhasil dihapus.`);
       loadRooms();
     } catch (err: any) {
       alert(err.message || 'Gagal menghapus kamar');
@@ -179,6 +187,8 @@ export default function KamarManagementPage() {
   const handleQuickStatusChange = async (room: Room, newStatus: RoomOperationalStatus) => {
     try {
       await PmsService.updateRoom(room.id, { operational_status: newStatus });
+      showAdminToast('edit', `Status operasional Kamar No. ${room.room_number} diubah menjadi "${newStatus}".`);
+      setFeedback(`Berhasil Diubah: Status operasional Kamar No. ${room.room_number} diubah.`);
       loadRooms();
     } catch (err: any) {
       alert(err.message);
@@ -219,17 +229,17 @@ export default function KamarManagementPage() {
       {/* Rooms Table */}
       <div className="bg-white rounded-2xl border border-[#E5DCD0] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
+          <table className="w-full min-w-[980px] text-xs text-left">
             <thead className="bg-[#FAF7F2] border-b border-[#E5DCD0] text-[#756A5F] uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="py-3.5 px-4 font-bold">No. Kamar</th>
-                <th className="py-3.5 px-4 font-bold">Nama & Tipe</th>
+                <th className="py-3.5 px-4 font-bold">Nama &amp; Tipe</th>
                 <th className="py-3.5 px-4 font-bold">Kapasitas</th>
                 <th className="py-3.5 px-4 font-bold text-right">Tarif Harian</th>
                 <th className="py-3.5 px-4 font-bold text-right">Tarif Bulanan</th>
                 <th className="py-3.5 px-4 font-bold text-center">Status Operasional</th>
                 <th className="py-3.5 px-4 font-bold text-center">Status Arsip</th>
-                <th className="py-3.5 px-4 font-bold text-right">Tindakan</th>
+                <th className="py-3.5 px-4 font-bold text-right w-40 min-w-[140px] whitespace-nowrap">Tindakan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5DCD0]/60">
@@ -275,32 +285,32 @@ export default function KamarManagementPage() {
                         <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium">Aktif</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="py-3.5 px-4 text-right w-40 min-w-[140px] whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2 shrink-0">
                         <button
                           onClick={() => openEditModal(r)}
                           title="Edit Kamar"
-                          className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition cursor-pointer"
+                          className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
                         >
-                          <Edit className="w-3.5 h-3.5" />
+                          <Edit className="w-4 h-4 text-[#806044] shrink-0" />
                         </button>
                         <button
                           onClick={() => handleArchive(r)}
                           title={r.is_archived ? 'Pulihkan dari Arsip' : 'Arsipkan Kamar (Sembunyikan dari Publik)'}
-                          className={`p-1.5 rounded-lg transition cursor-pointer ${
+                          className={`w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl transition flex items-center justify-center shrink-0 cursor-pointer shadow-2xs ${
                             r.is_archived 
                               ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' 
                               : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
                           }`}
                         >
-                          <Archive className="w-3.5 h-3.5" />
+                          <Archive className="w-4 h-4 shrink-0" />
                         </button>
                         <button
                           onClick={() => handleDelete(r)}
                           title="Hapus Kamar Permanen"
-                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
+                          className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4 shrink-0" />
                         </button>
                       </div>
                     </td>

@@ -45,6 +45,30 @@ let memInventory: InventoryItem[] = [...INITIAL_INVENTORY];
 let memProperty: PropertySettings = { ...INITIAL_PROPERTY_SETTINGS };
 let memAdPhotos: AdvertisementPhoto[] = [...INITIAL_AD_PHOTOS];
 let memStaffUsers: StaffUser[] = [...INITIAL_STAFF_USERS];
+
+function syncMemStaffUsersToStorage(users: StaffUser[]) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alyatama_staff_users_data', JSON.stringify(users));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+  }
+}
+
+function loadMemStaffUsersFromStorage(): StaffUser[] | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('alyatama_staff_users_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  return null;
+}
 let memStaffShifts: StaffShift[] = [...INITIAL_STAFF_SHIFTS];
 let memAuditLogs: AuditLog[] = [
   {
@@ -715,11 +739,27 @@ export const PmsService = {
 
   // --- V3.1 STAFF ACCESS MANAGEMENT ---
   async getStaffUsers(): Promise<StaffUser[]> {
-    if (!isSupabaseConfigured()) return memStaffUsers;
+    const fromStorage = loadMemStaffUsersFromStorage();
+    if (fromStorage && fromStorage.length > 0) {
+      memStaffUsers = fromStorage;
+      return memStaffUsers;
+    }
+
+    if (!isSupabaseConfigured()) {
+      syncMemStaffUsersToStorage(memStaffUsers);
+      return memStaffUsers;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.from('staff_users').select('*').order('created_at', { ascending: true });
-    if (error || !data) return memStaffUsers;
-    return data as StaffUser[];
+    if (error || !data || data.length === 0) {
+      syncMemStaffUsersToStorage(memStaffUsers);
+      return memStaffUsers;
+    }
+    
+    // If Supabase returned data, cache to memory & storage
+    memStaffUsers = data as StaffUser[];
+    syncMemStaffUsersToStorage(memStaffUsers);
+    return memStaffUsers;
   },
 
   async getStaffUserById(id: string): Promise<StaffUser | null> {
@@ -728,7 +768,8 @@ export const PmsService = {
   },
 
   async createStaffUser(userData: Omit<StaffUser, 'id' | 'created_at' | 'updated_at'>): Promise<StaffUser> {
-    const existing = memStaffUsers.find(
+    const list = await this.getStaffUsers();
+    const existing = list.find(
       (u) => u.username.toLowerCase() === userData.username.toLowerCase() || u.email.toLowerCase() === userData.email.toLowerCase()
     );
     if (existing) {
@@ -741,27 +782,54 @@ export const PmsService = {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    memStaffUsers.push(newUser);
+    memStaffUsers = [...memStaffUsers, newUser];
+    syncMemStaffUsersToStorage(memStaffUsers);
+
     if (isSupabaseConfigured()) {
       const supabase = createClient();
       const { data, error } = await supabase.from('staff_users').insert([newUser]).select().single();
-      if (!error && data) return data as StaffUser;
+      if (!error && data) {
+        const idx = memStaffUsers.findIndex((u) => u.id === newUser.id);
+        if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
+        syncMemStaffUsersToStorage(memStaffUsers);
+        return data as StaffUser;
+      }
     }
     return newUser;
   },
 
   async updateStaffUser(id: string, updates: Partial<StaffUser>): Promise<StaffUser> {
-    const idx = memStaffUsers.findIndex((u) => u.id === id);
+    const list = await this.getStaffUsers();
+    const idx = list.findIndex((u) => u.id === id);
     if (idx !== -1) {
       memStaffUsers[idx] = { ...memStaffUsers[idx], ...updates, updated_at: new Date().toISOString() };
+      syncMemStaffUsersToStorage(memStaffUsers);
     }
     if (isSupabaseConfigured()) {
       const supabase = createClient();
       const { data, error } = await supabase.from('staff_users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
-      if (!error && data) return data as StaffUser;
+      if (!error && data) {
+        if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
+        syncMemStaffUsersToStorage(memStaffUsers);
+        return data as StaffUser;
+      }
     }
     if (idx !== -1) return memStaffUsers[idx];
     throw new Error('Pengguna staf tidak ditemukan');
+  },
+
+  async deleteStaffUser(id: string): Promise<boolean> {
+    const list = await this.getStaffUsers();
+    const idx = list.findIndex((u) => u.id === id);
+    if (idx !== -1) {
+      memStaffUsers.splice(idx, 1);
+      syncMemStaffUsersToStorage(memStaffUsers);
+    }
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      await supabase.from('staff_users').delete().eq('id', id);
+    }
+    return true;
   },
 
   async updateStaffStatus(id: string, status: StaffAccountStatus): Promise<StaffUser> {

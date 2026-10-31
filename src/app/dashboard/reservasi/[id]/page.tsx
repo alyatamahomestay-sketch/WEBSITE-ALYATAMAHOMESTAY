@@ -26,6 +26,7 @@ import {
   getPaymentStatusMeta 
 } from '@/lib/formatters';
 import { prepareManualWhatsAppMessage } from '@/lib/whatsapp';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 interface Props {
   params: { id: string };
@@ -91,6 +92,7 @@ export default function ReservationDetailPage({ params }: Props) {
     if (!confirm('Setujui pemesanan ini?')) return;
     const res = await PmsService.approveReservation(reservation.id);
     if (res.success) {
+      showAdminToast('edit', 'Pemesanan telah disetujui.');
       setFeedbackMessage('Pemesanan telah disetujui.');
       loadData();
     } else {
@@ -103,6 +105,7 @@ export default function ReservationDetailPage({ params }: Props) {
     if (!reason) return;
     const res = await PmsService.rejectReservation(reservation.id, reason);
     if (res.success) {
+      showAdminToast('edit', 'Pemesanan telah ditolak.');
       setFeedbackMessage('Pemesanan telah ditolak.');
       loadData();
     }
@@ -123,6 +126,7 @@ export default function ReservationDetailPage({ params }: Props) {
     });
     if (res.success) {
       setShowPaymentModal(false);
+      showAdminToast('add', res.message || 'Pembayaran berhasil dicatat.');
       setFeedbackMessage(res.message);
       loadData();
     } else {
@@ -134,6 +138,7 @@ export default function ReservationDetailPage({ params }: Props) {
     if (!confirm(`Ubah status reservasi menjadi ${newStatus}?`)) return;
     const res = await PmsService.updateReservationStatus(reservation.id, newStatus);
     if (res.success) {
+      showAdminToast('edit', res.message || `Status diubah menjadi ${newStatus}`);
       setFeedbackMessage(res.message);
       loadData();
     }

@@ -23,6 +23,7 @@ import {
   getReservationStatusMeta, 
   getPaymentStatusMeta 
 } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 function ReservasiListContent() {
   const searchParams = useSearchParams();
@@ -55,6 +56,7 @@ function ReservasiListContent() {
     try {
       const res = await PmsService.approveReservation(id);
       if (res.success) {
+        showAdminToast('edit', 'Reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.');
         setActionMessage('Reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.');
         loadReservations();
       } else {
@@ -71,6 +73,7 @@ function ReservasiListContent() {
     try {
       const res = await PmsService.rejectReservation(id, reason);
       if (res.success) {
+        showAdminToast('edit', 'Reservasi telah ditolak.');
         setActionMessage('Reservasi telah ditolak.');
         loadReservations();
       } else {

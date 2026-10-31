@@ -21,6 +21,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { Room, StaffShift, Reservation } from '@/lib/types';
 import { formatRupiah } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function WalkInReservationPage() {
   const router = useRouter();
@@ -157,6 +158,7 @@ export default function WalkInReservationPage() {
       });
 
       setSuccessReservation(res);
+      showAdminToast('add', `Reservasi baru untuk tamu "${guestName}" berhasil ditambahkan ke sistem.`);
       setLoading(false);
     } catch (err: any) {
       alert(`Gagal membuat reservasi walk-in: ${err?.message || err}`);

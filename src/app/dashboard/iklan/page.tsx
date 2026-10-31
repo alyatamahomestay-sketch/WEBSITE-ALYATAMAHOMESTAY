@@ -20,6 +20,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { AdvertisementPhoto, AdCategory } from '@/lib/types';
 import ImageUploadPicker from '@/components/common/ImageUploadPicker';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 const CATEGORIES: { value: AdCategory; label: string }[] = [
   { value: 'brosur_flyer', label: 'Brosur & Flyer Resmi' },
@@ -119,6 +120,7 @@ export default function AdminIklanPage() {
           is_active: isActive,
           display_order: Number(displayOrder),
         });
+        showAdminToast('edit', `Foto iklan "${title}" berhasil diperbarui.`);
         setFeedback('Foto iklan berhasil diperbarui!');
       } else {
         await PmsService.createAdvertisementPhoto({
@@ -130,6 +132,7 @@ export default function AdminIklanPage() {
           is_active: isActive,
           display_order: Number(displayOrder),
         });
+        showAdminToast('add', `Foto iklan baru "${title}" berhasil ditambahkan dan siap tayang!`);
         setFeedback('Foto iklan baru berhasil ditambahkan dan siap tayang!');
       }
 
@@ -148,6 +151,7 @@ export default function AdminIklanPage() {
         is_active: !item.is_active,
       });
       await loadPhotos();
+      showAdminToast('edit', `Status foto "${item.title}" diubah menjadi ${!item.is_active ? 'Aktif (Tayang)' : 'Nonaktif (Disembunyikan)'}.`);
       setFeedback(`Status foto "${item.title}" diubah menjadi ${!item.is_active ? 'Aktif (Tayang)' : 'Nonaktif (Disembunyikan)'}.`);
       setTimeout(() => setFeedback(''), 3000);
     } catch (err: any) {
@@ -163,6 +167,7 @@ export default function AdminIklanPage() {
     try {
       await PmsService.deleteAdvertisementPhoto(item.id);
       await loadPhotos();
+      showAdminToast('delete', `Foto iklan "${item.title}" berhasil dihapus.`);
       setFeedback('Foto iklan telah berhasil dihapus.');
       setTimeout(() => setFeedback(''), 3000);
     } catch (err: any) {

@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import PanelSidebar from '@/components/panel/PanelSidebar';
 import PanelHeader from '@/components/panel/PanelHeader';
+import AdminToast from '@/components/common/AdminToast';
 
 function PanelGatekeeper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -113,6 +114,7 @@ function PanelGatekeeper({ children }: { children: React.ReactNode }) {
   // 4. Authenticated: render full management panel with collapsible sidebar & header
   return (
     <div className="min-h-screen bg-[#F7F4ED] print:bg-white print:min-h-0 flex flex-col font-sans">
+      <AdminToast />
       <PanelSidebar 
         currentRole={role} 
         onRoleChange={handleRoleChange} 

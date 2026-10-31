@@ -22,6 +22,7 @@ import {
 import { PmsService } from '@/lib/services/pms-service';
 import { PropertySettings, Room } from '@/lib/types';
 import { formatRupiah } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function SetupTampilanWebsitePage() {
   const [property, setProperty] = useState<PropertySettings | null>(null);
@@ -118,7 +119,8 @@ export default function SetupTampilanWebsitePage() {
         booking_policy: bookingPolicy,
       });
 
-      setFeedback('Pengaturan tampilan website berhasil diperbarui secara langsung!');
+      showAdminToast('edit', 'Pengaturan tampilan website berhasil diperbarui secara langsung.');
+      setFeedback('Berhasil Diubah: Pengaturan tampilan website berhasil diperbarui secara langsung!');
       setTimeout(() => setFeedback(''), 4000);
     } catch (err: any) {
       alert(`Gagal menyimpan pengaturan: ${err?.message || err}`);

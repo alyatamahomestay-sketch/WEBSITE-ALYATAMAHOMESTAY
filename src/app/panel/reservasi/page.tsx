@@ -25,6 +25,7 @@ import {
   getReservationStatusMeta, 
   getPaymentStatusMeta 
 } from '@/lib/formatters';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 function ReservasiPanelList() {
   const searchParams = useSearchParams();
@@ -57,7 +58,8 @@ function ReservasiPanelList() {
     try {
       const res = await PmsService.approveReservation(id, 'Petugas Bertugas');
       if (res.success) {
-        setActionMessage('Permintaan reservasi berhasil disetujui!');
+        showAdminToast('edit', 'Status reservasi berhasil diubah menjadi Disetujui.');
+        setActionMessage('Berhasil Diubah: Permintaan reservasi berhasil disetujui!');
         loadReservations();
         setTimeout(() => setActionMessage(''), 3000);
       }

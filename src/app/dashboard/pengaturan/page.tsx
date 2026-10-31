@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save, CheckCircle2, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { PropertySettings } from '@/lib/types';
+import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function PengaturanPropertiPage() {
   const [property, setProperty] = useState<PropertySettings | null>(null);
@@ -77,6 +78,7 @@ export default function PengaturanPropertiPage() {
         cancellation_policy: cancellationPolicy,
         pending_expiration_hours: Number(pendingExpirationHours),
       });
+      showAdminToast('edit', 'Pengaturan profil homestay berhasil disimpan.');
       setFeedback('Pengaturan profil homestay berhasil disimpan.');
     } catch (err: any) {
       alert(err.message || 'Gagal menyimpan pengaturan.');
