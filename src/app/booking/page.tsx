@@ -200,7 +200,7 @@ function BookingContent() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#392B21] mb-2">
                       Pilih Model Masa Sewa
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => handleRentalTypeChange('daily')}
@@ -228,21 +228,6 @@ function BookingContent() {
                         <span className="block text-xs font-bold">Bulanan</span>
                         <span className={`text-[10px] block mt-0.5 ${rentalType === 'monthly' ? 'text-white/80' : 'text-[#756A5F]'}`}>
                           30 hari
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRentalTypeChange('yearly')}
-                        className={`p-3 rounded-xl border text-center transition-all ${
-                          rentalType === 'yearly'
-                            ? 'bg-[#806044] text-white border-[#806044] shadow-sm'
-                            : 'bg-[#FAF7F2] text-[#392B21] border-[#E5DCD0] hover:border-[#806044]'
-                        }`}
-                      >
-                        <span className="block text-xs font-bold">Tahunan</span>
-                        <span className={`text-[10px] block mt-0.5 ${rentalType === 'yearly' ? 'text-white/80' : 'text-[#756A5F]'}`}>
-                          365 hari
                         </span>
                       </button>
                     </div>

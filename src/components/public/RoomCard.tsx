@@ -94,19 +94,7 @@ export default function RoomCard({ room }: RoomCardProps) {
                   {formatRupiah(room.monthly_rate)} <span className="font-normal text-[11px] text-[#756A5F]">/bulan</span>
                 </span>
               </div>
-            )}
-
-            {room.yearly_rate && (
-              <div className="flex items-center justify-between">
-                <span className="text-[#756A5F] flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-[#806044]" />
-                  Sewa Tahunan:
-                </span>
-                <span className="font-semibold text-[#806044]">
-                  {formatRupiah(room.yearly_rate)} <span className="font-normal text-[11px] text-[#756A5F]">/tahun</span>
-                </span>
-              </div>
-            )}
+            )}
           </div>
         </div>
 

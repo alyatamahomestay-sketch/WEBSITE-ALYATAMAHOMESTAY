@@ -28,19 +28,19 @@ export default async function KamarPage() {
               Pilihan Kamar ALYATAMA HOMESTAY
             </h1>
             <p className="text-xs sm:text-sm text-[#6B5E52] leading-relaxed">
-              Seluruh kamar berstandar Syariah, dilengkapi pendingin ruangan (AC), kasur empuk higienis, kamar mandi dalam bersih, WiFi gratis, serta lingkungan aman 24 jam. Melayani masa sewa <strong className="text-emerald-900">Harian, Bulanan, dan Tahunan</strong> di Bangkinang Kota.
+              Seluruh kamar berstandar Syariah, dilengkapi pendingin ruangan (AC), kasur empuk higienis, kamar mandi dalam bersih, WiFi gratis, serta lingkungan aman 24 jam. Melayani masa sewa <strong className="text-emerald-900">Harian dan Bulanan (Tipe REGULER & VIP)</strong> di Bangkinang Kota.
             </p>
           </div>
 
-          {/* 3 Model Sewa Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          {/* 2 Model Sewa Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
             <div className="bg-white p-4 rounded-2xl border border-[#DECFC0] shadow-xs flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
                 <span className="text-xs font-bold text-[#30231A] block">Sewa Harian</span>
-                <span className="text-[11px] text-[#6B5E52]">Cocok untuk wisata, keluarga, transit singkat</span>
+                <span className="text-[11px] text-[#6B5E52]">Pilihan tipe REGULER &amp; VIP untuk wisata, keluarga, transit singkat</span>
               </div>
             </div>
 
@@ -50,17 +50,7 @@ export default async function KamarPage() {
               </div>
               <div>
                 <span className="text-xs font-bold text-[#30231A] block">Sewa Bulanan</span>
-                <span className="text-[11px] text-[#6B5E52]">Ideal untuk dinas, staf BUMN, pekerja proyek</span>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-[#DECFC0] shadow-xs flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0">
-                <BedDouble className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-[#30231A] block">Sewa Tahunan</span>
-                <span className="text-[11px] text-[#6B5E52]">Pilihan hunian jangka panjang eksklusif & tenang</span>
+                <span className="text-[11px] text-[#6B5E52]">Lebih hemat untuk pegawai dinas, staf BUMN, dan penugasan proyek</span>
               </div>
             </div>
           </div>
@@ -69,7 +59,7 @@ export default async function KamarPage() {
           <div className="bg-[#FAF7F2] border border-emerald-700/20 rounded-2xl p-4 sm:p-5 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
             <div className="text-xs text-[#30231A]">
               <strong className="font-bold text-emerald-800 block sm:inline mr-1">Catatan Pemesanan:</strong>
-              Tarif harian dihitung per malam. Untuk sewa bulanan dan tahunan, Anda dapat langsung memilih opsi masa sewa pada formulir pemesanan online.
+              Tarif harian dihitung per malam. Untuk sewa bulanan, Anda dapat langsung memilih opsi masa sewa pada formulir pemesanan online.
             </div>
             <Link
               href="/cek-ketersediaan"

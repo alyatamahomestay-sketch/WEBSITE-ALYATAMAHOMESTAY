@@ -65,7 +65,7 @@ export default function KamarManagementPage() {
     setEditingRoomId(null);
     setRoomNumber('');
     setName('');
-    setRoomType('Standard Queen');
+    setRoomType('REGULER');
     setDescription('');
     setCapacityAdults(2);
     setCapacityChildren(1);
@@ -227,7 +227,6 @@ export default function KamarManagementPage() {
                 <th className="py-3.5 px-4 font-bold">Kapasitas</th>
                 <th className="py-3.5 px-4 font-bold text-right">Tarif Harian</th>
                 <th className="py-3.5 px-4 font-bold text-right">Tarif Bulanan</th>
-                <th className="py-3.5 px-4 font-bold text-right">Tarif Tahunan</th>
                 <th className="py-3.5 px-4 font-bold text-center">Status Operasional</th>
                 <th className="py-3.5 px-4 font-bold text-center">Status Arsip</th>
                 <th className="py-3.5 px-4 font-bold text-right">Tindakan</th>
@@ -253,9 +252,6 @@ export default function KamarManagementPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right font-semibold text-[#806044]">
                       {r.monthly_rate ? `${formatRupiah(r.monthly_rate)}/bln` : '-'}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-semibold text-[#65715A]">
-                      {r.yearly_rate ? `${formatRupiah(r.yearly_rate)}/thn` : '-'}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <select
@@ -354,24 +350,50 @@ export default function KamarManagementPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#392B21] mb-1">Tipe Kamar</label>
+                <label className="block font-semibold text-[#392B21] mb-1">
+                  Tipe Kamar <span className="text-xs font-normal text-stone-500">(Pilihan Utama: REGULER atau VIP)</span>
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setRoomType('REGULER')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      roomType.toUpperCase().includes('REGULER')
+                        ? 'bg-[#392B21] text-white shadow-xs'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    REGULER
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoomType('VIP')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      roomType.toUpperCase().includes('VIP')
+                        ? 'bg-[#806044] text-white shadow-xs'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    VIP
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Standard Queen"
+                  placeholder="Ketik REGULER atau VIP (atau nama spesifik)"
                   value={roomType}
                   onChange={(e) => setRoomType(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2]"
+                  className="w-full rounded-xl border border-[#E5DCD0] p-2.5 bg-[#FAF7F2] text-xs font-semibold"
                 />
               </div>
 
-              {/* 3 Model Sewa Rates */}
+              {/* 2 Model Sewa Rates (Harian & Bulanan) */}
               <div className="bg-[#FAF7F2] p-3.5 rounded-2xl border border-[#E5DCD0] space-y-3">
-                <span className="font-bold text-[#806044] block">Pengaturan Tarif Multi-Masa Sewa (IDR)</span>
+                <span className="font-bold text-[#806044] block">Pengaturan Tarif Masa Sewa (IDR)</span>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-medium text-stone-700 mb-1">Harian / Malam *</label>
+                    <label className="block font-medium text-stone-700 mb-1">Tarif Harian / Malam *</label>
                     <input
                       type="number"
                       required
@@ -384,7 +406,7 @@ export default function KamarManagementPage() {
                   </div>
 
                   <div>
-                    <label className="block font-medium text-stone-700 mb-1">Bulanan (30 hari)</label>
+                    <label className="block font-medium text-stone-700 mb-1">Tarif Bulanan (30 hari)</label>
                     <input
                       type="number"
                       min="500000"
@@ -392,19 +414,6 @@ export default function KamarManagementPage() {
                       placeholder="Contoh: 2500000"
                       value={monthlyRate}
                       onChange={(e) => setMonthlyRate(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full rounded-lg border border-[#E5DCD0] p-2 font-semibold bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-medium text-stone-700 mb-1">Tahunan (365 hari)</label>
-                    <input
-                      type="number"
-                      min="5000000"
-                      step="500000"
-                      placeholder="Contoh: 24000000"
-                      value={yearlyRate}
-                      onChange={(e) => setYearlyRate(e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full rounded-lg border border-[#E5DCD0] p-2 font-semibold bg-white"
                     />
                   </div>

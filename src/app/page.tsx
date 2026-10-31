@@ -23,11 +23,80 @@ import PublicFooter from '@/components/public/Footer';
 import RoomCard from '@/components/public/RoomCard';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 import { PmsService } from '@/lib/services/pms-service';
+import { formatRupiah } from '@/lib/formatters';
 
 export const revalidate = 0;
 
 export default async function HomePage() {
   const rooms = await PmsService.getRooms();
+
+  // Group rooms into REGULER and VIP
+  const activeRooms = rooms.filter((r) => !r.is_archived);
+
+  const regulerRooms = activeRooms.filter((r) => {
+    const type = (r.room_type || '').toUpperCase();
+    const name = (r.name || '').toUpperCase();
+    return (
+      type.includes('REGULER') ||
+      name.includes('REGULER') ||
+      type.includes('STANDARD') ||
+      name.includes('STANDARD') ||
+      type.includes('DELUXE') ||
+      name.includes('DELUXE') ||
+      type.includes('SINGLE') ||
+      (!type.includes('VIP') && !type.includes('EKSEKUTIF') && !type.includes('SUITE') && !type.includes('PAVILIUN'))
+    );
+  });
+
+  const vipRooms = activeRooms.filter((r) => {
+    const type = (r.room_type || '').toUpperCase();
+    const name = (r.name || '').toUpperCase();
+    return (
+      type.includes('VIP') ||
+      name.includes('VIP') ||
+      type.includes('EKSEKUTIF') ||
+      name.includes('EKSEKUTIF') ||
+      type.includes('SUITE') ||
+      name.includes('SUITE') ||
+      type.includes('PAVILIUN') ||
+      name.includes('PAVILIUN') ||
+      !regulerRooms.some((reg) => reg.id === r.id)
+    );
+  });
+
+  // Dynamic pricing for REGULER directly from admin rooms
+  const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
+  const regulerMonthlyRates = regulerRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
+
+  const regulerDailyMin = regulerDailyRates.length > 0 ? Math.min(...regulerDailyRates) : 200000;
+  const regulerDailyMax = regulerDailyRates.length > 0 ? Math.max(...regulerDailyRates) : 275000;
+  const regulerMonthlyMin = regulerMonthlyRates.length > 0 ? Math.min(...regulerMonthlyRates) : 2200000;
+  const regulerMonthlyMax = regulerMonthlyRates.length > 0 ? Math.max(...regulerMonthlyRates) : 2900000;
+
+  const regulerDailyDisplay = regulerDailyMin === regulerDailyMax
+    ? formatRupiah(regulerDailyMin)
+    : `${formatRupiah(regulerDailyMin)} - ${formatRupiah(regulerDailyMax)}`;
+
+  const regulerMonthlyDisplay = regulerMonthlyMin === regulerMonthlyMax
+    ? formatRupiah(regulerMonthlyMin)
+    : `${formatRupiah(regulerMonthlyMin)} - ${formatRupiah(regulerMonthlyMax)}`;
+
+  // Dynamic pricing for VIP directly from admin rooms
+  const vipDailyRates = vipRooms.map((r) => r.base_rate).filter(Boolean);
+  const vipMonthlyRates = vipRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
+
+  const vipDailyMin = vipDailyRates.length > 0 ? Math.min(...vipDailyRates) : 350000;
+  const vipDailyMax = vipDailyRates.length > 0 ? Math.max(...vipDailyRates) : 450000;
+  const vipMonthlyMin = vipMonthlyRates.length > 0 ? Math.min(...vipMonthlyRates) : 3600000;
+  const vipMonthlyMax = vipMonthlyRates.length > 0 ? Math.max(...vipMonthlyRates) : 4500000;
+
+  const vipDailyDisplay = vipDailyMin === vipDailyMax
+    ? formatRupiah(vipDailyMin)
+    : `${formatRupiah(vipDailyMin)} - ${formatRupiah(vipDailyMax)}`;
+
+  const vipMonthlyDisplay = vipMonthlyMin === vipMonthlyMax
+    ? formatRupiah(vipMonthlyMin)
+    : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`;
 
   const faqs = [
     {
@@ -39,8 +108,8 @@ export default async function HomePage() {
       a: 'Waktu check-in dimulai pukul 14:00 WIB dan waktu check-out maksimal pukul 12:00 WIB. Koordinasikan terlebih dahulu kepada pengelola apabila Anda membutuhkan fleksibilitas kedatangan.',
     },
     {
-      q: 'Bagaimana cara mengajukan sewa bulanan atau tahunan?',
-      a: 'Anda dapat memilih jenis masa sewa (Harian, Bulanan, atau Tahunan) langsung pada formulir reservasi online, atau menghubungi staf pengelola via WhatsApp untuk survei unit dan penyesuaian akad sewa.',
+      q: 'Bagaimana cara mengajukan sewa bulanan?',
+      a: 'Anda dapat memilih jenis masa sewa (Harian atau Bulanan) langsung pada formulir reservasi online, atau menghubungi staf pengelola via WhatsApp untuk survei unit dan penyesuaian akad sewa.',
     },
     {
       q: 'Apakah pemesanan online di website ini langsung terkonfirmasi?',
@@ -72,7 +141,7 @@ export default async function HomePage() {
                   </h1>
                   <p className="text-sm sm:text-base text-[#E7D8C5] leading-relaxed max-w-2xl">
                     Akomodasi berprinsip Syariah di jantung Bangkinang Kota, Kabupaten Kampar, Riau. Menyediakan pilihan sewa 
-                    <strong className="text-white font-semibold"> Harian, Bulanan, dan Tahunan</strong> dengan suasana bersih, tenang, aman, dan menjaga adab Islami.
+                    <strong className="text-white font-semibold"> Harian dan Bulanan</strong> dengan tipe kamar <strong className="text-white font-semibold">REGULER &amp; VIP</strong>, suasana bersih, tenang, aman, dan menjaga adab Islami.
                   </p>
                 </div>
 
@@ -146,67 +215,230 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 3 RENTAL MODELS — CLEAN EDITORIAL */}
-        <section className="w-full bg-[#E7D8C5] border-b border-[#D4C3AD] py-12">
+        {/* PILIHAN MASA SEWA FLEKSIBEL: TIPE REGULER & TIPE VIP */}
+        <section className="w-full bg-[#E7D8C5] border-b border-[#D4C3AD] py-14 sm:py-18">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="text-center max-w-xl mx-auto mb-8">
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21]">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-1.5">
                 Pilihan Masa Sewa Fleksibel
+              </span>
+              <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#392B21]">
+                Pilihan Kamar REGULER &amp; VIP
               </h2>
-              <p className="text-xs sm:text-sm text-[#756A5F] mt-1.5">
-                Sesuaikan masa tinggal dengan kebutuhan perjalanan atau penugasan Anda.
+              <p className="text-xs sm:text-sm text-[#756A5F] mt-2 leading-relaxed">
+                Tersedia 2 kategori pilihan kamar dengan opsi masa sewa <strong>Harian</strong> dan <strong>Bulanan</strong>. Rincian tarif transparan dan otomatis mengikuti harga resmi yang ditentukan manajemen.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
               
-              <div className="bg-white p-6 rounded-2xl border border-[#D4C3AD] shadow-xs flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#806044]/15 text-[#806044] flex items-center justify-center">
-                    <Calendar className="w-5 h-5" />
+              {/* Card 1: TIPE REGULER */}
+              <div className="bg-white rounded-3xl border border-[#D4C3AD] p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#392B21] text-white">
+                      Tipe Kamar Reguler
+                    </span>
+                    <span className="text-xs text-[#756A5F] font-medium">
+                      {regulerRooms.length > 0 ? `${regulerRooms.length} Unit Kamar` : 'Unit Tersedia'}
+                    </span>
                   </div>
-                  <h3 className="font-serif font-bold text-lg text-[#392B21]">Sewa Harian</h3>
-                  <p className="text-xs text-[#756A5F] leading-relaxed">
-                    Pilihan tepat untuk transit perjalanan, wali santri, kunjungan keluarga, dan agenda dinas singkat di Bangkinang.
-                  </p>
+
+                  <div>
+                    <h3 className="font-serif font-bold text-2xl text-[#392B21]">
+                      Kamar Syariah Reguler
+                    </h3>
+                    <p className="text-xs text-[#756A5F] mt-1.5 leading-relaxed">
+                      Pilihan hemat dan nyaman untuk transit perjalanan, wali santri, kunjungan keluarga, dan agenda dinas di Bangkinang Kota.
+                    </p>
+                  </div>
+
+                  {/* Rincian Biaya Sewa (Harian & Bulanan) */}
+                  <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-[#E5DCD0] space-y-3">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#806044] block">
+                      Rincian Biaya Sewa (Tarif Resmi):
+                    </span>
+
+                    <div className="space-y-2.5">
+                      {/* Sewa Harian */}
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E5DCD0]/70">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#806044]/15 text-[#806044] flex items-center justify-center shrink-0">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-[#392B21] block">Sewa Harian</span>
+                            <span className="text-[10px] text-[#756A5F]">Per malam (Check-in 14:00)</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm sm:text-base font-black text-[#806044]">
+                            {regulerDailyDisplay}
+                          </span>
+                          <span className="text-[10px] text-[#756A5F] block font-normal">/ malam</span>
+                        </div>
+                      </div>
+
+                      {/* Sewa Bulanan */}
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E5DCD0]/70">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#65715A]/15 text-[#65715A] flex items-center justify-center shrink-0">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-[#392B21] block">Sewa Bulanan</span>
+                            <span className="text-[10px] text-[#756A5F]">Masa sewa 30 hari (Lebih Hemat)</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm sm:text-base font-black text-[#65715A]">
+                            {regulerMonthlyDisplay}
+                          </span>
+                          <span className="text-[10px] text-[#756A5F] block font-normal">/ bulan</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fasilitas Kamar Reguler */}
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[11px] font-semibold text-[#392B21] block">Fasilitas Termasuk:</span>
+                    <ul className="text-xs text-[#756A5F] space-y-1.5">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Pendingin Ruangan (AC) di setiap kamar</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Kamar mandi dalam bersih &amp; higienis</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Akses Wi-Fi gratis berkecepatan tinggi</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Lingkungan Islami, aman &amp; privasi terjaga 24 jam</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="pt-4 mt-4 border-t border-[#E5DCD0]">
-                  <Link href="/kamar?rental=daily" className="text-xs font-semibold text-[#806044] hover:text-[#684D36] inline-flex items-center gap-1">
-                    Mulai Rp 200.000 / malam &rarr;
+
+                <div className="pt-5 mt-5 border-t border-[#E5DCD0]">
+                  <Link
+                    href="/kamar"
+                    className="w-full bg-[#FAF7F2] hover:bg-[#806044] text-[#392B21] hover:text-white border border-[#D4C3AD] hover:border-[#806044] font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    Lihat Pilihan Kamar Reguler
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-[#D4C3AD] shadow-xs flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#65715A]/15 text-[#65715A] flex items-center justify-center">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-serif font-bold text-lg text-[#392B21]">Sewa Bulanan</h3>
-                  <p className="text-xs text-[#756A5F] leading-relaxed">
-                    Hemat dan praktis untuk staf kantor pemerintah, pegawai BUMN, tenaga kesehatan RS Norpa Husada, dan pekerja proyek.
-                  </p>
+              {/* Card 2: TIPE VIP */}
+              <div className="bg-white rounded-3xl border-2 border-[#806044] p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-[#806044] text-white text-[10px] font-extrabold uppercase px-3.5 py-1 rounded-bl-xl tracking-wider">
+                  Prioritas &amp; Nyaman
                 </div>
-                <div className="pt-4 mt-4 border-t border-[#E5DCD0]">
-                  <Link href="/kamar?rental=monthly" className="text-xs font-semibold text-[#65715A] hover:text-[#525C48] inline-flex items-center gap-1">
-                    Mulai Rp 2.200.000 / bulan &rarr;
-                  </Link>
-                </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-[#D4C3AD] shadow-xs flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/25 text-[#806044] flex items-center justify-center">
-                    <BedDouble className="w-5 h-5" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-[#C9A84C]" />
+                      Tipe Kamar VIP
+                    </span>
+                    <span className="text-xs text-[#756A5F] font-medium pr-16 sm:pr-20">
+                      {vipRooms.length > 0 ? `${vipRooms.length} Unit Kamar` : 'Unit Prioritas'}
+                    </span>
                   </div>
-                  <h3 className="font-serif font-bold text-lg text-[#392B21]">Sewa Tahunan</h3>
-                  <p className="text-xs text-[#756A5F] leading-relaxed">
-                    Hunian tahunan eksklusif dengan privasi terjamin, lingkungan asri, dan akad Syariah yang menenangkan.
-                  </p>
+
+                  <div>
+                    <h3 className="font-serif font-bold text-2xl text-[#392B21]">
+                      Kamar Syariah VIP
+                    </h3>
+                    <p className="text-xs text-[#756A5F] mt-1.5 leading-relaxed">
+                      Akomodasi berkelas dengan ruang lebih luas, fasilitas eksklusif, privasi maksimal, dan suasana tenang untuk keluarga maupun penugasan eksekutif.
+                    </p>
+                  </div>
+
+                  {/* Rincian Biaya Sewa (Harian & Bulanan) */}
+                  <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-[#E5DCD0] space-y-3">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#806044] block">
+                      Rincian Biaya Sewa (Tarif Resmi):
+                    </span>
+
+                    <div className="space-y-2.5">
+                      {/* Sewa Harian */}
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E5DCD0]/70">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#806044]/20 text-[#806044] flex items-center justify-center shrink-0">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-[#392B21] block">Sewa Harian VIP</span>
+                            <span className="text-[10px] text-[#756A5F]">Per malam (Fasilitas VIP Lengkap)</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm sm:text-base font-black text-[#806044]">
+                            {vipDailyDisplay}
+                          </span>
+                          <span className="text-[10px] text-[#756A5F] block font-normal">/ malam</span>
+                        </div>
+                      </div>
+
+                      {/* Sewa Bulanan */}
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E5DCD0]/70">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#65715A]/20 text-[#65715A] flex items-center justify-center shrink-0">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-[#392B21] block">Sewa Bulanan VIP</span>
+                            <span className="text-[10px] text-[#756A5F]">Masa sewa 30 hari (Paket Eksklusif)</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm sm:text-base font-black text-[#65715A]">
+                            {vipMonthlyDisplay}
+                          </span>
+                          <span className="text-[10px] text-[#756A5F] block font-normal">/ bulan</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fasilitas Kamar VIP */}
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[11px] font-semibold text-[#392B21] block">Fasilitas Eksklusif Termasuk:</span>
+                    <ul className="text-xs text-[#756A5F] space-y-1.5">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Ruang kamar lebih luas dengan tata letak privat &amp; elegan</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Kamar mandi dalam luas + Water Heater (Pemanas Air)</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>AC dingin, Smart TV, dan meja kerja eksklusif</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#806044] shrink-0" />
+                        <span>Area parkir mobil luas &amp; dekat unit kamar</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="pt-4 mt-4 border-t border-[#E5DCD0]">
-                  <Link href="/kamar?rental=yearly" className="text-xs font-semibold text-[#806044] hover:text-[#684D36] inline-flex items-center gap-1">
-                    Mulai Rp 22.000.000 / tahun &rarr;
+
+                <div className="pt-5 mt-5 border-t border-[#E5DCD0]">
+                  <Link
+                    href="/kamar"
+                    className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    Lihat Pilihan Kamar VIP
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>

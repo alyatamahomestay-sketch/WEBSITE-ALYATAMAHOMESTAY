@@ -183,16 +183,6 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                         </div>
                       </div>
                     )}
-
-                    {room.yearly_rate && (
-                      <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#E5DCD0]">
-                        <span className="text-[11px] text-[#756A5F] block">Sewa Tahunan (Eksklusif)</span>
-                        <div className="text-xl font-bold text-[#65715A]">
-                          {formatRupiah(room.yearly_rate)}
-                          <span className="text-xs text-[#756A5F] font-normal"> / tahun</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
