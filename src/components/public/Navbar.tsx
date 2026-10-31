@@ -33,7 +33,7 @@ export default function PublicNavbar() {
       <div className="w-full bg-[#78593F] text-[#F6F0E7] text-[11px] sm:text-xs py-1.5 px-3 text-center font-normal flex items-center justify-center gap-2 flex-wrap leading-tight">
         <Heart className="w-3.5 h-3.5 text-[#E7D8C5] shrink-0 fill-none stroke-[1.5]" />
         <span>
-          Penginapan Syariah: <em>&ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;</em> &bull; Pilihan Sewa <strong>Harian, Bulanan & Tahunan</strong>
+          Penginapan Syariah: <em>&ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;</em> &bull; Pilihan Sewa <strong>Harian &amp; Bulanan</strong>
         </span>
       </div>
 
