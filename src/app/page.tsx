@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
-import RoomCard from '@/components/public/RoomCard';
 import RentalSection from '@/components/public/RentalSection';
 import FacilitiesSection from '@/components/public/FacilitiesSection';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
@@ -205,35 +204,6 @@ export default async function HomePage() {
 
         {/* PILIHAN MASA SEWA FLEKSIBEL: REGULER & VIP */}
         <RentalSection initialRooms={rooms} reservations={reservations} />
-
-        {/* ROOMS SHOWCASE */}
-        <section className="w-full py-16 sm:py-20 bg-[#F6F0E7]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-1">
-                  Pilihan Kamar
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#392B21]">
-                  Kamar Bersih, Tenang, dan Terawat
-                </h2>
-              </div>
-              <Link
-                href="/kamar"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#806044] hover:text-[#392B21] font-semibold"
-              >
-                Lihat semua unit kamar & tarif
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
-              {rooms.slice(0, 3).map((room) => (
-                <RoomCard key={room.id} room={room} reservations={reservations} />
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* 6 CORE FACILITIES (FROM OFFICIAL FLYER & ADMIN CONTROLLED) */}
         <FacilitiesSection />

@@ -375,7 +375,7 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
             <div className="pt-5 mt-5 border-t border-[#E5DCD0] space-y-2">
               {isRegulerAvailable ? (
                 <Link
-                  href="/kamar"
+                  href="/kamar?type=reguler"
                   className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
                 >
                   Lihat Pilihan Kamar Reguler
@@ -499,7 +499,7 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
             <div className="pt-5 mt-5 border-t border-[#E5DCD0] space-y-2">
               {isVipAvailable ? (
                 <Link
-                  href="/kamar"
+                  href="/kamar?type=vip"
                   className="w-full bg-[#806044] hover:bg-[#684D36] text-white font-bold text-xs py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xs"
                 >
                   Lihat Pilihan Kamar VIP
