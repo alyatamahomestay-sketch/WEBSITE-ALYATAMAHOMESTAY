@@ -56,8 +56,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Akses Wi-Fi gratis berkecepatan tinggi',
     'Lingkungan Islami, aman & privasi terjaga 24 jam'
   ],
-  regulerDailyRate: 200000,
-  regulerMonthlyRate: 2200000,
+  regulerDailyRate: 150000,
+  regulerMonthlyRate: 1500000,
   vipBadge: 'Tipe Kamar VIP',
   vipTagline: 'Prioritas & Nyaman',
   vipTitle: 'Kamar Syariah VIP',
@@ -68,8 +68,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'AC dingin, Smart TV, dan meja kerja eksklusif',
     'Area parkir mobil luas & dekat unit kamar'
   ],
-  vipDailyRate: 350000,
-  vipMonthlyRate: 3600000
+  vipDailyRate: 200000,
+  vipMonthlyRate: 3000000
 };
 
 export default function SetupMasaSewaPage() {
@@ -104,7 +104,21 @@ export default function SetupMasaSewaPage() {
       const roomsData = await PmsService.getRooms();
       setRooms(roomsData);
 
-      if (typeof window !== 'undefined') {
+      // Try server config API first
+      let loadedConfig = null;
+      try {
+        const res = await fetch('/api/panel/rental-config');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.config) {
+            loadedConfig = json.config;
+            setConfig(json.config);
+          }
+        }
+      } catch (e) {}
+
+      // Fallback to localStorage if server API wasn't reached
+      if (!loadedConfig && typeof window !== 'undefined') {
         const saved = localStorage.getItem('alyatama_rental_section_config');
         if (saved) {
           try {
@@ -190,26 +204,62 @@ export default function SetupMasaSewaPage() {
         ? formatRupiah(vipMonthlyMin)
         : `${formatRupiah(vipMonthlyMin)} - ${formatRupiah(vipMonthlyMax)}`);
 
-  // Save Content Config
-  const handleSaveConfig = () => {
+  // Save Content Config to server & localStorage
+  const handleSaveConfig = async () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('alyatama_rental_section_config', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
+      try {
+        await fetch('/api/panel/rental-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config }),
+        });
+      } catch (e) {}
     }
-    showAdminToast('edit', 'Pengaturan teks & tampilan seksi Masa Sewa berhasil disimpan.');
-    showNotification('Berhasil Diubah: Pengaturan tampilan seksi Masa Sewa berhasil disimpan!');
+    showAdminToast('edit', 'Pengaturan teks & tampilan seksi Masa Sewa berhasil disimpan ke seluruh perangkat.');
+    showNotification('Berhasil Diubah: Pengaturan tampilan seksi Masa Sewa berhasil disimpan ke seluruh perangkat!');
   };
 
-  // Direct Save Specific Rates from Card
-  const handleSaveSpecificRates = (type: 'REGULER' | 'VIP') => {
+  // Direct Save Specific Rates: Automatically updates server config AND all target rooms in database!
+  const handleSaveSpecificRates = async (type: 'REGULER' | 'VIP') => {
+    const daily = type === 'VIP' ? (config.vipDailyRate || 200000) : (config.regulerDailyRate || 150000);
+    const monthly = type === 'VIP' ? (config.vipMonthlyRate || 3000000) : (config.regulerMonthlyRate || 1500000);
+
+    // 1. Save config to local & server API so every visitor device gets it
     if (typeof window !== 'undefined') {
       localStorage.setItem('alyatama_rental_section_config', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
+      try {
+        await fetch('/api/panel/rental-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config }),
+        });
+      } catch (e) {}
     }
-    const daily = type === 'VIP' ? config.vipDailyRate : config.regulerDailyRate;
-    const monthly = type === 'VIP' ? config.vipMonthlyRate : config.regulerMonthlyRate;
-    showAdminToast('edit', `Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan) dan langsung aktif di homepage.`);
-    showNotification(`Berhasil Diubah: Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily || 0)}/malam, ${formatRupiah(monthly || 0)}/bulan).`);
+
+    // 2. Automatically sync to real database rooms
+    const targetRooms = type === 'VIP' ? vipRooms : regulerRooms;
+    if (targetRooms.length > 0) {
+      setSyncingType(type);
+      try {
+        for (const rm of targetRooms) {
+          await PmsService.updateRoom(rm.id, {
+            base_rate: daily,
+            monthly_rate: monthly
+          });
+        }
+        await loadData();
+      } catch (err: any) {
+        console.error('Error auto-syncing room rates:', err);
+      } finally {
+        setSyncingType(null);
+      }
+    }
+
+    showAdminToast('edit', `Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily)}/malam, ${formatRupiah(monthly)}/bulan) dan langsung aktif di seluruh perangkat.`);
+    showNotification(`Berhasil Diubah: Tarif Tipe ${type} berhasil disimpan (${formatRupiah(daily)}/malam, ${formatRupiah(monthly)}/bulan) ke seluruh perangkat pengunjung!`);
   };
 
   // Sync rates to database room records
@@ -459,7 +509,7 @@ export default function SetupMasaSewaPage() {
                       type="number"
                       min="0"
                       step="5000"
-                      value={config.regulerDailyRate ?? 200000}
+                      value={config.regulerDailyRate ?? 150000}
                       onChange={(e) =>
                         setConfig({
                           ...config,
@@ -467,7 +517,7 @@ export default function SetupMasaSewaPage() {
                         })
                       }
                       className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#806044] focus:outline-hidden focus:ring-1 focus:ring-[#806044]"
-                      placeholder="200000"
+                      placeholder="150000"
                     />
                   </div>
                   <span className="text-[10px] text-stone-500 block">
@@ -486,7 +536,7 @@ export default function SetupMasaSewaPage() {
                       type="number"
                       min="0"
                       step="50000"
-                      value={config.regulerMonthlyRate ?? 2200000}
+                      value={config.regulerMonthlyRate ?? 1500000}
                       onChange={(e) =>
                         setConfig({
                           ...config,
@@ -494,7 +544,7 @@ export default function SetupMasaSewaPage() {
                         })
                       }
                       className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#65715A] focus:outline-hidden focus:ring-1 focus:ring-[#65715A]"
-                      placeholder="2200000"
+                      placeholder="1500000"
                     />
                   </div>
                   <span className="text-[10px] text-stone-500 block">
@@ -578,7 +628,7 @@ export default function SetupMasaSewaPage() {
                       type="number"
                       min="0"
                       step="5000"
-                      value={config.vipDailyRate ?? 350000}
+                      value={config.vipDailyRate ?? 200000}
                       onChange={(e) =>
                         setConfig({
                           ...config,
@@ -586,7 +636,7 @@ export default function SetupMasaSewaPage() {
                         })
                       }
                       className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#806044] focus:outline-hidden focus:ring-1 focus:ring-[#806044]"
-                      placeholder="350000"
+                      placeholder="200000"
                     />
                   </div>
                   <span className="text-[10px] text-stone-500 block">
@@ -605,7 +655,7 @@ export default function SetupMasaSewaPage() {
                       type="number"
                       min="0"
                       step="50000"
-                      value={config.vipMonthlyRate ?? 3600000}
+                      value={config.vipMonthlyRate ?? 3000000}
                       onChange={(e) =>
                         setConfig({
                           ...config,
@@ -613,7 +663,7 @@ export default function SetupMasaSewaPage() {
                         })
                       }
                       className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold rounded-lg border border-stone-300 bg-stone-50 focus:bg-white text-[#65715A] focus:outline-hidden focus:ring-1 focus:ring-[#65715A]"
-                      placeholder="3600000"
+                      placeholder="3000000"
                     />
                   </div>
                   <span className="text-[10px] text-stone-500 block">

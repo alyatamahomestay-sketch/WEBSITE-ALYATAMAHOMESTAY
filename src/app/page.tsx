@@ -55,10 +55,10 @@ export default async function HomePage() {
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
   const regulerMonthlyRates = regulerRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
-  const regulerDailyMin = regulerDailyRates.length > 0 ? Math.min(...regulerDailyRates) : 200000;
-  const regulerDailyMax = regulerDailyRates.length > 0 ? Math.max(...regulerDailyRates) : 275000;
-  const regulerMonthlyMin = regulerMonthlyRates.length > 0 ? Math.min(...regulerMonthlyRates) : 2200000;
-  const regulerMonthlyMax = regulerMonthlyRates.length > 0 ? Math.max(...regulerMonthlyRates) : 2900000;
+  const regulerDailyMin = regulerDailyRates.length > 0 ? Math.min(...regulerDailyRates) : 150000;
+  const regulerDailyMax = regulerDailyRates.length > 0 ? Math.max(...regulerDailyRates) : 150000;
+  const regulerMonthlyMin = regulerMonthlyRates.length > 0 ? Math.min(...regulerMonthlyRates) : 1500000;
+  const regulerMonthlyMax = regulerMonthlyRates.length > 0 ? Math.max(...regulerMonthlyRates) : 1500000;
 
   const regulerDailyDisplay = regulerDailyMin === regulerDailyMax
     ? formatRupiah(regulerDailyMin)
@@ -72,10 +72,10 @@ export default async function HomePage() {
   const vipDailyRates = vipRooms.map((r) => r.base_rate).filter(Boolean);
   const vipMonthlyRates = vipRooms.map((r) => r.monthly_rate).filter(Boolean) as number[];
 
-  const vipDailyMin = vipDailyRates.length > 0 ? Math.min(...vipDailyRates) : 350000;
-  const vipDailyMax = vipDailyRates.length > 0 ? Math.max(...vipDailyRates) : 450000;
-  const vipMonthlyMin = vipMonthlyRates.length > 0 ? Math.min(...vipMonthlyRates) : 3600000;
-  const vipMonthlyMax = vipMonthlyRates.length > 0 ? Math.max(...vipMonthlyRates) : 4500000;
+  const vipDailyMin = vipDailyRates.length > 0 ? Math.min(...vipDailyRates) : 200000;
+  const vipDailyMax = vipDailyRates.length > 0 ? Math.max(...vipDailyRates) : 200000;
+  const vipMonthlyMin = vipMonthlyRates.length > 0 ? Math.min(...vipMonthlyRates) : 3000000;
+  const vipMonthlyMax = vipMonthlyRates.length > 0 ? Math.max(...vipMonthlyRates) : 3000000;
 
   const vipDailyDisplay = vipDailyMin === vipDailyMax
     ? formatRupiah(vipDailyMin)

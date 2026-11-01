@@ -46,8 +46,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'Akses Wi-Fi gratis berkecepatan tinggi',
     'Lingkungan Islami, aman & privasi terjaga 24 jam'
   ],
-  regulerDailyRate: 200000,
-  regulerMonthlyRate: 2200000,
+  regulerDailyRate: 150000,
+  regulerMonthlyRate: 1500000,
   vipBadge: 'Tipe Kamar VIP',
   vipTagline: 'Prioritas & Nyaman',
   vipTitle: 'Kamar Syariah VIP',
@@ -58,8 +58,8 @@ const DEFAULT_CONFIG: SectionConfig = {
     'AC dingin, Smart TV, dan meja kerja eksklusif',
     'Area parkir mobil luas & dekat unit kamar'
   ],
-  vipDailyRate: 350000,
-  vipMonthlyRate: 3600000
+  vipDailyRate: 200000,
+  vipMonthlyRate: 3000000
 };
 
 interface RentalSectionProps {
@@ -71,9 +71,22 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
   const [rooms] = useState<Room[]>(initialRooms);
   const [config, setConfig] = useState<SectionConfig>(DEFAULT_CONFIG);
 
-  // Load custom content config set by admin in panel if available
+  // Load custom content config set by admin in panel (live from server & local)
   useEffect(() => {
-    const readConfig = () => {
+    const readConfig = async () => {
+      // 1. Try server API so all devices receive the latest rates & text
+      try {
+        const res = await fetch('/api/panel/rental-config');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.config) {
+            setConfig(json.config);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Fallback to localStorage
       if (typeof window !== 'undefined') {
         const savedConfig = localStorage.getItem('alyatama_rental_section_config');
         if (savedConfig) {

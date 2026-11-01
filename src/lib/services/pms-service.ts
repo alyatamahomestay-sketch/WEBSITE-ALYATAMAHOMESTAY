@@ -199,26 +199,45 @@ export const PmsService = {
 
   // --- ROOMS ---
   async getRooms(includeArchived = false): Promise<Room[]> {
+    // 1. Prioritize live Supabase database query so all devices receive the real admin data
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        let query = supabase.from('rooms').select('*').order('room_number', { ascending: true });
+        if (!includeArchived) {
+          query = query.eq('is_archived', false);
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          memRooms = data as Room[];
+          syncMemRoomsToStorage(memRooms);
+          return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
+        }
+      } catch (e) {}
+    }
+
+    // 2. In browser environment, try live API endpoint
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/rooms');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
+            memRooms = json.rooms;
+            syncMemRoomsToStorage(memRooms);
+            return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to localStorage or in-memory if offline
     const fromStorage = loadMemRoomsFromStorage();
     if (fromStorage && fromStorage.length > 0) {
       memRooms = fromStorage;
       return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
     }
-    if (!isSupabaseConfigured()) {
-      syncMemRoomsToStorage(memRooms);
-      return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
-    }
-    const supabase = createClient();
-    let query = supabase.from('rooms').select('*').order('room_number', { ascending: true });
-    if (!includeArchived) {
-      query = query.eq('is_archived', false);
-    }
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      syncMemRoomsToStorage(memRooms);
-      return memRooms.filter(r => includeArchived || !r.is_archived);
-    }
-    memRooms = data as Room[];
+
     syncMemRoomsToStorage(memRooms);
     return includeArchived ? memRooms : memRooms.filter(r => !r.is_archived);
   },
