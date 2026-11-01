@@ -157,6 +157,20 @@ let memAuditLogs: AuditLog[] = [
 export const PmsService = {
   // --- PROPERTIES ---
   async getPropertySettings(): Promise<PropertySettings> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/properties');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.property) {
+            memProperty = json.property;
+            syncMemPropertyToStorage(memProperty);
+            return memProperty;
+          }
+        }
+      } catch (e) {}
+    }
+
     const fromStorage = loadMemPropertyFromStorage();
     if (fromStorage) {
       memProperty = fromStorage;
@@ -166,13 +180,15 @@ export const PmsService = {
       syncMemPropertyToStorage(memProperty);
       return memProperty;
     }
-    const supabase = createClient();
-    const { data, error } = await supabase.from('properties').select('*').limit(1).single();
-    if (error || !data) {
-      syncMemPropertyToStorage(memProperty);
-      return memProperty;
-    }
-    memProperty = data as PropertySettings;
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
+      if (!error && data) {
+        memProperty = data as PropertySettings;
+        syncMemPropertyToStorage(memProperty);
+        return memProperty;
+      }
+    } catch (e) {}
     syncMemPropertyToStorage(memProperty);
     return memProperty;
   },
@@ -181,18 +197,36 @@ export const PmsService = {
     memProperty = { ...memProperty, ...updates, updated_at: new Date().toISOString() };
     syncMemPropertyToStorage(memProperty);
 
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates }),
+        });
+        const json = await res.json();
+        if (json.success && json.property) {
+          memProperty = json.property;
+          syncMemPropertyToStorage(memProperty);
+          return memProperty;
+        }
+      } catch (e) {}
+    }
+
     if (isSupabaseConfigured()) {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('properties')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', memProperty.id)
-        .select()
-        .single();
-      if (!error && data) {
-        memProperty = data as PropertySettings;
-        syncMemPropertyToStorage(memProperty);
-      }
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('properties')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('id', memProperty.id)
+          .select()
+          .maybeSingle();
+        if (!error && data) {
+          memProperty = data as PropertySettings;
+          syncMemPropertyToStorage(memProperty);
+        }
+      } catch (e) {}
     }
     return memProperty;
   },
@@ -895,25 +929,41 @@ export const PmsService = {
 
   // --- V3.1 STAFF ACCESS MANAGEMENT ---
   async getStaffUsers(): Promise<StaffUser[]> {
+    // 1. In browser environment, prioritize API endpoint so all devices get identical server data
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/staff');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.users) && json.users.length > 0) {
+            memStaffUsers = json.users;
+            syncMemStaffUsersToStorage(memStaffUsers);
+            return memStaffUsers;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Direct Supabase query
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('staff_users').select('*').order('created_at', { ascending: true });
+        if (!error && data && data.length > 0) {
+          memStaffUsers = data as StaffUser[];
+          syncMemStaffUsersToStorage(memStaffUsers);
+          return memStaffUsers;
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to localStorage or in-memory
     const fromStorage = loadMemStaffUsersFromStorage();
     if (fromStorage && fromStorage.length > 0) {
       memStaffUsers = fromStorage;
       return memStaffUsers;
     }
 
-    if (!isSupabaseConfigured()) {
-      syncMemStaffUsersToStorage(memStaffUsers);
-      return memStaffUsers;
-    }
-    const supabase = createClient();
-    const { data, error } = await supabase.from('staff_users').select('*').order('created_at', { ascending: true });
-    if (error || !data || data.length === 0) {
-      syncMemStaffUsersToStorage(memStaffUsers);
-      return memStaffUsers;
-    }
-    
-    // If Supabase returned data, cache to memory & storage
-    memStaffUsers = data as StaffUser[];
     syncMemStaffUsersToStorage(memStaffUsers);
     return memStaffUsers;
   },
@@ -941,49 +991,98 @@ export const PmsService = {
     memStaffUsers = [...memStaffUsers, newUser];
     syncMemStaffUsersToStorage(memStaffUsers);
 
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', user: newUser }),
+        });
+        const json = await res.json();
+        if (json.success && json.user) {
+          const idx = memStaffUsers.findIndex((u) => u.id === newUser.id);
+          if (idx !== -1) memStaffUsers[idx] = json.user;
+          syncMemStaffUsersToStorage(memStaffUsers);
+          return json.user;
+        }
+      } catch (e) {}
+    }
+
     if (isSupabaseConfigured()) {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('staff_users').insert([newUser]).select().single();
-      if (!error && data) {
-        const idx = memStaffUsers.findIndex((u) => u.id === newUser.id);
-        if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
-        syncMemStaffUsersToStorage(memStaffUsers);
-        return data as StaffUser;
-      }
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('staff_users').insert([newUser]).select().single();
+        if (!error && data) {
+          const idx = memStaffUsers.findIndex((u) => u.id === newUser.id);
+          if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
+          syncMemStaffUsersToStorage(memStaffUsers);
+          return data as StaffUser;
+        }
+      } catch (e) {}
     }
     return newUser;
   },
 
   async updateStaffUser(id: string, updates: Partial<StaffUser>): Promise<StaffUser> {
-    const list = await this.getStaffUsers();
-    const idx = list.findIndex((u) => u.id === id);
+    const idx = memStaffUsers.findIndex((u) => u.id === id);
     if (idx !== -1) {
       memStaffUsers[idx] = { ...memStaffUsers[idx], ...updates, updated_at: new Date().toISOString() };
       syncMemStaffUsersToStorage(memStaffUsers);
     }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', id, updates }),
+        });
+        const json = await res.json();
+        if (json.success && json.user) {
+          if (idx !== -1) memStaffUsers[idx] = json.user;
+          syncMemStaffUsersToStorage(memStaffUsers);
+          return json.user;
+        }
+      } catch (e) {}
+    }
+
     if (isSupabaseConfigured()) {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('staff_users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
-      if (!error && data) {
-        if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
-        syncMemStaffUsersToStorage(memStaffUsers);
-        return data as StaffUser;
-      }
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('staff_users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+        if (!error && data) {
+          if (idx !== -1) memStaffUsers[idx] = data as StaffUser;
+          syncMemStaffUsersToStorage(memStaffUsers);
+          return data as StaffUser;
+        }
+      } catch (e) {}
     }
     if (idx !== -1) return memStaffUsers[idx];
     throw new Error('Pengguna staf tidak ditemukan');
   },
 
   async deleteStaffUser(id: string): Promise<boolean> {
-    const list = await this.getStaffUsers();
-    const idx = list.findIndex((u) => u.id === id);
+    const idx = memStaffUsers.findIndex((u) => u.id === id);
     if (idx !== -1) {
       memStaffUsers.splice(idx, 1);
       syncMemStaffUsersToStorage(memStaffUsers);
     }
+
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/panel/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', id }),
+        });
+      } catch (e) {}
+    }
+
     if (isSupabaseConfigured()) {
-      const supabase = createClient();
-      await supabase.from('staff_users').delete().eq('id', id);
+      try {
+        const supabase = createClient();
+        await supabase.from('staff_users').delete().eq('id', id);
+      } catch (e) {}
     }
     return true;
   },
@@ -1086,6 +1185,20 @@ export const PmsService = {
 
   // --- V3.1 STAFF SHIFTS ---
   async getStaffShifts(staffUserId?: string): Promise<StaffShift[]> {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = staffUserId ? `/api/panel/staff?type=shifts&staff_user_id=${encodeURIComponent(staffUserId)}` : '/api/panel/staff?type=shifts';
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.shifts)) {
+            memStaffShifts = json.shifts;
+            return memStaffShifts;
+          }
+        }
+      } catch (e) {}
+    }
+
     let list = memStaffShifts;
     if (staffUserId) {
       list = list.filter((s) => s.staff_user_id === staffUserId);
@@ -1117,11 +1230,32 @@ export const PmsService = {
       updated_at: new Date().toISOString(),
     };
     memStaffShifts.push(newShift);
+
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'start_shift',
+            staffUserId,
+            staffNameSnapshot,
+            notes,
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.shift) {
+          return json.shift;
+        }
+      } catch (e) {}
+    }
+
     return newShift;
   },
 
   async endShift(shiftId: string): Promise<StaffShift> {
     const idx = memStaffShifts.findIndex((s) => s.id === shiftId);
+    let updatedShift: StaffShift | null = null;
     if (idx !== -1) {
       memStaffShifts[idx] = {
         ...memStaffShifts[idx],
@@ -1129,8 +1263,24 @@ export const PmsService = {
         ended_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      return memStaffShifts[idx];
+      updatedShift = memStaffShifts[idx];
     }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'end_shift', shiftId }),
+        });
+        const json = await res.json();
+        if (json.success && json.shift) {
+          return json.shift;
+        }
+      } catch (e) {}
+    }
+
+    if (updatedShift) return updatedShift;
     throw new Error('Shift tidak ditemukan');
   },
 

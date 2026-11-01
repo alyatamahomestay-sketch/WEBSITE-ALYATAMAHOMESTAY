@@ -32,3 +32,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# server persistent local store
+.server-*.json
+.rental-config.json
+.server-data/
+
