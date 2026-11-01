@@ -128,39 +128,25 @@ export default function SetupMasaSewaPage() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  // Group rooms into REGULER and VIP
+  // Clean partitioning between VIP and REGULER (Matching visitor page & PMS data)
   const activeRooms = rooms.filter((r) => !r.is_archived);
 
-  const regulerRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const rName = (r.name || '').toUpperCase();
+  const isVipRoom = (r: Room) => {
+    const type = (r.room_type || '').toUpperCase().trim();
+    const rName = (r.name || '').toUpperCase().trim();
     return (
-      type.includes('REGULER') ||
-      rName.includes('REGULER') ||
-      type.includes('STANDARD') ||
-      rName.includes('STANDARD') ||
-      type.includes('DELUXE') ||
-      rName.includes('DELUXE') ||
-      type.includes('SINGLE') ||
-      (!type.includes('VIP') && !type.includes('EKSEKUTIF') && !type.includes('SUITE') && !type.includes('PAVILIUN'))
-    );
-  });
-
-  const vipRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const rName = (r.name || '').toUpperCase();
-    return (
+      type === 'VIP' ||
       type.includes('VIP') ||
       rName.includes('VIP') ||
       type.includes('EKSEKUTIF') ||
       rName.includes('EKSEKUTIF') ||
-      type.includes('SUITE') ||
-      rName.includes('SUITE') ||
       type.includes('PAVILIUN') ||
-      rName.includes('PAVILIUN') ||
-      !regulerRooms.some((reg) => reg.id === r.id)
+      rName.includes('PAVILIUN')
     );
-  });
+  };
+
+  const vipRooms = activeRooms.filter(isVipRoom);
+  const regulerRooms = activeRooms.filter((r) => !isVipRoom(r));
 
   // Rates for REGULER: Prioritize explicit admin rate setting
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
@@ -1068,6 +1054,59 @@ export default function SetupMasaSewaPage() {
             </p>
           </div>
 
+          {/* Kolom Khusus Ringkasan Total Ketersediaan Unit di Atas Card */}
+          <div className="max-w-4xl mx-auto mb-6 bg-white rounded-3xl border border-[#D4C3AD] p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#E5DCD0]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#806044] text-white flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#806044] block">
+                    Kapasitas &amp; Ketersediaan Unit
+                  </span>
+                  <h4 className="font-serif font-bold text-base text-[#392B21]">
+                    Total Kapasitas Homestay: <span className="text-[#806044] font-black">{activeRooms.length || 8} Unit Kamar</span>
+                  </h4>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                {activeRooms.filter(r => r.operational_status === 'tersedia').length} Unit Tersedia (Siap Huni)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 text-xs">
+              <div className="flex items-center justify-between p-3 bg-[#FAF7F2] rounded-xl border border-[#E5DCD0]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#392B21] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    R
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#392B21] block">Kamar Tipe REGULER</span>
+                    <span className="text-[11px] text-[#756A5F]">Total Kapasitas: <strong className="text-[#392B21]">{regulerRooms.length} Unit Kamar</strong></span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800">
+                  {regulerRooms.filter(r => r.operational_status === 'tersedia').length} Siap Huni
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-[#FAF7F2] rounded-xl border border-[#E5DCD0]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#806044] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#392B21] block">Kamar Tipe VIP</span>
+                    <span className="text-[11px] text-[#756A5F]">Total Kapasitas: <strong className="text-[#392B21]">{vipRooms.length} Unit Kamar</strong></span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800">
+                  {vipRooms.filter(r => r.operational_status === 'tersedia').length} Siap Huni
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {/* Card Reguler Preview */}
             <div className="bg-white rounded-3xl border border-[#D4C3AD] p-6 shadow-xs flex flex-col justify-between">
@@ -1075,9 +1114,6 @@ export default function SetupMasaSewaPage() {
                 <div className="flex items-center justify-between">
                   <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase bg-[#392B21] text-white">
                     {config.regulerBadge}
-                  </span>
-                  <span className="text-xs text-[#756A5F] font-medium">
-                    {regulerRooms.length} Unit Kamar
                   </span>
                 </div>
                 <h3 className="font-serif font-bold text-xl text-[#392B21]">
@@ -1128,9 +1164,6 @@ export default function SetupMasaSewaPage() {
                   <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase bg-[#806044] text-white flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-[#C9A84C]" />
                     {config.vipBadge}
-                  </span>
-                  <span className="text-xs text-[#756A5F] font-medium pr-16">
-                    {vipRooms.length} Unit Kamar
                   </span>
                 </div>
                 <h3 className="font-serif font-bold text-xl text-[#392B21]">

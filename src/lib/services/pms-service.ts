@@ -80,7 +80,17 @@ function loadMemRoomsFromStorage(): Room[] | null {
       const saved = localStorage.getItem('alyatama_rooms_data');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length >= 8) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const merged = [...parsed];
+          INITIAL_ROOMS.forEach((initRoom) => {
+            if (!merged.some((r) => r.room_number === initRoom.room_number)) {
+              merged.push(initRoom);
+            }
+          });
+          syncMemRoomsToStorage(merged);
+          return merged;
+        }
       }
     } catch (e) {}
   }

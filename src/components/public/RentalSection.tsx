@@ -7,11 +7,13 @@ import {
   Building2, 
   Sparkles, 
   CheckCircle2, 
-  ArrowRight
+  ArrowRight,
+  XCircle,
+  BedDouble,
+  ShieldCheck
 } from 'lucide-react';
 import { Room, Reservation } from '@/lib/types';
 import { evaluateRoomAvailability } from '@/lib/room-availability';
-import { XCircle } from 'lucide-react';
 import { formatRupiah } from '@/lib/formatters';
 
 interface SectionConfig {
@@ -94,39 +96,25 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // Group rooms into REGULER and VIP
+  // Clean partitioning between VIP and REGULER (Exactly matches admin setup)
   const activeRooms = rooms.filter((r) => !r.is_archived);
 
-  const regulerRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const rName = (r.name || '').toUpperCase();
+  const isVipRoom = (r: Room) => {
+    const type = (r.room_type || '').toUpperCase().trim();
+    const name = (r.name || '').toUpperCase().trim();
     return (
-      type.includes('REGULER') ||
-      rName.includes('REGULER') ||
-      type.includes('STANDARD') ||
-      rName.includes('STANDARD') ||
-      type.includes('DELUXE') ||
-      rName.includes('DELUXE') ||
-      type.includes('SINGLE') ||
-      (!type.includes('VIP') && !type.includes('EKSEKUTIF') && !type.includes('SUITE') && !type.includes('PAVILIUN'))
-    );
-  });
-
-  const vipRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const rName = (r.name || '').toUpperCase();
-    return (
+      type === 'VIP' ||
       type.includes('VIP') ||
-      rName.includes('VIP') ||
+      name.includes('VIP') ||
       type.includes('EKSEKUTIF') ||
-      rName.includes('EKSEKUTIF') ||
-      type.includes('SUITE') ||
-      rName.includes('SUITE') ||
+      name.includes('EKSEKUTIF') ||
       type.includes('PAVILIUN') ||
-      rName.includes('PAVILIUN') ||
-      !regulerRooms.some((reg) => reg.id === r.id)
+      name.includes('PAVILIUN')
     );
-  });
+  };
+
+  const vipRooms = activeRooms.filter(isVipRoom);
+  const regulerRooms = activeRooms.filter((r) => !isVipRoom(r));
 
   // Calculate live availability for each category
   const regulerAvailableUnits = regulerRooms.filter(
@@ -138,6 +126,9 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
     (r) => evaluateRoomAvailability(r, reservations).isAvailable
   );
   const isVipAvailable = vipAvailableUnits.length > 0;
+
+  const totalAvailableCount = regulerAvailableUnits.length + vipAvailableUnits.length;
+  const totalOccupiedCount = activeRooms.length - totalAvailableCount;
 
   // Rates for REGULER: Admin explicit setting takes highest priority
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
@@ -186,7 +177,7 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         
         {/* Header Section */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <span className="text-xs font-bold uppercase tracking-widest text-[#806044] block mb-1.5">
             Pilihan Masa Sewa Fleksibel
           </span>
@@ -198,31 +189,116 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
           </p>
         </div>
 
+        {/* KOLOM KHUSUS RINGKASAN TOTAL KETERSEDIAAN UNIT (DIBAGIAN ATAS ANTARA CARD) */}
+        <div className="max-w-5xl mx-auto mb-8 bg-white/95 rounded-3xl border-2 border-[#806044]/30 p-5 sm:p-6 shadow-sm backdrop-blur-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E5DCD0]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#806044] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#806044] block">
+                  Informasi Resmi Kapasitas &amp; Ketersediaan Unit
+                </span>
+                <h3 className="font-serif font-bold text-lg sm:text-xl text-[#392B21]">
+                  Total Kapasitas Homestay: <span className="text-[#806044] font-black">{activeRooms.length || 8} Unit Kamar</span>
+                </h3>
+              </div>
+            </div>
+
+            {/* Badges Total Tersedia vs Terisi */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                {totalAvailableCount} Unit Tersedia (Siap Huni)
+              </span>
+              {totalOccupiedCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-rose-50 text-rose-700 border-2 border-rose-400 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                  {totalOccupiedCount} Unit Ditempati
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 2 Kolom Breakdown: Reguler (4 Unit) & VIP (4 Unit) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
+            {/* Kolom Khusus 1: Kamar Tipe REGULER */}
+            <div className="flex items-center justify-between p-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E5DCD0]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#392B21] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                  R
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#392B21] block">Kamar Tipe REGULER</span>
+                  <span className="text-[11px] text-[#756A5F]">
+                    Total Kapasitas: <strong className="text-[#392B21] font-bold">{regulerRooms.length} Unit Kamar</strong>
+                  </span>
+                </div>
+              </div>
+              <div>
+                {isRegulerAvailable ? (
+                  <span className="inline-block px-3 py-1 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-400 shadow-2xs">
+                    {regulerAvailableUnits.length} Unit Siap Huni
+                  </span>
+                ) : (
+                  <span className="inline-block px-3 py-1 rounded-xl text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-400 shadow-2xs">
+                    Semua Terisi Penuh
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Kolom Khusus 2: Kamar Tipe VIP */}
+            <div className="flex items-center justify-between p-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E5DCD0]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#806044] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                  VIP
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-[#392B21] block">Kamar Tipe VIP</span>
+                  <span className="text-[11px] text-[#756A5F]">
+                    Total Kapasitas: <strong className="text-[#392B21] font-bold">{vipRooms.length} Unit Kamar</strong>
+                  </span>
+                </div>
+              </div>
+              <div>
+                {isVipAvailable ? (
+                  <span className="inline-block px-3 py-1 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-400 shadow-2xs">
+                    {vipAvailableUnits.length} Unit Siap Huni
+                  </span>
+                ) : (
+                  <span className="inline-block px-3 py-1 rounded-xl text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-400 shadow-2xs">
+                    Semua Terisi Penuh
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2 CARDS UTAMA: REGULER & VIP (Total Unit Dihapus dari Dalam Card) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
           
           {/* Card 1: TIPE REGULER */}
           <div className="bg-white rounded-3xl border border-[#D4C3AD] p-6 sm:p-8 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#392B21] text-white shadow-2xs">
-                    {config.regulerBadge}
-                  </span>
-                  {isRegulerAvailable ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Tersedia ({regulerAvailableUnits.length} Unit)
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                      Tidak Tersedia
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-[#756A5F] font-medium pr-2">
-                  Total {regulerRooms.length} Unit
+              {/* Header Card REGULER (Hanya Badge Tipe dan Label Status, Tanpa Tulisan Total Unit) */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="px-3.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#392B21] text-white shadow-2xs">
+                  {config.regulerBadge}
                 </span>
+                {isRegulerAvailable ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Tersedia
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Tidak Tersedia
+                  </span>
+                )}
               </div>
 
               <div>
@@ -330,27 +406,23 @@ export default function RentalSection({ initialRooms, reservations = [] }: Renta
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1.5 shadow-2xs">
-                    <Sparkles className="w-3 h-3 text-[#C9A84C]" />
-                    {config.vipBadge}
-                  </span>
-                  {isVipAvailable ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Tersedia ({vipAvailableUnits.length} Unit)
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                      Tidak Tersedia
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-[#756A5F] font-medium pr-24 sm:pr-28">
-                  Total {vipRooms.length} Unit
+              {/* Header Card VIP (Hanya Badge Tipe dan Label Status, Tanpa Tulisan Total Unit) */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="px-3.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#806044] text-white flex items-center gap-1.5 shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-[#C9A84C]" />
+                  {config.vipBadge}
                 </span>
+                {isVipAvailable ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border-2 border-emerald-500 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Tersedia
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border-2 border-rose-500 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Tidak Tersedia
+                  </span>
+                )}
               </div>
 
               <div>

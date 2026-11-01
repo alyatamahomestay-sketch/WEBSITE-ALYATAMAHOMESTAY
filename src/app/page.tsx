@@ -32,39 +32,25 @@ export const revalidate = 0;
 export default async function HomePage() {
   const [rooms, reservations] = await Promise.all([PmsService.getRooms(), PmsService.getReservations()]);
 
-  // Group rooms into REGULER and VIP
+  // Group rooms cleanly into REGULER and VIP (Clean Partitioning)
   const activeRooms = rooms.filter((r) => !r.is_archived);
 
-  const regulerRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const name = (r.name || '').toUpperCase();
+  const isVipRoom = (r: any) => {
+    const t = (r.room_type || '').toUpperCase().trim();
+    const n = (r.name || '').toUpperCase().trim();
     return (
-      type.includes('REGULER') ||
-      name.includes('REGULER') ||
-      type.includes('STANDARD') ||
-      name.includes('STANDARD') ||
-      type.includes('DELUXE') ||
-      name.includes('DELUXE') ||
-      type.includes('SINGLE') ||
-      (!type.includes('VIP') && !type.includes('EKSEKUTIF') && !type.includes('SUITE') && !type.includes('PAVILIUN'))
+      t === 'VIP' ||
+      t.includes('VIP') ||
+      n.includes('VIP') ||
+      t.includes('EKSEKUTIF') ||
+      n.includes('EKSEKUTIF') ||
+      t.includes('PAVILIUN') ||
+      n.includes('PAVILIUN')
     );
-  });
+  };
 
-  const vipRooms = activeRooms.filter((r) => {
-    const type = (r.room_type || '').toUpperCase();
-    const name = (r.name || '').toUpperCase();
-    return (
-      type.includes('VIP') ||
-      name.includes('VIP') ||
-      type.includes('EKSEKUTIF') ||
-      name.includes('EKSEKUTIF') ||
-      type.includes('SUITE') ||
-      name.includes('SUITE') ||
-      type.includes('PAVILIUN') ||
-      name.includes('PAVILIUN') ||
-      !regulerRooms.some((reg) => reg.id === r.id)
-    );
-  });
+  const vipRooms = activeRooms.filter(isVipRoom);
+  const regulerRooms = activeRooms.filter((r) => !isVipRoom(r));
 
   // Dynamic pricing for REGULER directly from admin rooms
   const regulerDailyRates = regulerRooms.map((r) => r.base_rate).filter(Boolean);
