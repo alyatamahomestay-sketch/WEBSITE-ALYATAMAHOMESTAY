@@ -52,18 +52,21 @@ function ReservasiListContent() {
   }, []);
 
   const handleApprove = async (id: string) => {
-    if (!confirm('Setujui permintaan reservasi ini? Sistem akan memeriksa ketersediaan kamar secara atomik.')) return;
+    if (!confirm('Setujui permintaan reservasi ini?')) return;
+    setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'approved_pending_payment' } : r));
     try {
       const res = await PmsService.approveReservation(id);
       if (res.success) {
         showAdminToast('edit', 'Reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.');
         setActionMessage('Reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.');
-        loadReservations();
+        await loadReservations();
       } else {
         alert(res.message);
+        await loadReservations();
       }
     } catch (err: any) {
       alert(err.message || 'Gagal menyetujui reservasi');
+      await loadReservations();
     }
   };
 

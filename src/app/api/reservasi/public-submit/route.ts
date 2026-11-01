@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import fs from 'fs';
+import path from 'path';
 import { PmsService } from '@/lib/services/pms-service';
 import { calculateReservationPricing, calculateNights } from '@/lib/pricing';
 import { normalizeIndonesianPhone, isValidIndonesianPhone } from '@/lib/phone';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Reservation, RentalType } from '@/lib/types';
+import { getTodayDateWIB } from '@/lib/date-utils';
+import { loadReservationsFromFile, saveReservationsToFile } from '@/lib/server-reservations-store';
 
 // Validation Schema
 const bookingFormSchema = z.object({
   fullName: z.string().min(2, 'Nama lengkap wajib diisi'),
   phone: z.string().min(9, 'Nomor WhatsApp wajib diisi'),
-  email: z.string().email('Format email tidak valid').optional().or(z.literal('')),
+  email: z.string().optional().or(z.literal('')),
   checkinDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal check-in tidak valid'),
   checkoutDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal check-out tidak valid'),
   roomId: z.string().min(1, 'Pilihan kamar wajib ditentukan'),
@@ -22,6 +26,7 @@ const bookingFormSchema = z.object({
   marriageConfirmed: z.boolean().optional().default(false),
   promoCode: z.string().optional(),
   specialRequests: z.string().max(500).optional(),
+  paymentPreference: z.enum(['cash', 'transfer']).default('cash'),
   dataConsent: z.boolean().refine((val) => val === true, {
     message: 'Anda harus menyetujui pemrosesan data reservasi',
   }),
@@ -75,15 +80,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Optional promo code evaluation
-    let matchedPromo = null;
-    if (data.promoCode && data.promoCode.trim()) {
-      const allPromos = await PmsService.getPromotions();
-      matchedPromo = allPromos.find(
-        (p) => p.is_active && p.code?.toUpperCase() === data.promoCode?.trim().toUpperCase()
-      ) || null;
-    }
-
     // Server-side safe price calculation according to rentalType
     const pricing = calculateReservationPricing({
       checkinDateStr: data.checkinDate,
@@ -91,112 +87,60 @@ export async function POST(req: NextRequest) {
       room,
       rentalType: data.rentalType,
       durationUnits: data.durationUnits,
-      promotion: matchedPromo,
+      promotion: null,
     });
 
     const normalizedPhone = normalizeIndonesianPhone(data.phone);
 
-    // Generate unique, unpredictable reservation number: ALY-YYYYMMDD-XXXX
-    const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomHex = Math.floor(1000 + Math.random() * 9000).toString();
-    const reservationNumber = `ALY-${dateStamp}-${randomHex}`;
+    // =====================================================================
+    // 5. GENERATE NOMOR ANTREAN RESERVASI TERSTRUKTUR & BERURUTAN (SEQUENTIAL)
+    // Format: ALY-YYYYMMDD-001, ALY-YYYYMMDD-002, dst. (berdasarkan tanggal WIB)
+    // =====================================================================
+    const dateStamp = getTodayDateWIB().replace(/-/g, '');
+    const prefix = `ALY-${dateStamp}-`;
 
-    // If Supabase is configured, insert to Supabase via admin client
-    if (isSupabaseConfigured()) {
-      const adminClient = createAdminClient();
-      if (adminClient) {
-        // 1. Upsert or find Guest
-        const { data: existingGuest } = await adminClient
-          .from('guests')
-          .select('id')
-          .eq('normalized_phone', normalizedPhone)
-          .maybeSingle();
-
-        let guestId = existingGuest?.id;
-        if (!guestId) {
-          const { data: newGuest, error: guestErr } = await adminClient
-            .from('guests')
-            .insert([{
-              full_name: data.fullName,
-              phone: data.phone,
-              normalized_phone: normalizedPhone,
-              email: data.email || null,
-            }])
-            .select('id')
-            .single();
-
-          if (guestErr) throw new Error(guestErr.message);
-          guestId = newGuest.id;
+    const currentReservations = loadReservationsFromFile();
+    let maxSequence = 0;
+    currentReservations.forEach((r) => {
+      if (r.reservation_number && r.reservation_number.startsWith(prefix)) {
+        const parts = r.reservation_number.split('-');
+        if (parts.length >= 3) {
+          const seq = parseInt(parts[2], 10);
+          if (!isNaN(seq) && seq > maxSequence) {
+            maxSequence = seq;
+          }
         }
-
-        // 2. Insert Reservation
-        const { data: newRes, error: resErr } = await adminClient
-          .from('reservations')
-          .insert([{
-            reservation_number: reservationNumber,
-            guest_id: guestId,
-            checkin_date: data.checkinDate,
-            checkout_date: data.checkoutDate,
-            adults: data.adults,
-            children: data.children,
-            status: 'pending_approval',
-            payment_status: 'unpaid',
-            special_requests: data.specialRequests ? `${data.specialRequests}${data.marriageConfirmed ? ' [Status Pasangan Suami Istri Terkonfirmasi Syariah]' : ''}` : (data.marriageConfirmed ? '[Status Pasangan Suami Istri Terkonfirmasi Syariah]' : null),
-          }])
-          .select('id')
-          .single();
-
-        if (resErr) throw new Error(resErr.message);
-
-        // 3. Insert reservation_rooms mapping
-        await adminClient.from('reservation_rooms').insert([{
-          reservation_id: newRes.id,
-          room_id: room.id,
-        }]);
-
-        // 4. Insert locked price snapshot
-        await adminClient.from('reservation_price_snapshots').insert([{
-          reservation_id: newRes.id,
-          rental_type: data.rentalType,
-          duration_units: pricing.durationUnits,
-          unit_rate: pricing.unitRate,
-          total_nights: pricing.totalNights,
-          base_subtotal: pricing.baseSubtotal,
-          nightly_breakdown: pricing.nightlyBreakdown,
-          discount_amount: pricing.discountAmount,
-          discount_reason: pricing.discountReason,
-          promo_code: data.promoCode || null,
-          promo_snapshot: pricing.promoSnapshot,
-          extra_charges: pricing.extraCharges,
-          deposit_required: pricing.depositRequired,
-          total_amount: pricing.totalAmount,
-          total_paid: 0,
-          balance_due: pricing.totalAmount,
-        }]);
-
-        // 5. Insert separate WhatsApp consent record
-        await adminClient.from('whatsapp_consents').insert([{
-          reservation_id: newRes.id,
-          phone: normalizedPhone,
-          has_consented: Boolean(data.whatsappConsent),
-          consent_timestamp: new Date().toISOString(),
-        }]);
-
-        return NextResponse.json({
-          success: true,
-          reservationNumber,
-          reservationId: newRes.id,
-          message: 'Permintaan reservasi berhasil diajukan dan sedang menunggu persetujuan admin.',
-        });
       }
-    }
+    });
 
-    // Fallback: save to interactive memory PMS store
-    const memResId = 'res-' + Date.now();
-    const fallbackReservation: Reservation = {
-      id: memResId,
+    const nextSeqNumber = maxSequence + 1;
+    const reservationNumber = `${prefix}${String(nextSeqNumber).padStart(3, '0')}`;
+
+    // Payment preference label
+    const paymentLabel = data.paymentPreference === 'transfer'
+      ? 'Transfer Rekening Bank Resmi ALYATAMA'
+      : 'Bayar Tunai (Cash di Tempat)';
+
+    const paymentNotice = `[Metode Pembayaran: ${paymentLabel} - Pembayaran dilakukan sebelum serah terima kunci]`;
+
+    let combinedRequests = '';
+    if (data.specialRequests && data.specialRequests.trim()) {
+      combinedRequests += data.specialRequests.trim() + ' ';
+    }
+    if (data.marriageConfirmed) {
+      combinedRequests += '[Status Pasangan Suami Istri Terkonfirmasi Syariah] ';
+    }
+    combinedRequests += paymentNotice;
+
+    const newResId = 'res-' + Date.now();
+    const guestId = 'gst-' + Date.now();
+
+    // Full reservation entity
+    const newReservation: Reservation = {
+      id: newResId,
       reservation_number: reservationNumber,
-      guest_id: 'gst-' + Date.now(),
+      guest_id: guestId,
+      payment_preference: data.paymentPreference,
       checkin_date: data.checkinDate,
       checkout_date: data.checkoutDate,
       adults: data.adults,
@@ -205,15 +149,15 @@ export async function POST(req: NextRequest) {
       duration_units: pricing.durationUnits,
       status: 'pending_approval',
       payment_status: 'unpaid',
-      special_requests: data.specialRequests ? `${data.specialRequests}${data.marriageConfirmed ? ' [Status Pasangan Suami Istri Terkonfirmasi Syariah]' : ''}` : (data.marriageConfirmed ? '[Status Pasangan Suami Istri Terkonfirmasi Syariah]' : null),
+      special_requests: combinedRequests.trim(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       guest: {
-        id: 'gst-' + Date.now(),
+        id: guestId,
         full_name: data.fullName,
         phone: data.phone,
         normalized_phone: normalizedPhone,
-        email: data.email,
+        email: data.email || null,
         category: 'regular',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -221,17 +165,17 @@ export async function POST(req: NextRequest) {
       rooms: [room],
       price_snapshot: {
         id: 'snp-' + Date.now(),
-        reservation_id: memResId,
+        reservation_id: newResId,
         rental_type: data.rentalType,
         duration_units: pricing.durationUnits,
         unit_rate: pricing.unitRate,
         total_nights: pricing.totalNights,
         base_subtotal: pricing.baseSubtotal,
         nightly_breakdown: pricing.nightlyBreakdown,
-        discount_amount: pricing.discountAmount,
-        discount_reason: pricing.discountReason,
-        promo_code: data.promoCode,
-        promo_snapshot: pricing.promoSnapshot,
+        discount_amount: 0,
+        discount_reason: null,
+        promo_code: null,
+        promo_snapshot: null,
         extra_charges: pricing.extraCharges,
         deposit_required: pricing.depositRequired,
         total_amount: pricing.totalAmount,
@@ -242,7 +186,7 @@ export async function POST(req: NextRequest) {
       },
       deposit: {
         id: 'dep-' + Date.now(),
-        reservation_id: memResId,
+        reservation_id: newResId,
         required_amount: pricing.depositRequired,
         received_amount: 0,
         deducted_amount: 0,
@@ -253,23 +197,95 @@ export async function POST(req: NextRequest) {
       },
       whatsapp_consent: {
         id: 'wac-' + Date.now(),
-        reservation_id: memResId,
+        reservation_id: newResId,
         phone: normalizedPhone,
-        has_consented: Boolean(data.whatsappConsent),
+        has_consented: true,
         consent_timestamp: new Date().toISOString(),
         created_at: new Date().toISOString(),
       },
     };
 
-    // Store into in-memory store
-    const existingList = await PmsService.getReservations();
-    existingList.unshift(fallbackReservation);
+    // 1. Save immediately to persistent server storage so it is NEVER lost
+    currentReservations.unshift(newReservation);
+    saveReservationsToFile(currentReservations);
+
+    // 2. Also try inserting into Supabase via admin client
+    if (isSupabaseConfigured()) {
+      try {
+        const adminClient = createAdminClient();
+        if (adminClient) {
+          // A. Insert Guest
+          const { data: dbGuest } = await adminClient
+            .from('guests')
+            .insert([{
+              full_name: data.fullName,
+              phone: data.phone,
+              normalized_phone: normalizedPhone,
+              email: data.email || null,
+            }])
+            .select('id')
+            .maybeSingle();
+
+          const finalGuestId = dbGuest?.id || guestId;
+
+          // B. Insert Reservation
+          const { data: dbRes } = await adminClient
+            .from('reservations')
+            .insert([{
+              id: newResId,
+              reservation_number: reservationNumber,
+              guest_id: finalGuestId,
+              checkin_date: data.checkinDate,
+              checkout_date: data.checkoutDate,
+              adults: data.adults,
+              children: data.children,
+              status: 'pending_approval',
+              payment_status: 'unpaid',
+              payment_preference: data.paymentPreference,
+              special_requests: combinedRequests.trim(),
+            }])
+            .select('id')
+            .maybeSingle();
+
+          const finalResId = dbRes?.id || newResId;
+
+          // C. Insert reservation_rooms
+          await adminClient.from('reservation_rooms').insert([{
+            reservation_id: finalResId,
+            room_id: room.id,
+          }]);
+
+          // D. Insert price snapshot
+          await adminClient.from('reservation_price_snapshots').insert([{
+            reservation_id: finalResId,
+            rental_type: data.rentalType,
+            duration_units: pricing.durationUnits,
+            unit_rate: pricing.unitRate,
+            total_nights: pricing.totalNights,
+            base_subtotal: pricing.baseSubtotal,
+            nightly_breakdown: pricing.nightlyBreakdown,
+            discount_amount: 0,
+            discount_reason: null,
+            promo_code: null,
+            promo_snapshot: null,
+            extra_charges: pricing.extraCharges,
+            deposit_required: pricing.depositRequired,
+            total_amount: pricing.totalAmount,
+            total_paid: 0,
+            balance_due: pricing.totalAmount,
+          }]);
+        }
+      } catch (err: any) {
+        console.warn('Supabase reservation sync warning (local persistent file saved):', err.message);
+      }
+    }
 
     return NextResponse.json({
       success: true,
       reservationNumber,
-      reservationId: memResId,
-      message: 'Permintaan reservasi berhasil diajukan.',
+      reservationId: newResId,
+      reservation: newReservation,
+      message: 'Permintaan reservasi berhasil diajukan dan sedang menunggu persetujuan admin.',
     });
   } catch (error: any) {
     console.error('Error submitting booking:', error);

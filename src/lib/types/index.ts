@@ -144,6 +144,7 @@ export interface Reservation {
   cancelled_reason?: string | null;
   checked_in_at?: string | null;
   checked_out_at?: string | null;
+  payment_preference?: 'cash' | 'transfer' | string;
   // V3.1 Staff Attribution & Booking Source
   booking_source?: 'online' | 'walk_in' | 'phone' | 'admin';
   created_by_user_id?: string | null;

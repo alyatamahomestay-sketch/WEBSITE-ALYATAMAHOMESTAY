@@ -55,16 +55,22 @@ function ReservasiPanelList() {
   }, []);
 
   const handleApprove = async (id: string) => {
+    // Optimistic UI update so row status immediately changes to approved
+    setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'approved_pending_payment' } : r));
     try {
       const res = await PmsService.approveReservation(id, 'Petugas Bertugas');
       if (res.success) {
         showAdminToast('edit', 'Status reservasi berhasil diubah menjadi Disetujui.');
-        setActionMessage('Berhasil Diubah: Permintaan reservasi berhasil disetujui!');
-        loadReservations();
-        setTimeout(() => setActionMessage(''), 3000);
+        setActionMessage('Berhasil Disetujui: Permintaan reservasi berhasil disetujui (Menunggu Pembayaran / DP)!');
+        await loadReservations();
+        setTimeout(() => setActionMessage(''), 4000);
+      } else {
+        alert(res.message || 'Gagal menyetujui reservasi');
+        await loadReservations();
       }
     } catch (err: any) {
       alert(err.message || 'Gagal menyetujui reservasi');
+      await loadReservations();
     }
   };
 
@@ -239,13 +245,18 @@ function ReservasiPanelList() {
                         <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${payMeta.badgeClass}`}>
                           {payMeta.label}
                         </span>
+                        <div className="text-[10px] text-stone-500 mt-0.5 font-medium">
+                          {res.payment_preference === 'transfer' ? 'Transfer Bank' : 'Bayar Tunai'}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {res.status === 'pending_approval' && (
                             <button
+                              type="button"
                               onClick={() => handleApprove(res.id)}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition shadow-2xs cursor-pointer"
+                              title="Klik untuk menyetujui reservasi tamu ini"
                             >
                               Setujui
                             </button>

@@ -395,6 +395,23 @@ export const PmsService = {
 
   // --- RESERVATIONS ---
   async getReservations(statusFilter?: string): Promise<Reservation[]> {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = statusFilter && statusFilter !== 'all' 
+          ? `/api/panel/reservations?status=${encodeURIComponent(statusFilter)}` 
+          : '/api/panel/reservations';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.reservations)) {
+            memReservations = json.reservations;
+            syncMemReservationsToStorage(memReservations);
+            return memReservations;
+          }
+        }
+      } catch (e) {}
+    }
+
     const fromStorage = loadMemReservationsFromStorage();
     if (fromStorage && fromStorage.length > 0) {
       memReservations = fromStorage;
@@ -407,100 +424,141 @@ export const PmsService = {
       }
       return memReservations;
     }
-    const supabase = createClient();
-    let query = supabase
-      .from('reservations')
-      .select(`
-        *,
-        guest:guests(*),
-        rooms:reservation_rooms(room:rooms(*)),
-        price_snapshot:reservation_price_snapshots(*),
-        payments:payments(*),
-        deposit:deposits(*),
-        whatsapp_consent:whatsapp_consents(*)
-      `)
-      .order('created_at', { ascending: false });
 
-    if (statusFilter && statusFilter !== 'all') {
-      query = query.eq('status', statusFilter);
-    }
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      syncMemReservationsToStorage(memReservations);
+    try {
+      const supabase = createClient();
+      let query = supabase
+        .from('reservations')
+        .select(`
+          *,
+          guest:guests(*),
+          rooms:reservation_rooms(room:rooms(*)),
+          price_snapshot:reservation_price_snapshots(*),
+          payments:payments(*),
+          deposit:deposits(*),
+          whatsapp_consent:whatsapp_consents(*)
+        `)
+        .order('created_at', { ascending: false });
+
       if (statusFilter && statusFilter !== 'all') {
-        return memReservations.filter(r => r.status === statusFilter);
+        query = query.eq('status', statusFilter);
       }
-      return memReservations;
-    }
-    memReservations = data as unknown as Reservation[];
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        memReservations = data as unknown as Reservation[];
+        syncMemReservationsToStorage(memReservations);
+        return memReservations;
+      }
+    } catch (e) {}
+
     syncMemReservationsToStorage(memReservations);
-    return memReservations;
-    if (error) {
-      if (statusFilter && statusFilter !== 'all') {
-        return memReservations.filter(r => r.status === statusFilter);
-      }
-      return memReservations;
+    if (statusFilter && statusFilter !== 'all') {
+      return memReservations.filter(r => r.status === statusFilter);
     }
-    return data as unknown as Reservation[];
+    return memReservations;
   },
 
   async getReservationById(id: string): Promise<Reservation | null> {
-    if (!isSupabaseConfigured()) {
-      return memReservations.find(r => r.id === id || r.reservation_number === id) || null;
-    }
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('reservations')
-      .select(`
-        *,
-        guest:guests(*),
-        rooms:reservation_rooms(room:rooms(*)),
-        price_snapshot:reservation_price_snapshots(*),
-        payments:payments(*),
-        deposit:deposits(*),
-        whatsapp_consent:whatsapp_consents(*)
-      `)
-      .or(`id.eq.${id},reservation_number.eq.${id}`)
-      .single();
+    const cleanId = id.trim().toUpperCase();
 
-    if (error) {
-      return memReservations.find(r => r.id === id || r.reservation_number === id) || null;
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/panel/reservations?id=${encodeURIComponent(cleanId)}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.reservation) {
+            return json.reservation;
+          }
+        }
+      } catch (e) {}
     }
-    return data as unknown as Reservation;
+
+    // Check in-memory / storage
+    const list = await this.getReservations();
+    const found = list.find(r => (r.id && r.id.toUpperCase() === cleanId) || (r.reservation_number && r.reservation_number.toUpperCase() === cleanId));
+    if (found) return found;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            guest:guests(*),
+            rooms:reservation_rooms(room:rooms(*)),
+            price_snapshot:reservation_price_snapshots(*),
+            payments:payments(*),
+            deposit:deposits(*),
+            whatsapp_consent:whatsapp_consents(*)
+          `)
+          .or(`id.eq.${cleanId},reservation_number.eq.${cleanId}`)
+          .maybeSingle();
+
+        if (!error && data) {
+          return data as unknown as Reservation;
+        }
+      } catch (e) {}
+    }
+
+    return null;
   },
 
   async approveReservation(reservationId: string, adminId?: string): Promise<{ success: boolean; message: string }> {
-    if (!isSupabaseConfigured()) {
-      const res = memReservations.find(r => r.id === reservationId);
-      if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'approve', id: reservationId, adminId }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          const rIdx = memReservations.findIndex(r => r.id === reservationId || r.reservation_number === reservationId);
+          if (rIdx !== -1) {
+            memReservations[rIdx].status = 'approved_pending_payment';
+            syncMemReservationsToStorage(memReservations);
+          }
+          return { success: true, message: json.message || 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
+        }
+      } catch (e) {}
+    }
+
+    const res = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
+    if (res) {
       res.status = 'approved_pending_payment';
       res.approved_at = new Date().toISOString();
-      res.approved_by = adminId || 'admin-demo';
+      res.approved_by = adminId || 'Administrator';
       res.updated_at = new Date().toISOString();
       syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
     }
 
-    const supabase = createClient();
-    const { data, error } = await supabase.rpc('approve_reservation_atomic', {
-      p_reservation_id: reservationId,
-      p_admin_id: adminId || null,
-      p_target_status: 'approved_pending_payment'
-    });
-
-    if (error) return { success: false, message: error.message };
-    const rIdx = memReservations.findIndex(r => r.id === reservationId);
-    if (rIdx !== -1) {
-      memReservations[rIdx].status = 'approved_pending_payment';
-      syncMemReservationsToStorage(memReservations);
-    }
-    return { success: true, message: 'Reservasi disetujui secara aman dan atomik.' };
+    return { success: false, message: 'Reservasi tidak ditemukan.' };
   },
 
   async rejectReservation(reservationId: string, reason: string): Promise<{ success: boolean; message: string }> {
-    if (!isSupabaseConfigured()) {
-      const res = memReservations.find(r => r.id === reservationId);
-      if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reject', id: reservationId, reason }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          const rIdx = memReservations.findIndex(r => r.id === reservationId || r.reservation_number === reservationId);
+          if (rIdx !== -1) {
+            memReservations[rIdx].status = 'rejected';
+            syncMemReservationsToStorage(memReservations);
+          }
+          return { success: true, message: json.message || 'Reservasi ditolak.' };
+        }
+      } catch (e) {}
+    }
+
+    const res = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
+    if (res) {
       res.status = 'rejected';
       res.rejected_at = new Date().toISOString();
       res.rejected_reason = reason;
@@ -508,23 +566,8 @@ export const PmsService = {
       syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Reservasi ditolak.' };
     }
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('reservations')
-      .update({
-        status: 'rejected',
-        rejected_at: new Date().toISOString(),
-        rejected_reason: reason,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', reservationId);
-    if (error) return { success: false, message: error.message };
-    const rIdx = memReservations.findIndex(r => r.id === reservationId);
-    if (rIdx !== -1) {
-      memReservations[rIdx].status = 'rejected';
-      syncMemReservationsToStorage(memReservations);
-    }
-    return { success: true, message: 'Reservasi ditolak.' };
+
+    return { success: false, message: 'Reservasi tidak ditemukan.' };
   },
 
   async updateReservationStatus(
@@ -532,26 +575,48 @@ export const PmsService = {
     newStatus: Reservation['status'], 
     opts?: { checkedInAt?: string; checkedOutAt?: string }
   ): Promise<{ success: boolean; message: string }> {
-    if (!isSupabaseConfigured()) {
-      const res = memReservations.find(r => r.id === reservationId);
-      if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };
-      res.status = newStatus;
-      if (newStatus === 'checked_in') res.checked_in_at = opts?.checkedInAt || new Date().toISOString();
-      if (newStatus === 'checked_out') res.checked_out_at = opts?.checkedOutAt || new Date().toISOString();
-      res.updated_at = new Date().toISOString();
-      syncMemReservationsToStorage(memReservations);
-      return { success: true, message: `Status reservasi berhasil diubah ke ${newStatus}.` };
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_status', id: reservationId, status: newStatus }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          const rIdx = memReservations.findIndex(r => r.id === reservationId || r.reservation_number === reservationId);
+          if (rIdx !== -1) {
+            memReservations[rIdx].status = newStatus;
+            if (newStatus === 'checked_in') memReservations[rIdx].checked_in_at = opts?.checkedInAt || new Date().toISOString();
+            if (newStatus === 'checked_out') memReservations[rIdx].checked_out_at = opts?.checkedOutAt || new Date().toISOString();
+            syncMemReservationsToStorage(memReservations);
+          }
+          return { success: true, message: json.message || `Status diperbarui ke ${newStatus}.` };
+        }
+      } catch (e) {}
     }
-    const supabase = createClient();
-    const payload: any = {
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    };
-    if (newStatus === 'checked_in') payload.checked_in_at = opts?.checkedInAt || new Date().toISOString();
-    if (newStatus === 'checked_out') payload.checked_out_at = opts?.checkedOutAt || new Date().toISOString();
 
-    const { error } = await supabase.from('reservations').update(payload).eq('id', reservationId);
-    if (error) return { success: false, message: error.message };
+    const res = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
+    if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };
+    res.status = newStatus;
+    if (newStatus === 'checked_in') res.checked_in_at = opts?.checkedInAt || new Date().toISOString();
+    if (newStatus === 'checked_out') res.checked_out_at = opts?.checkedOutAt || new Date().toISOString();
+    res.updated_at = new Date().toISOString();
+    syncMemReservationsToStorage(memReservations);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const payload: any = {
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        };
+        if (newStatus === 'checked_in') payload.checked_in_at = opts?.checkedInAt || new Date().toISOString();
+        if (newStatus === 'checked_out') payload.checked_out_at = opts?.checkedOutAt || new Date().toISOString();
+        await supabase.from('reservations').update(payload).eq('id', res.id);
+      } catch (e) {}
+    }
+
     return { success: true, message: `Status diperbarui ke ${newStatus}.` };
   },
 

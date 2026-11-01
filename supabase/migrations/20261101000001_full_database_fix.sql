@@ -58,6 +58,10 @@ ALTER TABLE public.rooms
     ADD COLUMN IF NOT EXISTS monthly_rate NUMERIC(12,2),
     ADD COLUMN IF NOT EXISTS yearly_rate NUMERIC(12,2);
 
+-- 5B. PERBAIKI KOLOM-KOLOM PADA TABEL RESERVATIONS
+ALTER TABLE public.reservations 
+    ADD COLUMN IF NOT EXISTS payment_preference TEXT DEFAULT 'cash';
+
 -- 6. SEED / UPDATE DATA IDENTITAS HOMESTAY RESMI
 INSERT INTO public.properties (
     id,

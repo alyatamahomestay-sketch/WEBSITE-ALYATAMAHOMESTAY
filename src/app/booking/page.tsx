@@ -15,7 +15,9 @@ import {
   Building2,
   BedDouble,
   HeartHandshake,
-  Sparkles
+  Sparkles,
+  Banknote,
+  CreditCard
 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
@@ -40,7 +42,7 @@ function BookingContent() {
   // Form State with Asia/Jakarta (WIB) default dates
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [paymentPreference, setPaymentPreference] = useState<'cash' | 'transfer'>('cash');
   const initialCheckin = searchParams.get('checkin') || getTodayDateWIB();
   const [checkinDate, setCheckinDate] = useState(initialCheckin);
 
@@ -51,10 +53,8 @@ function BookingContent() {
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
   const [children, setChildren] = useState(0);
   const [marriageConfirmed, setMarriageConfirmed] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [dataConsent, setDataConsent] = useState(false);
-  const [whatsappConsent, setWhatsappConsent] = useState(false);
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -125,7 +125,7 @@ function BookingContent() {
     setErrorMessage('');
 
     if (!dataConsent) {
-      setErrorMessage('Anda wajib menyetujui pemrosesan data untuk keperluan reservasi.');
+      setErrorMessage('Anda wajib menyetujui pemrosesan data untuk keperluan verifikasi reservasi.');
       return;
     }
 
@@ -148,7 +148,6 @@ function BookingContent() {
         body: JSON.stringify({
           fullName,
           phone,
-          email,
           checkinDate,
           checkoutDate,
           roomId,
@@ -157,10 +156,9 @@ function BookingContent() {
           adults,
           children,
           marriageConfirmed,
-          promoCode,
+          paymentPreference,
           specialRequests,
           dataConsent,
-          whatsappConsent,
         }),
       });
 
@@ -172,8 +170,15 @@ function BookingContent() {
         return;
       }
 
+      // Simpan backup instan ke browser storage agar langsung terbaca di halaman status
+      if (typeof window !== 'undefined' && json.reservation) {
+        try {
+          localStorage.setItem('last_submitted_reservation', JSON.stringify(json.reservation));
+        } catch (e) {}
+      }
+
       // Success! Redirect to status page
-      router.push(`/status-reservasi?res_num=${json.reservationNumber}&status=submitted`);
+      router.push(`/status-reservasi?res_num=${encodeURIComponent(json.reservationNumber)}&status=submitted`);
     } catch (err: any) {
       setErrorMessage(err.message || 'Terjadi gangguan jaringan saat mengajukan pemesanan.');
       setSubmitting(false);
@@ -227,7 +232,7 @@ function BookingContent() {
                       <button
                         type="button"
                         onClick={() => handleRentalTypeChange('daily')}
-                        className={`p-3 rounded-xl border text-center transition-all ${
+                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                           rentalType === 'daily'
                             ? 'bg-[#806044] text-white border-[#806044] shadow-sm'
                             : 'bg-[#FAF7F2] text-[#392B21] border-[#E5DCD0] hover:border-[#806044]'
@@ -242,7 +247,7 @@ function BookingContent() {
                       <button
                         type="button"
                         onClick={() => handleRentalTypeChange('monthly')}
-                        className={`p-3 rounded-xl border text-center transition-all ${
+                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                           rentalType === 'monthly'
                             ? 'bg-[#806044] text-white border-[#806044] shadow-sm'
                             : 'bg-[#FAF7F2] text-[#392B21] border-[#E5DCD0] hover:border-[#806044]'
@@ -270,43 +275,28 @@ function BookingContent() {
                         <input
                           type="text"
                           required
-                          placeholder="Sesuai kartu identitas resmi (KTP/SIM/Paspor)"
+                          placeholder="Sesuai kartu identitas resmi (KTP / SIM / Paspor)"
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-[#392B21] mb-1">
-                            Nomor WhatsApp Aktif <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="Contoh: 082285472008"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
-                          />
-                          <span className="text-[11px] text-[#756A5F] mt-0.5 block">
-                            Untuk konfirmasi persetujuan & pengiriman bukti pemesanan.
-                          </span>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-[#392B21] mb-1">
-                            Alamat Email (Opsional)
-                          </label>
-                          <input
-                            type="email"
-                            placeholder="email@contoh.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#392B21] mb-1">
+                          Nomor WhatsApp Aktif <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Contoh: 082285472008 atau 081234567890"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
+                        />
+                        <span className="text-[11px] text-[#756A5F] mt-1 block">
+                          Digunakan untuk konfirmasi persetujuan reservasi dan koordinasi kedatangan oleh staf homestay.
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -365,8 +355,6 @@ function BookingContent() {
                             let rateDisplay = `${formatRupiah(r.base_rate)}/malam`;
                             if (rentalType === 'monthly' && r.monthly_rate) {
                               rateDisplay = `${formatRupiah(r.monthly_rate)}/bulan`;
-                            } else if (rentalType === 'yearly' && r.yearly_rate) {
-                              rateDisplay = `${formatRupiah(r.yearly_rate)}/tahun`;
                             }
                             return (
                               <option key={r.id} value={r.id}>
@@ -416,13 +404,13 @@ function BookingContent() {
                               id="marriageConfirmed"
                               checked={marriageConfirmed}
                               onChange={(e) => setMarriageConfirmed(e.target.checked)}
-                              className="mt-1 h-4 w-4 rounded border-stone-300 text-[#806044] focus:ring-[#806044]"
+                              className="mt-1 h-4 w-4 rounded border-stone-300 text-[#806044] focus:ring-[#806044] cursor-pointer"
                             />
-                            <label htmlFor="marriageConfirmed" className="text-xs text-[#392B21] leading-relaxed">
+                            <label htmlFor="marriageConfirmed" className="text-xs text-[#392B21] leading-relaxed cursor-pointer">
                               <span className="font-bold text-[#806044] block mb-0.5">
-                                Kepatuhan Kebijakan Syariah (Pasangan Suami Istri / Keluarga):
+                                Kepatuhan Kebijakan Syariah (Pasangan Suami Istri / Mahram):
                               </span>
-                              Saya menyatakan bahwa tamu lawan jenis yang menginap bersama adalah pasangan sah suami-istri atau keluarga mahram, dan bersedia menunjukkan identitas / bukti sah (Buku Nikah / KTP beralamat sama) saat proses check-in.
+                              Saya menyatakan bahwa tamu lawan jenis yang menginap bersama adalah pasangan sah suami-istri atau keluarga mahram, dan bersedia menunjukkan identitas sah (Buku Nikah / KTP beralamat sama) saat proses check-in.
                             </label>
                           </div>
                         </div>
@@ -430,24 +418,11 @@ function BookingContent() {
 
                       <div>
                         <label className="block text-xs font-semibold text-[#392B21] mb-1">
-                          Kode Promo (Opsional)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: HEMAT3"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2] uppercase"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-[#392B21] mb-1">
                           Permintaan Khusus (Opsional)
                         </label>
                         <textarea
                           rows={2}
-                          placeholder="Contoh: Jam kedatangan diperkirakan larut malam, permohonan sajadah ekstra, dsb."
+                          placeholder="Contoh: Perkiraan jam kedatangan larut malam, permohonan sajadah ekstra, dsb."
                           value={specialRequests}
                           onChange={(e) => setSpecialRequests(e.target.value)}
                           className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
@@ -456,40 +431,100 @@ function BookingContent() {
                     </div>
                   </div>
 
-                  {/* Bagian 3: Persetujuan Eksplisit */}
-                  <div className="pt-2 border-t border-[#E5DCD0] space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#392B21] mb-2">
-                      3. Persetujuan & Kebijakan
+                  {/* Bagian 3: Pilihan Metode Pembayaran */}
+                  <div className="pt-2 border-t border-[#E5DCD0]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#392B21] pb-2 border-b border-[#FAF7F2] mb-3">
+                      3. Pilihan Metode Pembayaran <span className="text-rose-500">*</span>
                     </h3>
 
-                    {/* Consent 1: Data Processing (Mandatory) */}
-                    <div className="flex items-start gap-3">
+                    {/* Notice Penjelasan Pembayaran */}
+                    <div className="p-3.5 mb-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-950">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <strong className="block text-amber-900 font-bold mb-0.5">
+                          Ketentuan Transaksi Pembayaran:
+                        </strong>
+                        Seluruh transaksi pembayaran (baik secara <span className="font-semibold underline">Tunai / Cash</span> maupun <span className="font-semibold underline">Transfer Rekening Bank</span>) dilakukan <span className="font-bold">saat sebelum serah terima kunci</span> oleh petugas homestay saat Anda tiba di lokasi.
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Opsi 1: Cash */}
+                      <label
+                        className={`p-4 rounded-2xl border flex items-start gap-3 cursor-pointer transition-all ${
+                          paymentPreference === 'cash'
+                            ? 'bg-[#FAF7F2] border-[#806044] ring-2 ring-[#806044]/30'
+                            : 'bg-white border-[#E5DCD0] hover:border-stone-400'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentPreference"
+                          value="cash"
+                          checked={paymentPreference === 'cash'}
+                          onChange={() => setPaymentPreference('cash')}
+                          className="mt-1 text-[#806044] focus:ring-[#806044]"
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-[#392B21]">
+                            <Banknote className="w-4 h-4 text-[#806044]" />
+                            <span>Bayar Tunai / Cash di Tempat</span>
+                          </div>
+                          <p className="text-[11px] text-[#756A5F] leading-relaxed">
+                            Bayar tunai langsung kepada petugas di lokasi homestay sebelum menerima kunci kamar.
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Opsi 2: Transfer Bank */}
+                      <label
+                        className={`p-4 rounded-2xl border flex items-start gap-3 cursor-pointer transition-all ${
+                          paymentPreference === 'transfer'
+                            ? 'bg-[#FAF7F2] border-[#806044] ring-2 ring-[#806044]/30'
+                            : 'bg-white border-[#E5DCD0] hover:border-stone-400'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentPreference"
+                          value="transfer"
+                          checked={paymentPreference === 'transfer'}
+                          onChange={() => setPaymentPreference('transfer')}
+                          className="mt-1 text-[#806044] focus:ring-[#806044]"
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-[#392B21]">
+                            <CreditCard className="w-4 h-4 text-[#806044]" />
+                            <span>Transfer ke Rekening Homestay</span>
+                          </div>
+                          <p className="text-[11px] text-[#756A5F] leading-relaxed">
+                            Transfer melalui ATM / m-Banking resmi sebelum serah terima kunci kamar saat tiba di lokasi.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Bagian 4: Persetujuan Eksplisit */}
+                  <div className="pt-2 border-t border-[#E5DCD0] space-y-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#392B21] mb-2">
+                      4. Persetujuan & Kebijakan
+                    </h3>
+
+                    {/* Consent: Data Processing (Mandatory) */}
+                    <div className="flex items-start gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#E5DCD0]">
                       <input
                         type="checkbox"
                         id="dataConsent"
                         checked={dataConsent}
                         onChange={(e) => setDataConsent(e.target.checked)}
-                        className="mt-1 h-4 w-4 rounded border-stone-300 text-[#806044] focus:ring-[#806044]"
+                        className="mt-1 h-4 w-4 rounded border-stone-300 text-[#806044] focus:ring-[#806044] cursor-pointer"
                       />
-                      <label htmlFor="dataConsent" className="text-xs text-[#756A5F] leading-relaxed">
-                        <span className="font-semibold text-[#392B21]">Persetujuan Pemrosesan Data:</span> Saya menyatakan data yang diberikan adalah benar dan menyetujui pemrosesan data untuk keperluan verifikasi reservasi sesuai{' '}
+                      <label htmlFor="dataConsent" className="text-xs text-[#756A5F] leading-relaxed cursor-pointer">
+                        <span className="font-semibold text-[#392B21]">Persetujuan Reservasi:</span> Saya menyatakan bahwa data yang diisi adalah benar, bersedia mematuhi{' '}
                         <Link href="/kebijakan" target="_blank" className="text-[#806044] underline font-medium">
                           Tata Tertib & Kebijakan Syariah Homestay
-                        </Link>.
-                      </label>
-                    </div>
-
-                    {/* Consent 2: WhatsApp Sending (Separate Consent) */}
-                    <div className="flex items-start gap-3 bg-[#FAF7F2] p-4 rounded-xl border border-[#E5DCD0]">
-                      <input
-                        type="checkbox"
-                        id="whatsappConsent"
-                        checked={whatsappConsent}
-                        onChange={(e) => setWhatsappConsent(e.target.checked)}
-                        className="mt-1 h-4 w-4 rounded border-stone-300 text-[#806044] focus:ring-[#806044]"
-                      />
-                      <label htmlFor="whatsappConsent" className="text-xs text-[#392B21] leading-relaxed">
-                        <span className="font-bold text-[#806044]">Persetujuan Pengiriman Bukti via WhatsApp:</span> Saya setuju menerima ringkasan pemesanan, tautan bukti reservasi, dan instruksi pembayaran secara manual melalui nomor WhatsApp yang saya daftarkan.
+                        </Link>, dan memahami transaksi pembayaran dilakukan sebelum serah terima kunci.
                       </label>
                     </div>
                   </div>
@@ -497,7 +532,7 @@ function BookingContent() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-[#806044] hover:bg-[#6c5037] disabled:bg-stone-400 text-white font-bold text-sm py-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-[#806044] hover:bg-[#6c5037] disabled:bg-stone-400 text-white font-bold text-sm py-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {submitting ? 'Memproses Pengajuan...' : 'Ajukan Permintaan Reservasi Sekarang'}
                     {!submitting && <ArrowRight className="w-4 h-4" />}
@@ -532,7 +567,7 @@ function BookingContent() {
                       <div className="flex items-center justify-between text-xs text-[#756A5F] pt-1">
                         <span>{selectedRoom.room_type}</span>
                         <span className="bg-[#806044]/15 text-[#806044] font-semibold px-2 py-0.5 rounded text-[10px] uppercase">
-                          Sewa {rentalType === 'daily' ? 'Harian' : rentalType === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                          Sewa {rentalType === 'daily' ? 'Harian' : 'Bulanan'}
                         </span>
                       </div>
                     </div>
@@ -552,6 +587,12 @@ function BookingContent() {
                           {durationInfo.durationUnits} {durationInfo.unitLabel} ({durationInfo.totalNights} malam)
                         </span>
                       </div>
+                      <div className="flex justify-between pt-1 border-t border-dashed border-[#E5DCD0]">
+                        <span>Metode Pembayaran:</span>
+                        <span className="font-semibold text-[#392B21]">
+                          {paymentPreference === 'cash' ? 'Bayar Tunai (Cash)' : 'Transfer Bank'}
+                        </span>
+                      </div>
                     </div>
 
                     {dynamicPricing && (
@@ -568,14 +609,6 @@ function BookingContent() {
                             {formatRupiah(dynamicPricing.baseSubtotal)}
                           </span>
                         </div>
-                        {dynamicPricing.discountAmount > 0 && (
-                          <div className="flex justify-between text-emerald-700">
-                            <span>Diskon:</span>
-                            <span className="font-semibold">
-                              -{formatRupiah(dynamicPricing.discountAmount)}
-                            </span>
-                          </div>
-                        )}
                         <div className="flex justify-between font-bold text-[#392B21] text-base pt-3 border-t border-[#E5DCD0]">
                           <span>Total Estimasi:</span>
                           <span className="text-[#806044]">
@@ -584,11 +617,11 @@ function BookingContent() {
                         </div>
                         
                         <div className="text-[11px] text-[#756A5F] bg-[#FAF7F2] p-3 rounded-xl border border-[#E5DCD0] leading-relaxed space-y-1">
-                          <p>
-                            <strong>Deposit / Uang Muka:</strong> {formatRupiah(dynamicPricing.depositRequired)} (50%).
+                          <p className="font-semibold text-[#392B21]">
+                            Waktu Transaksi Pembayaran:
                           </p>
-                          <p className="text-[10px] text-stone-500">
-                            *Setelah admin menyetujui ketersediaan kamar, Anda akan menerima instruksi penguncian jadwal dan transfer deposit.
+                          <p className="text-[11px] text-stone-600">
+                            Pembayaran diselesaikan sebelum serah terima kunci kamar oleh petugas homestay saat kedatangan.
                           </p>
                         </div>
                       </div>
