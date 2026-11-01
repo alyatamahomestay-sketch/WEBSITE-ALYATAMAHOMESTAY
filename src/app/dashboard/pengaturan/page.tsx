@@ -78,6 +78,10 @@ export default function PengaturanPropertiPage() {
         cancellation_policy: cancellationPolicy,
         pending_expiration_hours: Number(pendingExpirationHours),
       });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('property-updated'));
+      }
       showAdminToast('edit', 'Pengaturan profil homestay berhasil disimpan.');
       setFeedback('Pengaturan profil homestay berhasil disimpan.');
     } catch (err: any) {

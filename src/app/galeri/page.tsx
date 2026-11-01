@@ -40,6 +40,15 @@ export default function GaleriIklanPage() {
     async function loadData() {
       try {
         setLoading(true);
+        // 1. Live server fetch
+        const res = await fetch('/api/panel/photos?active=true', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.photos)) {
+            setPhotos(json.photos);
+            return;
+          }
+        }
         const data = await PmsService.getAdvertisementPhotos(true);
         setPhotos(data);
       } catch (err) {
@@ -49,6 +58,17 @@ export default function GaleriIklanPage() {
       }
     }
     loadData();
+
+    const onSync = () => loadData();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('storage', onSync);
+    window.addEventListener('photos-updated', onSync);
+
+    return () => {
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('photos-updated', onSync);
+    };
   }, []);
 
   const matchesCategory = (itemCategory: string, tabKey: string) => {

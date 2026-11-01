@@ -68,45 +68,62 @@ interface RentalSectionProps {
 }
 
 export default function RentalSection({ initialRooms, reservations = [] }: RentalSectionProps) {
-  const [rooms] = useState<Room[]>(initialRooms);
+  const [rooms, setRooms] = useState<Room[]>(initialRooms);
   const [config, setConfig] = useState<SectionConfig>(DEFAULT_CONFIG);
 
   // Load custom content config set by admin in panel (live from server & local)
   useEffect(() => {
-    const readConfig = async () => {
+    const loadLiveData = async () => {
       // 1. Try server API so all devices receive the latest rates & text
       try {
-        const res = await fetch('/api/panel/rental-config');
-        if (res.ok) {
-          const json = await res.json();
+        const resConfig = await fetch('/api/panel/rental-config', { cache: 'no-store' });
+        if (resConfig.ok) {
+          const json = await resConfig.json();
           if (json.success && json.config) {
             setConfig(json.config);
-            return;
           }
         }
       } catch (e) {}
 
-      // 2. Fallback to localStorage
+      // 2. Fetch live rooms to update unit counts and rates in realtime
+      try {
+        const resRooms = await fetch('/api/panel/rooms', { cache: 'no-store' });
+        if (resRooms.ok) {
+          const json = await resRooms.json();
+          if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
+            setRooms(json.rooms);
+          }
+        }
+      } catch (e) {}
+
+      // 3. Fallback to localStorage if offline
       if (typeof window !== 'undefined') {
         const savedConfig = localStorage.getItem('alyatama_rental_section_config');
         if (savedConfig) {
           try {
-            setConfig(JSON.parse(savedConfig));
+            setConfig(prev => ({ ...prev, ...JSON.parse(savedConfig) }));
           } catch (e) {}
         }
       }
     };
 
-    readConfig();
+    loadLiveData();
 
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'alyatama_rental_section_config') {
-        readConfig();
-      }
+    const handleSync = () => {
+      loadLiveData();
     };
 
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('rental-config-updated', handleSync);
+    window.addEventListener('rooms-updated', handleSync);
+
+    return () => {
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('rental-config-updated', handleSync);
+      window.removeEventListener('rooms-updated', handleSync);
+    };
   }, []);
 
   // Clean partitioning between VIP and REGULER (Exactly matches admin setup)

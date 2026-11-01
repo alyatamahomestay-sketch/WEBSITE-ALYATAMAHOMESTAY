@@ -29,6 +29,36 @@ export default function KamarListClient({
   const searchParams = useSearchParams();
   const urlType = searchParams?.get('type')?.toLowerCase();
 
+  const [roomList, setRoomList] = useState<Room[]>(rooms);
+
+  // Sync rooms in realtime from server
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch('/api/panel/rooms', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
+            setRoomList(json.rooms);
+          }
+        }
+      } catch (e) {}
+    };
+
+    fetchRooms();
+
+    const onSync = () => fetchRooms();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('storage', onSync);
+    window.addEventListener('rooms-updated', onSync);
+
+    return () => {
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('rooms-updated', onSync);
+    };
+  }, []);
+
   // Determine active filter from URL or props
   const [activeFilter, setActiveFilter] = useState<'all' | 'reguler' | 'vip'>(() => {
     const t = urlType || initialType;
@@ -61,7 +91,7 @@ export default function KamarListClient({
     );
   };
 
-  const activeRooms = useMemo(() => rooms.filter((r) => !r.is_archived), [rooms]);
+  const activeRooms = useMemo(() => roomList.filter((r) => !r.is_archived), [roomList]);
   const regulerRooms = useMemo(() => activeRooms.filter((r) => !isVipRoom(r)), [activeRooms]);
   const vipRooms = useMemo(() => activeRooms.filter(isVipRoom), [activeRooms]);
 

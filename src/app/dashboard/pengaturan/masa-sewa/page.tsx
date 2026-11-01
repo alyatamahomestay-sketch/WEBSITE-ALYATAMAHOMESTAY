@@ -107,7 +107,7 @@ export default function SetupMasaSewaPage() {
       // Try server config API first
       let loadedConfig = null;
       try {
-        const res = await fetch('/api/panel/rental-config');
+        const res = await fetch('/api/panel/rental-config', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.config) {

@@ -6,6 +6,7 @@ import PublicFooter from '@/components/public/Footer';
 import KamarListClient from '@/components/public/KamarListClient';
 import { PmsService } from '@/lib/services/pms-service';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface KamarPageProps {

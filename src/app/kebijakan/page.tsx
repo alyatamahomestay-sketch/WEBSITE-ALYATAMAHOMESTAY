@@ -3,8 +3,13 @@ import Link from 'next/link';
 import { ShieldCheck, Clock, AlertTriangle, CreditCard, CheckCircle2, HeartHandshake, Sparkles, Building2 } from 'lucide-react';
 import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
+import { PmsService } from '@/lib/services/pms-service';
 
-export default function KebijakanPage() {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function KebijakanPage() {
+  const property = await PmsService.getPropertySettings();
   return (
     <div className="min-h-screen flex flex-col w-full">
       <PublicNavbar />
@@ -54,10 +59,10 @@ export default function KebijakanPage() {
               </div>
               <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 <p>
-                  • <strong>Waktu Check-in:</strong> Mulai pukul <strong>14:00 WIB</strong>. Bila Anda tiba lebih awal, penitipan bagasi dapat dikoordinasikan terlebih dahulu kepada pengelola.
+                  • <strong>Waktu Check-in:</strong> Mulai pukul <strong>{property.checkin_time || '14:00'} WIB</strong>. Bila Anda tiba lebih awal, penitipan bagasi dapat dikoordinasikan terlebih dahulu kepada pengelola.
                 </p>
                 <p>
-                  • <strong>Waktu Check-out:</strong> Maksimal pukul <strong>12:00 WIB</strong>. Keterlambatan check-out tanpa konfirmasi dapat dikenakan biaya penyesuaian operasional.
+                  • <strong>Waktu Check-out:</strong> Maksimal pukul <strong>{property.checkout_time || '12:00'} WIB</strong>. Keterlambatan check-out tanpa konfirmasi dapat dikenakan biaya penyesuaian operasional.
                 </p>
                 <p>
                   • Seluruh tamu dewasa wajib menunjukkan kartu identitas resmi (KTP/SIM/Paspor) saat check-in.

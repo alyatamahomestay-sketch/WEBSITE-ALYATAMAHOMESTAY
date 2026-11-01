@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Phone, Menu, X, Heart, Image as ImageIcon } from 'lucide-react';
@@ -9,6 +9,54 @@ import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // Dynamic property settings from admin
+  const [property, setProperty] = useState<{
+    phone: string;
+    whatsapp_number: string;
+    announcement_banner: string;
+    is_announcement_active: boolean;
+  }>({
+    phone: '0822-8547-2008',
+    whatsapp_number: '6282285472008',
+    announcement_banner: 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian & Bulanan',
+    is_announcement_active: true,
+  });
+
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        const res = await fetch('/api/panel/properties', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.property) {
+            setProperty({
+              phone: json.property.phone || '0822-8547-2008',
+              whatsapp_number: json.property.whatsapp_number || '6282285472008',
+              announcement_banner: json.property.announcement_banner || 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian & Bulanan',
+              is_announcement_active: json.property.is_announcement_active !== false,
+            });
+          }
+        }
+      } catch (e) {}
+    };
+
+    fetchProperty();
+
+    const onSync = () => fetchProperty();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('storage', onSync);
+    window.addEventListener('property-updated', onSync);
+
+    return () => {
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('property-updated', onSync);
+    };
+  }, []);
+
+  const cleanWaNumber = (property.whatsapp_number || '6282285472008').replace(/[^0-9]/g, '');
+  const displayPhone = property.phone || '0822 8547 2008';
 
   const navItems = [
     { label: 'Beranda', href: '/', exact: true },
@@ -29,13 +77,13 @@ export default function PublicNavbar() {
 
   return (
     <header className="w-full sticky top-0 z-50 bg-[#36281E] border-b border-[#4D392B] text-stone-100 shadow-md backdrop-blur-md" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
-      {/* Top Banner: Syariah & Charity Slogan (Exact match to reference image) */}
-      <div className="w-full bg-[#78593F] text-[#F6F0E7] text-[11px] sm:text-xs py-1.5 px-3 text-center font-normal flex items-center justify-center gap-2 flex-wrap leading-tight">
-        <Heart className="w-3.5 h-3.5 text-[#E7D8C5] shrink-0 fill-none stroke-[1.5]" />
-        <span>
-          Penginapan Syariah: <em>&ldquo;Nikmati Kenyamanan, Raih Ibadah Jariyah&rdquo;</em> &bull; Pilihan Sewa <strong>Harian &amp; Bulanan</strong>
-        </span>
-      </div>
+      {/* Top Banner: Syariah & Charity Slogan */}
+      {property.is_announcement_active && (
+        <div className="w-full bg-[#78593F] text-[#F6F0E7] text-[11px] sm:text-xs py-1.5 px-3 text-center font-normal flex items-center justify-center gap-2 flex-wrap leading-tight">
+          <Heart className="w-3.5 h-3.5 text-[#E7D8C5] shrink-0 fill-none stroke-[1.5]" />
+          <span>{property.announcement_banner}</span>
+        </div>
+      )}
 
       <div className="max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6 w-full">
         <div className="flex items-center justify-between h-20 gap-2 lg:gap-3 xl:gap-5">
@@ -75,14 +123,14 @@ export default function PublicNavbar() {
           {/* Action Buttons: Contact Phone Pill & CTA (Visible on lg:flex) */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
             <a
-              href="https://wa.me/6282285472008"
+              href={`https://wa.me/${cleanWaNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[11px] xl:text-xs text-stone-200 hover:text-white border border-[#5E4532] hover:border-[#806044] rounded-xl px-2.5 xl:px-3 py-2 transition-colors flex items-center gap-1.5 whitespace-nowrap bg-[#2A1F17]/60"
-              aria-label="Hubungi Telepon / WhatsApp Pengelola: 0822 8547 2008"
+              aria-label={`Hubungi Telepon / WhatsApp Pengelola: ${displayPhone}`}
             >
               <Phone className="w-3.5 h-3.5 text-[#C9A84C]" />
-              <span className="font-mono">0822 8547 2008</span>
+              <span className="font-mono">{displayPhone}</span>
             </a>
 
             <Link
@@ -138,13 +186,13 @@ export default function PublicNavbar() {
 
           <div className="pt-3">
             <a
-              href="https://wa.me/6282285472008"
+              href={`https://wa.me/${cleanWaNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full text-center py-2.5 rounded-xl border border-[#806044] text-[#E7D8C5] text-xs font-semibold flex items-center justify-center gap-2 bg-[#806044]/20 hover:bg-[#806044]/30 transition-colors"
             >
               <Phone className="w-3.5 h-3.5 text-[#C9A84C]" />
-              <span>WhatsApp: 0822 8547 2008</span>
+              <span>WhatsApp: {displayPhone}</span>
             </a>
           </div>
         </div>

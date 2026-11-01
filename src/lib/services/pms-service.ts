@@ -51,6 +51,7 @@ function syncMemPropertyToStorage(property: PropertySettings) {
     try {
       localStorage.setItem('alyatama_property_settings', JSON.stringify(property));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('property-updated'));
     } catch (e) {}
   }
 }
@@ -70,6 +71,7 @@ function syncMemRoomsToStorage(rooms: Room[]) {
     try {
       localStorage.setItem('alyatama_rooms_data', JSON.stringify(rooms));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('rooms-updated'));
     } catch (e) {}
   }
 }
@@ -124,6 +126,7 @@ function syncMemStaffUsersToStorage(users: StaffUser[]) {
     try {
       localStorage.setItem('alyatama_staff_users_data', JSON.stringify(users));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('staff-updated'));
     } catch (e) {}
   }
 }
@@ -833,6 +836,8 @@ export const PmsService = {
           const json = await res.json();
           if (json.success && json.photo) {
             memAdPhotos.push(json.photo);
+            window.dispatchEvent(new CustomEvent('photos-updated'));
+            window.dispatchEvent(new Event('storage'));
             return json.photo;
           }
         }
@@ -869,6 +874,8 @@ export const PmsService = {
           if (json.success && json.photo) {
             const idx = memAdPhotos.findIndex((p) => p.id === id);
             if (idx !== -1) memAdPhotos[idx] = json.photo;
+            window.dispatchEvent(new CustomEvent('photos-updated'));
+            window.dispatchEvent(new Event('storage'));
             return json.photo;
           }
         }
@@ -907,6 +914,8 @@ export const PmsService = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'delete', id }),
         });
+        window.dispatchEvent(new CustomEvent('photos-updated'));
+        window.dispatchEvent(new Event('storage'));
       } catch (err) {
         console.warn('API delete photo notice:', err);
       }

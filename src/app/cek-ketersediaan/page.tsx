@@ -44,6 +44,17 @@ function CekKetersediaanContent() {
   useEffect(() => {
     async function loadData() {
       try {
+        const res = await fetch('/api/panel/rooms', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
+            setRooms(json.rooms);
+            if (!selectedRoomId) {
+              setSelectedRoomId(json.rooms[0].id);
+            }
+            return;
+          }
+        }
         const data = await PmsService.getRooms();
         setRooms(data);
         if (!selectedRoomId && data.length > 0) {
@@ -56,6 +67,17 @@ function CekKetersediaanContent() {
       }
     }
     loadData();
+
+    const onSync = () => loadData();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('storage', onSync);
+    window.addEventListener('rooms-updated', onSync);
+
+    return () => {
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('rooms-updated', onSync);
+    };
   }, [selectedRoomId]);
 
   const handleRentalTypeChange = (type: RentalType) => {

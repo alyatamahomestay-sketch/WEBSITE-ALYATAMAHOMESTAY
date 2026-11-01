@@ -5,10 +5,13 @@ import PublicNavbar from '@/components/public/Navbar';
 import PublicFooter from '@/components/public/Footer';
 import { PmsService } from '@/lib/services/pms-service';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function KontakPage() {
   const property = await PmsService.getPropertySettings();
+  const cleanWa = (property.whatsapp_number || '6282285472008').replace(/[^0-9]/g, '');
+  const displayPhone = property.phone || '0822 8547 2008';
 
   return (
     <div className="min-h-screen flex flex-col w-full">
@@ -44,9 +47,9 @@ export default async function KontakPage() {
                   </div>
                   <div>
                     <span className="text-[11px] text-stone-500 block">WhatsApp Resmi (Fast Response)</span>
-                    <strong className="text-[#392B21] text-base block">0822 8547 2008</strong>
+                    <strong className="text-[#392B21] text-base block">{displayPhone}</strong>
                     <a
-                      href="https://wa.me/6282285472008"
+                      href={`https://wa.me/${cleanWa}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-emerald-700 font-semibold hover:underline inline-flex items-center gap-1 mt-0.5"
@@ -62,7 +65,7 @@ export default async function KontakPage() {
                   </div>
                   <div>
                     <span className="text-[11px] text-stone-500 block">Telepon Kantor</span>
-                    <strong className="text-[#392B21]">0822 8547 2008</strong>
+                    <strong className="text-[#392B21]">{displayPhone}</strong>
                   </div>
                 </div>
 
@@ -72,7 +75,7 @@ export default async function KontakPage() {
                   </div>
                   <div>
                     <span className="text-[11px] text-stone-500 block">Email Layanan</span>
-                    <span className="text-[#392B21]">alyatamahomestay@gmail.com</span>
+                    <span className="text-[#392B21]">{property.email || 'kontak@alyatamahomestay.com'}</span>
                   </div>
                 </div>
 
@@ -102,10 +105,10 @@ export default async function KontakPage() {
                   <div>
                     <span className="text-[11px] text-stone-500 block">Alamat Homestay</span>
                     <strong className="text-[#392B21] leading-relaxed block">
-                      Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Daerah Kampar
+                      {property.address}
                     </strong>
                     <span className="text-stone-600 block mt-0.5">
-                      Kabupaten Kampar, Riau 28411, Indonesia
+                      {property.city}, {property.province} {property.postal_code}, {property.country}
                     </span>
                   </div>
                 </div>
@@ -113,13 +116,13 @@ export default async function KontakPage() {
                 <div className="bg-[#FAF7F2] p-3.5 rounded-xl border border-[#E5DCD0] text-xs space-y-1">
                   <span className="font-bold text-[#806044] block">Patokan Lokasi Penting:</span>
                   <p className="text-[#392B21]">
-                    Tepat di belakang SPBU Bangkinang Kota, di samping Rumah Sakit Norpa Husada.
+                    {property.landmark}
                   </p>
                 </div>
 
                 <div className="pt-2">
                   <a
-                    href="https://maps.app.goo.gl/M2HcHTp2wSDMNyfj7"
+                    href={property.google_maps_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-[#392B21] hover:bg-[#2a1f17] text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
@@ -138,7 +141,7 @@ export default async function KontakPage() {
               Informasi Penting Sebelum Berkunjung:
             </h4>
             <p>
-              1. <strong>Waktu Check-in:</strong> Mulai pukul 14:00 WIB, dan waktu check-out maksimal pukul 12:00 WIB.
+              1. <strong>Waktu Check-in:</strong> Mulai pukul {property.checkin_time} WIB, dan waktu check-out maksimal pukul {property.checkout_time} WIB.
             </p>
             <p>
               2. <strong>Kebijakan Tamu Pasangan:</strong> Tamu pasangan pria dan wanita wajib merupakan pasangan sah suami-istri (siap menunjukkan identitas/Buku Nikah).

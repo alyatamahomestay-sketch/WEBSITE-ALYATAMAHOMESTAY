@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import { AdvertisementPhoto } from '@/lib/types';
 import { INITIAL_AD_PHOTOS } from '@/lib/mock-fallback';
 
-// Persistent in-memory cache for serverless runtime
-let serverAdPhotos: AdvertisementPhoto[] = [...INITIAL_AD_PHOTOS];
-let serverDeletedIds: string[] = [];
+const PHOTOS_FILE_PATH = path.join(process.cwd(), '.server-photos.json');
 
 function getSupabase() {
   const admin = createAdminClient();
@@ -15,33 +15,58 @@ function getSupabase() {
   return createClient();
 }
 
+function loadPhotosFromFile(): AdvertisementPhoto[] {
+  try {
+    if (fs.existsSync(PHOTOS_FILE_PATH)) {
+      const data = fs.readFileSync(PHOTOS_FILE_PATH, 'utf8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading photos file:', e);
+  }
+  savePhotosToFile(INITIAL_AD_PHOTOS);
+  return [...INITIAL_AD_PHOTOS];
+}
+
+function savePhotosToFile(photos: AdvertisementPhoto[]) {
+  try {
+    fs.writeFileSync(PHOTOS_FILE_PATH, JSON.stringify(photos, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error writing photos file:', e);
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const onlyActive = searchParams.get('active') === 'true';
 
+    let photos = loadPhotosFromFile();
+
     if (isSupabaseConfigured()) {
-      const supabase = getSupabase();
-      let query = supabase.from('advertisement_photos').select('*').order('display_order', { ascending: true });
-      if (onlyActive) {
-        query = query.eq('is_active', true);
-      }
-      const { data, error } = await query;
-      if (!error && data) {
-        // Filter out any IDs that were explicitly deleted
-        const filtered = data.filter((p: AdvertisementPhoto) => !serverDeletedIds.includes(p.id));
-        return NextResponse.json({ success: true, photos: filtered });
-      }
+      try {
+        const supabase = getSupabase();
+        let query = supabase.from('advertisement_photos').select('*').order('display_order', { ascending: true });
+        if (onlyActive) {
+          query = query.eq('is_active', true);
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          photos = data as AdvertisementPhoto[];
+          savePhotosToFile(photos);
+        }
+      } catch (e) {}
     }
 
-    // Fallback: server cache with deleted IDs excluded
-    let list = serverAdPhotos.filter((p) => !serverDeletedIds.includes(p.id));
     if (onlyActive) {
-      list = list.filter((p) => p.is_active);
+      photos = photos.filter(p => p.is_active);
     }
-    list.sort((a, b) => a.display_order - b.display_order);
+    photos.sort((a, b) => a.display_order - b.display_order);
 
-    return NextResponse.json({ success: true, photos: list });
+    return NextResponse.json({ success: true, photos });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -53,23 +78,21 @@ export async function POST(req: NextRequest) {
     const { action = 'create', photo, id, updates } = body;
     const supabase = getSupabase();
 
+    let photos = loadPhotosFromFile();
+
     if (action === 'delete') {
       const targetId = id || body.id;
       if (!targetId) {
         return NextResponse.json({ success: false, error: 'ID foto wajib ditentukan.' }, { status: 400 });
       }
 
-      // Add to server deleted IDs
-      if (!serverDeletedIds.includes(targetId)) {
-        serverDeletedIds.push(targetId);
-      }
-      serverAdPhotos = serverAdPhotos.filter((p) => p.id !== targetId);
+      photos = photos.filter(p => p.id !== targetId);
+      savePhotosToFile(photos);
 
       if (isSupabaseConfigured()) {
-        const { error } = await supabase.from('advertisement_photos').delete().eq('id', targetId);
-        if (error) {
-          console.warn('Supabase delete photo notice:', error.message);
-        }
+        try {
+          await supabase.from('advertisement_photos').delete().eq('id', targetId);
+        } catch (e) {}
       }
 
       return NextResponse.json({ success: true, message: 'Foto berhasil dihapus secara permanen.' });
@@ -79,50 +102,67 @@ export async function POST(req: NextRequest) {
       const targetId = id || body.id;
       const patch = { ...(updates || photo), updated_at: new Date().toISOString() };
 
-      const idx = serverAdPhotos.findIndex((p) => p.id === targetId);
+      const idx = photos.findIndex(p => p.id === targetId);
+      let updatedPhoto: AdvertisementPhoto | null = null;
       if (idx !== -1) {
-        serverAdPhotos[idx] = { ...serverAdPhotos[idx], ...patch };
+        photos[idx] = { ...photos[idx], ...patch };
+        updatedPhoto = photos[idx];
+        savePhotosToFile(photos);
       }
 
       if (isSupabaseConfigured()) {
-        const { data, error } = await supabase
-          .from('advertisement_photos')
-          .update(patch)
-          .eq('id', targetId)
-          .select()
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from('advertisement_photos')
+            .update(patch)
+            .eq('id', targetId)
+            .select()
+            .single();
 
-        if (!error && data) {
-          return NextResponse.json({ success: true, photo: data });
-        }
+          if (!error && data) {
+            if (idx !== -1) {
+              photos[idx] = data as AdvertisementPhoto;
+              savePhotosToFile(photos);
+            }
+            return NextResponse.json({ success: true, photo: data });
+          }
+        } catch (e) {}
       }
 
-      const updated = serverAdPhotos.find((p) => p.id === targetId);
-      return NextResponse.json({ success: true, photo: updated });
+      if (updatedPhoto) {
+        return NextResponse.json({ success: true, photo: updatedPhoto });
+      }
+      return NextResponse.json({ success: false, error: 'Foto tidak ditemukan.' }, { status: 404 });
     }
 
-    // Default: Create photo
+    // Default: create
     const newPhoto: AdvertisementPhoto = {
-      ...photo,
-      id: photo?.id || 'ad-' + Date.now(),
+      ...(photo || body),
+      id: (photo && photo.id) || 'ad-' + Date.now(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Remove from deleted list if re-adding with same ID
-    serverDeletedIds = serverDeletedIds.filter((dId) => dId !== newPhoto.id);
-    serverAdPhotos.push(newPhoto);
+    photos.push(newPhoto);
+    savePhotosToFile(photos);
 
     if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('advertisement_photos')
-        .insert([newPhoto])
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('advertisement_photos')
+          .insert([newPhoto])
+          .select()
+          .single();
 
-      if (!error && data) {
-        return NextResponse.json({ success: true, photo: data });
-      }
+        if (!error && data) {
+          const idx = photos.findIndex(p => p.id === newPhoto.id);
+          if (idx !== -1) {
+            photos[idx] = data as AdvertisementPhoto;
+            savePhotosToFile(photos);
+          }
+          return NextResponse.json({ success: true, photo: data });
+        }
+      } catch (e) {}
     }
 
     return NextResponse.json({ success: true, photo: newPhoto });

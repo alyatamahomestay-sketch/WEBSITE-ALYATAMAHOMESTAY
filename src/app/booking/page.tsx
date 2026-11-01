@@ -63,6 +63,17 @@ function BookingContent() {
   useEffect(() => {
     async function fetchRooms() {
       try {
+        const res = await fetch('/api/panel/rooms', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
+            setRooms(json.rooms);
+            if (!roomId) {
+              setRoomId(json.rooms[0].id);
+            }
+            return;
+          }
+        }
         const data = await PmsService.getRooms();
         setRooms(data);
         if (!roomId && data.length > 0) {
@@ -75,6 +86,17 @@ function BookingContent() {
       }
     }
     fetchRooms();
+
+    const onSync = () => fetchRooms();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('storage', onSync);
+    window.addEventListener('rooms-updated', onSync);
+
+    return () => {
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('rooms-updated', onSync);
+    };
   }, [roomId]);
 
   // Handle rental type switch
