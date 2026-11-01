@@ -109,7 +109,7 @@ function CekKetersediaanContent() {
               Cek Ketersediaan Kamar ALYATAMA
             </h1>
             <p className="text-xs sm:text-sm text-[#756A5F]">
-              Pilih model sewa (Harian, Bulanan, Tahunan), tanggal, dan tipe kamar untuk simulasi tarif resmi.
+              Pilih model sewa (Harian dan Bulanan), tanggal, dan tipe kamar untuk simulasi tarif resmi.
             </p>
           </div>
 

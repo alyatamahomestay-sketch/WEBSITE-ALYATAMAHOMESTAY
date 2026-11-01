@@ -65,11 +65,11 @@ export default function KebijakanPage() {
               </div>
             </div>
 
-            {/* Model Sewa: Harian, Bulanan, Tahunan */}
+            {/* Model Sewa: Harian dan Bulanan */}
             <div className="bg-white rounded-3xl border border-[#E5DCD0] p-6 sm:p-8 shadow-sm space-y-4">
               <div className="flex items-center gap-3 text-[#392B21] font-bold text-base pb-3 border-b border-[#FAF7F2]">
                 <Building2 className="w-5 h-5 text-[#65715A]" />
-                <span>3. Ketentuan Masa Sewa (Harian, Bulanan, Tahunan)</span>
+                <span>3. Ketentuan Masa Sewa (Harian dan Bulanan)</span>
               </div>
               <div className="space-y-2 text-xs sm:text-sm text-[#756A5F] leading-relaxed">
                 <p>
@@ -79,7 +79,6 @@ export default function KebijakanPage() {
                   • <strong>Sewa Bulanan:</strong> Berlaku untuk durasi minimal 1 bulan (30 hari). Termasuk biaya kebersihan berkala dan fasilitas standar. Uang jaminan (security deposit) dikembalikan saat masa sewa berakhir setelah kamar diinspeksi.
                 </p>
                 <p>
-                  • <strong>Sewa Tahunan:</strong> Melalui akad perjanjian sewa tahunan yang jelas, dengan hak prioritas perpanjangan bagi penyewa yang menjaga ketertiban properti.
                 </p>
               </div>
             </div>

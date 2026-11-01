@@ -276,7 +276,7 @@ export default function GaleriIklanPage() {
                   Ingin Memesan Kamar atau Bertanya Ketersediaan?
                 </h3>
                 <p className="text-xs sm:text-sm text-[#d1bfab] leading-relaxed">
-                  Kami melayani sewa harian (transit & wisata), bulanan (dinas / proyek), dan tahunan (keluarga) dengan fasilitas lengkap, bersih, dan lingkungan nyaman di pusat Bangkinang Kota.
+                  Kami melayani sewa harian (transit & wisata) dan bulanan (dinas / proyek) dengan fasilitas lengkap, bersih, dan lingkungan nyaman di pusat Bangkinang Kota.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row md:flex-col gap-3 justify-end">

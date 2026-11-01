@@ -189,7 +189,7 @@ export default async function HomePage() {
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between bg-[#392B21] px-3.5 py-2.5 rounded-xl border border-[#4D3B2E] text-[#E7D8C5]">
                       <span className="font-medium text-white">Masa Sewa:</span>
-                      <span className="text-[#C9A84C] font-semibold">Harian &bull; Bulanan &bull; Tahunan</span>
+                      <span className="text-[#C9A84C] font-semibold">Harian &bull; Bulanan</span>
                     </div>
                     <p className="text-[11px] text-[#CFBBA2] text-center pt-1">
                       Lokasi strategis di samping RS Norpa Husada & belakang SPBU Bangkinang Kota.
@@ -387,7 +387,7 @@ export default async function HomePage() {
               Rencanakan Menginap Anda Bersama Kami
             </h2>
             <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
-              Ajukan permintaan reservasi kamar pilihan Anda untuk sewa Harian, Bulanan, maupun Tahunan. Petugas kami akan segera memverifikasi ketersediaan dan menghubungi Anda.
+              Ajukan permintaan reservasi kamar pilihan Anda untuk sewa Harian maupun Bulanan. Petugas kami akan segera memverifikasi ketersediaan dan menghubungi Anda.
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <Link

@@ -26,7 +26,7 @@ export default async function KontakPage() {
               Kontak & Lokasi ALYATAMA HOMESTAY
             </h1>
             <p className="text-sm text-[#756A5F] leading-relaxed">
-              Kami siap melayani kebutuhan akomodasi Harian, Bulanan, maupun Tahunan. Jangan ragu menghubungi pengelola untuk konfirmasi ketersediaan kamar, survey lokasi, atau petunjuk jalan.
+              Kami siap melayani kebutuhan akomodasi Harian maupun Bulanan. Jangan ragu menghubungi pengelola untuk konfirmasi ketersediaan kamar, survey lokasi, atau petunjuk jalan.
             </p>
           </div>
 
@@ -144,7 +144,7 @@ export default async function KontakPage() {
               2. <strong>Kebijakan Tamu Pasangan:</strong> Tamu pasangan pria dan wanita wajib merupakan pasangan sah suami-istri (siap menunjukkan identitas/Buku Nikah).
             </p>
             <p>
-              3. <strong>Sewa Jangka Panjang:</strong> Untuk sewa bulanan dan tahunan, Anda dapat menghubungi admin terlebih dahulu untuk menjadwalkan survey kamar.
+              3. <strong>Sewa Jangka Panjang:</strong> Untuk sewa bulanan, Anda dapat menghubungi admin terlebih dahulu untuk menjadwalkan survey kamar.
             </p>
           </div>
 

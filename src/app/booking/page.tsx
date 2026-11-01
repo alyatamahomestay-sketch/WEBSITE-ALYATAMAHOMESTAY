@@ -175,7 +175,7 @@ function BookingContent() {
               Formulir Reservasi Resmi ALYATAMA HOMESTAY
             </h1>
             <p className="text-xs sm:text-sm text-[#756A5F] leading-relaxed">
-              Lengkapi formulir di bawah ini untuk sewa <strong className="text-[#392B21]">Harian, Bulanan, maupun Tahunan</strong>. Permintaan Anda akan segera diverifikasi oleh admin homestay sebelum konfirmasi resmi.
+              Lengkapi formulir di bawah ini untuk sewa <strong className="text-[#392B21]">Harian maupun Bulanan</strong>. Permintaan Anda akan segera diverifikasi oleh admin homestay sebelum konfirmasi resmi.
             </p>
           </div>
 

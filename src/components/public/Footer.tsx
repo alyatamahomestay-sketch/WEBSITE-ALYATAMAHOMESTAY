@@ -33,7 +33,7 @@ export default function PublicFooter() {
               </span>
             </div>
             <p className="text-xs text-[#d1bfab] leading-relaxed">
-              Penginapan Syariah terpercaya di Bangkinang Kota, Kampar, Riau. Melayani sewa harian, bulanan, dan tahunan dengan suasana bersih, tenang, aman, dan penuh keberkahan ibadah jariyah.
+              Penginapan Syariah terpercaya di Bangkinang Kota, Kampar, Riau. Melayani sewa harian dan bulanan dengan suasana bersih, tenang, aman, dan penuh keberkahan ibadah jariyah.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#C9A84C]">
               <Clock className="w-3.5 h-3.5" />
@@ -68,12 +68,6 @@ export default function PublicFooter() {
                 <Link href="/kamar?rental=monthly" className="hover:text-white transition-colors flex items-center justify-between">
                   <span>Sewa Bulanan (Dinas / Proyek)</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4d3b2e] text-[#C9A84C]">Bulanan</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/kamar?rental=yearly" className="hover:text-white transition-colors flex items-center justify-between">
-                  <span>Sewa Tahunan (Keluarga)</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4d3b2e] text-[#C9A84C]">Tahunan</span>
                 </Link>
               </li>
               <li className="pt-2 border-t border-[#4d3b2e]">

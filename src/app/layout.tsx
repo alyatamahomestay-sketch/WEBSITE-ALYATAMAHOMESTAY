@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'ALYATAMA HOMESTAY | Penginapan Syariah Bangkinang Kota, Kampar, Riau',
-  description: 'Penginapan Syariah terpercaya di Bangkinang Kota, Kabupaten Kampar, Riau. Sewa Harian, Bulanan, dan Tahunan. Fasilitas lengkap, kamar bersih, suasana Islami, dan pelayanan profesional.',
+  description: 'Penginapan Syariah terpercaya di Bangkinang Kota, Kabupaten Kampar, Riau. Sewa Harian dan Bulanan. Fasilitas lengkap, kamar bersih, suasana Islami, dan pelayanan profesional.',
 };
 
 export default function RootLayout({

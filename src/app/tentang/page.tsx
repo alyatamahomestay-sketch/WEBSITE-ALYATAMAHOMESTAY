@@ -50,7 +50,7 @@ export default function TentangPage() {
             {/* Content Details */}
             <div className="space-y-4 text-xs sm:text-sm text-[#392B21] leading-relaxed">
               <h2 className="font-serif text-xl font-bold text-[#392B21]">
-                Akomodasi Fleksibel: Harian, Bulanan, dan Tahunan
+                Akomodasi Fleksibel: Harian dan Bulanan
               </h2>
               <p className="text-[#756A5F]">
                 ALYATAMA HOMESTAY berlokasi strategis di <strong>Jl. Mayor Ali Rasyid No 19 Bangkinang Kota</strong>, tepat di belakang SPBU Bangkinang Kota dan bersebelahan dengan Rumah Sakit Norpa Husada. Posisi ini memberikan kemudahan mobilitas baik bagi Anda yang bertugas dinas, keluarga yang berkunjung atau menjenguk kerabat di rumah sakit, maupun profesional yang membutuhkan hunian jangka panjang.
@@ -61,7 +61,6 @@ export default function TentangPage() {
               <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#392B21]">
                 <li><strong>Sewa Harian:</strong> Tarif terjangkau untuk kebutuhan transit, kunjungan keluarga, dan pelancong wisata Kampar.</li>
                 <li><strong>Sewa Bulanan:</strong> Solusi hemat dan nyaman bagi staf instansi pemerintah, pegawai BUMN, tenaga kesehatan, atau pekerja proyek di Bangkinang.</li>
-                <li><strong>Sewa Tahunan:</strong> Pilihan hunian eksklusif berfasilitas lengkap dengan lingkungan asri dan aman.</li>
               </ul>
             </div>
 

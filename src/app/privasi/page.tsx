@@ -38,7 +38,7 @@ export default function PrivasiPage() {
                 <li>Nama lengkap tamu utama sesuai kartu identitas resmi (KTP/SIM/Paspor).</li>
                 <li>Nomor WhatsApp aktif untuk koordinasi kedatangan, konfirmasi admin, dan pengiriman bukti.</li>
                 <li>Alamat email (opsional).</li>
-                <li>Tanggal menginap, model sewa (Harian, Bulanan, Tahunan), serta jumlah tamu.</li>
+                <li>Tanggal menginap, model sewa (Harian atau Bulanan), serta jumlah tamu.</li>
                 <li>Bukti transfer deposit atau pembayaran yang disimpan dalam sistem penyimpanan terenkripsi.</li>
               </ul>
             </section>
