@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/dashboard/Sidebar';
 import DashboardHeader from '@/components/dashboard/Header';
 import { UserRole } from '@/lib/types';
@@ -11,16 +11,23 @@ import { AlertCircle, ArrowRight } from 'lucide-react';
 import AdminToast from '@/components/common/AdminToast';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get('role') as UserRole;
   const [role, setRole] = useState<UserRole>(roleParam || 'owner');
   const dbConfigured = isSupabaseConfigured();
 
+  useEffect(() => {
+    // Automatically redirect legacy /dashboard routes to modern /panel
+    if (pathname && pathname.startsWith('/dashboard')) {
+      const targetPanelPath = pathname.replace(/^\/dashboard/, '/panel');
+      router.replace(targetPanelPath);
+    }
+  }, [pathname, router]);
+
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
-    const url = new URL(window.location.href);
-    url.searchParams.set('role', newRole);
-    window.location.href = url.toString();
   };
 
   return (

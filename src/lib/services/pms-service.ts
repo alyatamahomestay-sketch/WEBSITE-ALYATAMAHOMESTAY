@@ -404,9 +404,17 @@ export const PmsService = {
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.reservations)) {
-            memReservations = json.reservations;
+            const serverList: Reservation[] = json.reservations;
+            const idMap = new Map<string, Reservation>();
+            serverList.forEach(r => idMap.set(r.id, r));
+            memReservations.forEach(r => {
+              if (!idMap.has(r.id)) idMap.set(r.id, r);
+            });
+            memReservations = Array.from(idMap.values());
             syncMemReservationsToStorage(memReservations);
-            return memReservations;
+            return statusFilter && statusFilter !== 'all'
+              ? memReservations.filter(r => r.status === statusFilter)
+              : memReservations;
           }
         }
       } catch (e) {}
@@ -481,7 +489,8 @@ export const PmsService = {
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+        let query = supabase
           .from('reservations')
           .select(`
             *,
@@ -491,9 +500,15 @@ export const PmsService = {
             payments:payments(*),
             deposit:deposits(*),
             whatsapp_consent:whatsapp_consents(*)
-          `)
-          .or(`id.eq.${cleanId},reservation_number.eq.${cleanId}`)
-          .maybeSingle();
+          `);
+
+        if (isUuid) {
+          query = query.eq('id', cleanId);
+        } else {
+          query = query.eq('reservation_number', cleanId);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (!error && data) {
           return data as unknown as Reservation;
@@ -505,18 +520,22 @@ export const PmsService = {
   },
 
   async approveReservation(reservationId: string, adminId?: string): Promise<{ success: boolean; message: string }> {
+    const targetRes = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
+
     if (typeof window !== 'undefined') {
       try {
         const res = await fetch('/api/panel/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'approve', id: reservationId, adminId }),
+          body: JSON.stringify({ action: 'approve', id: reservationId, adminId, reservation: targetRes }),
         });
         const json = await res.json();
         if (json.success) {
           const rIdx = memReservations.findIndex(r => r.id === reservationId || r.reservation_number === reservationId);
           if (rIdx !== -1) {
             memReservations[rIdx].status = 'approved_pending_payment';
+            memReservations[rIdx].approved_at = new Date().toISOString();
+            memReservations[rIdx].approved_by = adminId || 'Administrator';
             syncMemReservationsToStorage(memReservations);
           }
           return { success: true, message: json.message || 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
@@ -524,12 +543,11 @@ export const PmsService = {
       } catch (e) {}
     }
 
-    const res = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
-    if (res) {
-      res.status = 'approved_pending_payment';
-      res.approved_at = new Date().toISOString();
-      res.approved_by = adminId || 'Administrator';
-      res.updated_at = new Date().toISOString();
+    if (targetRes) {
+      targetRes.status = 'approved_pending_payment';
+      targetRes.approved_at = new Date().toISOString();
+      targetRes.approved_by = adminId || 'Administrator';
+      targetRes.updated_at = new Date().toISOString();
       syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
     }

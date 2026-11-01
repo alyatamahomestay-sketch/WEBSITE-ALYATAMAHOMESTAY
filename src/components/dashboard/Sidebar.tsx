@@ -156,36 +156,12 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
       >
         {/* Brand / Logo Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-[#4d3b2e]">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/panel" className="flex items-center gap-2">
             <AlyatamaLogo variant="white" size="sm" />
             <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] font-bold bg-[#2a1f17] px-1.5 py-0.5 rounded border border-[#4d3b2e]">
               PMS
             </span>
           </Link>
-        </div>
-
-        {/* Role Indicator & Quick Switcher */}
-        <div className="px-4 py-3 bg-[#2a1f17] border-b border-[#4d3b2e]">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] uppercase font-semibold text-stone-400 tracking-wider">
-              Hak Akses Aktif:
-            </span>
-            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#806044] text-white border border-[#C9A84C]/40">
-              {activeRole}
-            </span>
-          </div>
-
-          <select
-            value={activeRole}
-            onChange={(e) => onRoleChange(e.target.value as UserRole)}
-            className="w-full bg-[#392B21] border border-[#4d3b2e] text-[#F6F0E7] text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#806044]"
-          >
-            <option value="owner">Peran: Owner (Akses Penuh)</option>
-            <option value="admin">Peran: Admin Operasional</option>
-            <option value="reception">Peran: Reception</option>
-            <option value="finance">Peran: Finance / Kasir</option>
-            <option value="housekeeping">Peran: Housekeeping</option>
-          </select>
         </div>
 
         {/* Navigation Links */}
@@ -280,11 +256,11 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
             Buka Website Calon Tamu &rarr;
           </Link>
           <Link
-            href="/portal"
+            href="/login"
             className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-transparent hover:bg-stone-800 text-stone-400 hover:text-stone-200 text-[11px] font-medium transition"
           >
             <LogOut className="w-3 h-3" />
-            <span>Ganti Peran / Keluar Portal</span>
+            <span>Keluar Akun Admin</span>
           </Link>
           <div className="text-[10px] text-stone-400 text-center">
             ALYATAMA HOMESTAY PMS v2.0

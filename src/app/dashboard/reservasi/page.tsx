@@ -172,14 +172,14 @@ function ReservasiListContent() {
           <table className="w-full text-xs text-left">
             <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 uppercase text-[10px] tracking-wider">
               <tr>
-                <th className="py-3 px-4 font-semibold">No. Reservasi</th>
-                <th className="py-3 px-4 font-semibold">Tamu</th>
-                <th className="py-3 px-4 font-semibold">Kamar</th>
-                <th className="py-3 px-4 font-semibold">Periode Menginap</th>
-                <th className="py-3 px-4 font-semibold text-right">Total Biaya</th>
-                <th className="py-3 px-4 font-semibold text-center">Status Reservasi</th>
-                <th className="py-3 px-4 font-semibold text-center">Pembayaran</th>
-                <th className="py-3 px-4 font-semibold text-right">Tindakan</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[130px]">No. Reservasi</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[150px]">Tamu</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[140px]">Kamar</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[160px]">Periode Menginap</th>
+                <th className="py-3 px-4 font-semibold text-right whitespace-nowrap min-w-[120px]">Total Biaya</th>
+                <th className="py-3 px-4 font-semibold text-center whitespace-nowrap min-w-[140px]">Status Reservasi</th>
+                <th className="py-3 px-4 font-semibold text-center whitespace-nowrap min-w-[120px]">Pembayaran</th>
+                <th className="py-3 px-4 font-semibold text-right whitespace-nowrap min-w-[140px] w-[140px] shrink-0">Tindakan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -228,40 +228,42 @@ function ReservasiListContent() {
                         {pMeta.label}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px] w-[140px] shrink-0">
+                      <div className="flex items-center justify-end gap-1.5 shrink-0 whitespace-nowrap">
                         {res.status === 'pending_approval' && (
                           <>
                             <button
+                              type="button"
                               onClick={() => handleApprove(res.id)}
                               title="Setujui Reservasi"
-                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              className="w-7 h-7 min-w-[28px] max-w-[28px] shrink-0 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center justify-center cursor-pointer shadow-2xs"
                             >
-                              <CheckCircle2 className="w-4 h-4" />
+                              <CheckCircle2 className="w-4 h-4 shrink-0" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleReject(res.id)}
                               title="Tolak Reservasi"
-                              className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                              className="w-7 h-7 min-w-[28px] max-w-[28px] shrink-0 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-2xs"
                             >
-                              <XCircle className="w-4 h-4" />
+                              <XCircle className="w-4 h-4 shrink-0" />
                             </button>
                           </>
                         )}
                         <Link
                           href={`/dashboard/reservasi/${res.id}`}
                           title="Lihat Rincian Reservasi"
-                          className="p-1.5 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
+                          className="w-7 h-7 min-w-[28px] max-w-[28px] shrink-0 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors flex items-center justify-center shadow-2xs"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4 shrink-0" />
                         </Link>
                         <Link
                           href={`/slip/${res.id}`}
                           target="_blank"
                           title="Cetak Bukti / Invoice"
-                          className="p-1.5 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
+                          className="w-7 h-7 min-w-[28px] max-w-[28px] shrink-0 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors flex items-center justify-center shadow-2xs"
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-4 h-4 shrink-0" />
                         </Link>
                       </div>
                     </td>

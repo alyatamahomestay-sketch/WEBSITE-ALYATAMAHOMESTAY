@@ -61,6 +61,8 @@ ALTER TABLE public.rooms
 -- 5B. PERBAIKI KOLOM-KOLOM PADA TABEL RESERVATIONS
 ALTER TABLE public.reservations 
     ADD COLUMN IF NOT EXISTS payment_preference TEXT DEFAULT 'cash';
+ALTER TABLE public.reservations DROP CONSTRAINT IF EXISTS reservations_approved_by_fkey;
+ALTER TABLE public.reservations ALTER COLUMN approved_by TYPE TEXT;
 
 -- 6. SEED / UPDATE DATA IDENTITAS HOMESTAY RESMI
 INSERT INTO public.properties (

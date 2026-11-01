@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
-import { Reservation } from '@/lib/types';
+import { Reservation, Room } from '@/lib/types';
 import {
   loadReservationsFromFile,
   saveReservationsToFile,
@@ -17,6 +17,38 @@ function getSupabaseClient() {
   return createClient();
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function transformSupabaseRecord(item: any): Reservation {
+  let mappedRooms: Room[] = [];
+  if (Array.isArray(item.rooms)) {
+    mappedRooms = item.rooms.map((rr: any) => rr?.room || rr).filter(Boolean);
+  }
+
+  let mappedSnapshot = item.price_snapshot;
+  if (Array.isArray(mappedSnapshot)) {
+    mappedSnapshot = mappedSnapshot[0] || null;
+  }
+
+  let mappedDeposit = item.deposit;
+  if (Array.isArray(mappedDeposit)) {
+    mappedDeposit = mappedDeposit[0] || null;
+  }
+
+  let mappedGuest = item.guest;
+  if (Array.isArray(mappedGuest)) {
+    mappedGuest = mappedGuest[0] || null;
+  }
+
+  return {
+    ...item,
+    guest: mappedGuest,
+    rooms: mappedRooms,
+    price_snapshot: mappedSnapshot,
+    deposit: mappedDeposit,
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -26,7 +58,7 @@ export async function GET(req: NextRequest) {
 
     let reservations = loadReservationsFromFile().map(normalizeReservation);
 
-    // Merge Supabase data if configured
+    // 1. Fetch from Supabase as primary source of truth
     if (isSupabaseConfigured()) {
       try {
         const supabase = getSupabaseClient();
@@ -43,29 +75,37 @@ export async function GET(req: NextRequest) {
           `)
           .order('created_at', { ascending: false });
 
-        if (id) {
-          query = query.or(`id.eq.${id},reservation_number.eq.${id}`);
-        } else if (resNum) {
-          query = query.eq('reservation_number', resNum);
+        const searchCode = (id || resNum || '').trim();
+        if (searchCode) {
+          if (UUID_REGEX.test(searchCode)) {
+            query = query.eq('id', searchCode);
+          } else {
+            query = query.eq('reservation_number', searchCode.toUpperCase());
+          }
         } else if (status && status !== 'all') {
           query = query.eq('status', status);
         }
 
         const { data, error } = await query;
         if (!error && data && data.length > 0) {
-          const remoteList = data.map(normalizeReservation);
+          const remoteList = data.map(transformSupabaseRecord);
+
+          // Merge Supabase records with local file cache
           const idMap = new Map<string, Reservation>();
-          // Priority to fresh updates from remote
+          // Remote data takes precedence
           remoteList.forEach((r) => idMap.set(r.id, r));
           reservations.forEach((r) => {
             if (!idMap.has(r.id)) idMap.set(r.id, r);
           });
+
           reservations = Array.from(idMap.values()).sort(
             (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
           saveReservationsToFile(reservations);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Supabase query warning in GET /api/panel/reservations:', e);
+      }
     }
 
     // If querying specific id or reservation_number
@@ -105,18 +145,19 @@ export async function POST(req: NextRequest) {
     }
 
     let reservations = loadReservationsFromFile().map(normalizeReservation);
+    const supabase = getSupabaseClient();
+    const isTargetUuid = UUID_REGEX.test(targetId);
+
+    // If reservations cache is empty or target not found, query Supabase directly
     let idx = reservations.findIndex(
       (r) =>
         (r.id && r.id.toLowerCase() === targetId.toLowerCase()) ||
         (r.reservation_number && r.reservation_number.toUpperCase() === targetId.toUpperCase())
     );
 
-    const supabase = getSupabaseClient();
-
-    // If not found in file, try finding from Supabase
     if (idx === -1 && isSupabaseConfigured()) {
       try {
-        const { data } = await supabase
+        let fetchQuery = supabase
           .from('reservations')
           .select(`
             *,
@@ -126,117 +167,148 @@ export async function POST(req: NextRequest) {
             payments:payments(*),
             deposit:deposits(*),
             whatsapp_consent:whatsapp_consents(*)
-          `)
-          .or(`id.eq.${targetId},reservation_number.eq.${targetId}`)
-          .maybeSingle();
+          `);
 
+        if (isTargetUuid) {
+          fetchQuery = fetchQuery.eq('id', targetId);
+        } else {
+          fetchQuery = fetchQuery.eq('reservation_number', targetId.toUpperCase());
+        }
+
+        const { data } = await fetchQuery.maybeSingle();
         if (data) {
-          const norm = normalizeReservation(data);
+          const norm = transformSupabaseRecord(data);
           reservations.unshift(norm);
           idx = 0;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Supabase fetch query warning in POST:', e);
+      }
     }
 
     if (action === 'approve') {
-      if (idx === -1) {
-        return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
-      }
+      const approvedAt = new Date().toISOString();
+      const approvedBy = adminId || 'Administrator';
 
-      reservations[idx] = {
-        ...reservations[idx],
-        status: 'approved_pending_payment',
-        approved_at: new Date().toISOString(),
-        approved_by: adminId || 'Administrator',
-        updated_at: new Date().toISOString(),
-      };
-      saveReservationsToFile(reservations);
-
+      // 1. Update in Supabase immediately
       if (isSupabaseConfigured()) {
         try {
-          await supabase
+          const isApprovedByUuid = adminId && UUID_REGEX.test(adminId);
+          let updateQuery = supabase
             .from('reservations')
             .update({
               status: 'approved_pending_payment',
-              approved_at: new Date().toISOString(),
-              approved_by: adminId || 'Administrator',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', reservations[idx].id);
-        } catch (e) {}
+              approved_at: approvedAt,
+              approved_by: isApprovedByUuid ? adminId : null,
+              updated_at: approvedAt,
+            });
+
+          if (isTargetUuid) {
+            updateQuery = updateQuery.eq('id', targetId);
+          } else {
+            updateQuery = updateQuery.eq('reservation_number', targetId.toUpperCase());
+          }
+
+          const { data: updatedSupabaseData, error: updateError } = await updateQuery.select().maybeSingle();
+          if (!updateError && updatedSupabaseData) {
+            if (idx !== -1) {
+              reservations[idx] = {
+                ...reservations[idx],
+                status: 'approved_pending_payment',
+                approved_at: approvedAt,
+                approved_by: approvedBy,
+                updated_at: approvedAt,
+              };
+            }
+          }
+        } catch (e) {
+          console.warn('Supabase approve update error:', e);
+        }
       }
 
-      return NextResponse.json({
-        success: true,
-        message: 'Status reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.',
-        reservation: reservations[idx],
-      });
+      // 2. Update local file storage
+      if (idx !== -1) {
+        reservations[idx] = {
+          ...reservations[idx],
+          status: 'approved_pending_payment',
+          approved_at: approvedAt,
+          approved_by: approvedBy,
+          updated_at: approvedAt,
+        };
+        saveReservationsToFile(reservations);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Status reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.',
+          reservation: reservations[idx],
+        });
+      }
+
+      // If idx is still -1, check if caller provided reservation object
+      if (body.reservation) {
+        const newApprovedRes = {
+          ...body.reservation,
+          status: 'approved_pending_payment',
+          approved_at: approvedAt,
+          approved_by: approvedBy,
+          updated_at: approvedAt,
+        };
+        reservations.unshift(newApprovedRes);
+        saveReservationsToFile(reservations);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Status reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.',
+          reservation: newApprovedRes,
+        });
+      }
+
+      return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
     }
 
     if (action === 'reject') {
-      if (idx === -1) {
-        return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
-      }
-
-      reservations[idx] = {
-        ...reservations[idx],
-        status: 'rejected',
-        rejected_at: new Date().toISOString(),
-        rejected_reason: reason || 'Kamar penuh pada tanggal yang dipilih',
-        updated_at: new Date().toISOString(),
-      };
-      saveReservationsToFile(reservations);
+      const rejectedAt = new Date().toISOString();
+      const rejReason = reason || 'Kamar penuh pada tanggal yang dipilih';
 
       if (isSupabaseConfigured()) {
         try {
-          await supabase
+          let updateQuery = supabase
             .from('reservations')
             .update({
               status: 'rejected',
-              rejected_at: new Date().toISOString(),
-              rejected_reason: reason || 'Kamar penuh pada tanggal yang dipilih',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', reservations[idx].id);
+              rejected_at: rejectedAt,
+              rejected_reason: rejReason,
+              updated_at: rejectedAt,
+            });
+
+          if (isTargetUuid) {
+            updateQuery = updateQuery.eq('id', targetId);
+          } else {
+            updateQuery = updateQuery.eq('reservation_number', targetId.toUpperCase());
+          }
+
+          await updateQuery;
         } catch (e) {}
       }
 
-      return NextResponse.json({
-        success: true,
-        message: 'Reservasi ditolak.',
-        reservation: reservations[idx],
-      });
-    }
+      if (idx !== -1) {
+        reservations[idx] = {
+          ...reservations[idx],
+          status: 'rejected',
+          rejected_at: rejectedAt,
+          rejected_reason: rejReason,
+          updated_at: rejectedAt,
+        };
+        saveReservationsToFile(reservations);
 
-    if (action === 'update_status') {
-      if (idx === -1) {
-        return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
+        return NextResponse.json({
+          success: true,
+          message: 'Reservasi ditolak.',
+          reservation: reservations[idx],
+        });
       }
 
-      reservations[idx] = {
-        ...reservations[idx],
-        status: status || reservations[idx].status,
-        updated_at: new Date().toISOString(),
-      };
-      saveReservationsToFile(reservations);
-
-      if (isSupabaseConfigured()) {
-        try {
-          await supabase
-            .from('reservations')
-            .update({
-              status: status || reservations[idx].status,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', reservations[idx].id);
-        } catch (e) {}
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Status reservasi berhasil diperbarui.',
-        reservation: reservations[idx],
-      });
+      return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
     }
 
     return NextResponse.json({ success: false, error: 'Aksi tidak dikenali' }, { status: 400 });

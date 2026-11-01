@@ -200,7 +200,7 @@ export default function KalenderOkupansiPage() {
                         >
                           {matchingRes ? (
                             <Link
-                              href={`/dashboard/reservasi/${matchingRes.id}`}
+                              href={`/panel/reservasi/${matchingRes.id}`}
                               className={`block w-full py-2 px-1 rounded shadow-xs truncate ${cellColor}`}
                             >
                               {cellText}

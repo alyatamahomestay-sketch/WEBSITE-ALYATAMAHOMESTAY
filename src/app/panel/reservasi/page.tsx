@@ -169,15 +169,15 @@ function ReservasiPanelList() {
           <table className="w-full text-left text-xs text-stone-700">
             <thead className="bg-[#FAF7F2] text-stone-600 border-b border-stone-200">
               <tr>
-                <th className="py-3 px-4 font-semibold">No. Booking</th>
-                <th className="py-3 px-4 font-semibold">Tamu</th>
-                <th className="py-3 px-4 font-semibold">Kamar</th>
-                <th className="py-3 px-4 font-semibold">Periode Sewa</th>
-                <th className="py-3 px-4 font-semibold">Sumber</th>
-                <th className="py-3 px-4 font-semibold">Petugas Penerima</th>
-                <th className="py-3 px-4 font-semibold">Status Reservasi</th>
-                <th className="py-3 px-4 font-semibold">Pembayaran</th>
-                <th className="py-3 px-4 font-semibold text-right">Aksi</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[130px]">No. Booking</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[150px]">Tamu</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[130px]">Kamar</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[160px]">Periode Sewa</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[90px]">Sumber</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[140px]">Petugas Penerima</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[140px]">Status Reservasi</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap min-w-[120px]">Pembayaran</th>
+                <th className="py-3 px-4 font-semibold text-right whitespace-nowrap min-w-[130px] w-[130px] shrink-0">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -249,22 +249,29 @@ function ReservasiPanelList() {
                           {res.payment_preference === 'transfer' ? 'Transfer Bank' : 'Bayar Tunai'}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-3 px-4 text-right whitespace-nowrap min-w-[130px] w-[130px] shrink-0">
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 whitespace-nowrap">
                           {res.status === 'pending_approval' && (
                             <button
                               type="button"
                               onClick={() => handleApprove(res.id)}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition shadow-2xs cursor-pointer"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition shadow-2xs cursor-pointer shrink-0"
                               title="Klik untuk menyetujui reservasi tamu ini"
                             >
                               Setujui
                             </button>
                           )}
                           <Link
+                            href={`/panel/reservasi/${res.id}`}
+                            className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded transition shrink-0"
+                            title="Lihat Detail Reservasi"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Link>
+                          <Link
                             href={`/slip/${res.id}`}
                             target="_blank"
-                            className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded transition"
+                            className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded transition shrink-0"
                             title="Cetak Slip / Invoice"
                           >
                             <Printer className="w-3.5 h-3.5" />

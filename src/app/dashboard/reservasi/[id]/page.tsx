@@ -150,7 +150,7 @@ export default function ReservationDetailPage({ params }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard/reservasi"
+            href="/panel/reservasi"
             className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
