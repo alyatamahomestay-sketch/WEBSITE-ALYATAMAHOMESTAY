@@ -94,7 +94,7 @@ function CekKetersediaanContent() {
   const selectedRoomObj = rooms.find((r) => r.id === selectedRoomId);
 
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-12">

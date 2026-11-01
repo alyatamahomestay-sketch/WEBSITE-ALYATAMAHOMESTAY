@@ -19,7 +19,7 @@ export default async function KamarPage({ searchParams }: KamarPageProps) {
   const initialType = searchParams?.type?.toLowerCase() || 'all';
 
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-12 sm:py-16">

@@ -86,7 +86,7 @@ export default function GaleriIklanPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-[#F6F0E7] overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full bg-[#F6F0E7]">
       <PublicNavbar />
 
       <main className="flex-1 py-12 md:py-16">

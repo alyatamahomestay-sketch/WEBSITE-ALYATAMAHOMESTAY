@@ -7,7 +7,7 @@ import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 
 export default function TentangPage() {
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full">
       <PublicNavbar />
 
       <main className="flex-1 bg-[#F6F0E7] py-16">

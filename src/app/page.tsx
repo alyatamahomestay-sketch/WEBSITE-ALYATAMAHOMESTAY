@@ -105,7 +105,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden font-sans bg-[#F6F0E7]">
+    <div className="min-h-screen flex flex-col w-full font-sans bg-[#F6F0E7]">
       <PublicNavbar />
 
       <main className="flex-1">

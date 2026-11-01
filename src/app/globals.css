@@ -17,7 +17,7 @@
     max-width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
     background-color: #392B21;
   }
@@ -28,7 +28,7 @@
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     background-color: #F6F0E7;
     color: #392B21;
     -webkit-font-smoothing: antialiased;

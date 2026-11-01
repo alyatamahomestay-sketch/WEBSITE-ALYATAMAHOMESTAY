@@ -28,7 +28,7 @@ export default function PublicNavbar() {
   };
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-[#36281E] border-b border-[#4D392B] text-stone-100 shadow-sm">
+    <header className="w-full sticky top-0 z-50 bg-[#36281E] border-b border-[#4D392B] text-stone-100 shadow-md backdrop-blur-md" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
       {/* Top Banner: Syariah & Charity Slogan (Exact match to reference image) */}
       <div className="w-full bg-[#78593F] text-[#F6F0E7] text-[11px] sm:text-xs py-1.5 px-3 text-center font-normal flex items-center justify-center gap-2 flex-wrap leading-tight">
         <Heart className="w-3.5 h-3.5 text-[#E7D8C5] shrink-0 fill-none stroke-[1.5]" />
