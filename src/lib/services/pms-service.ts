@@ -539,6 +539,8 @@ export const PmsService = {
             syncMemReservationsToStorage(memReservations);
           }
           return { success: true, message: json.message || 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
+        } else {
+          return { success: false, message: json.error || json.message || 'Gagal menyetujui reservasi di database.' };
         }
       } catch (e) {}
     }
@@ -571,6 +573,8 @@ export const PmsService = {
             syncMemReservationsToStorage(memReservations);
           }
           return { success: true, message: json.message || 'Reservasi ditolak.' };
+        } else {
+          return { success: false, message: json.error || json.message || 'Gagal menolak reservasi di database.' };
         }
       } catch (e) {}
     }

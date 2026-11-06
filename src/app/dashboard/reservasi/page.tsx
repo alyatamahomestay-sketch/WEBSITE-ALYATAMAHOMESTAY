@@ -212,10 +212,16 @@ function ReservasiListContent() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="font-semibold text-stone-900">
-                        {formatRupiah(res.price_snapshot?.total_amount)}
+                        {formatRupiah(
+                          (Array.isArray(res.price_snapshot) ? res.price_snapshot[0]?.total_amount : res.price_snapshot?.total_amount) 
+                          || ((res.rooms?.[0]?.base_rate || 150000) * (res.duration_units || 1))
+                        )}
                       </div>
                       <div className="text-[11px] text-stone-500">
-                        Sisa: {formatRupiah(res.price_snapshot?.balance_due)}
+                        Sisa: {formatRupiah(
+                          (Array.isArray(res.price_snapshot) ? res.price_snapshot[0]?.balance_due : res.price_snapshot?.balance_due) 
+                          ?? ((Array.isArray(res.price_snapshot) ? res.price_snapshot[0]?.total_amount : res.price_snapshot?.total_amount) || ((res.rooms?.[0]?.base_rate || 150000) * (res.duration_units || 1)))
+                        )}
                       </div>
                     </td>
                     <td className="py-3.5 px-4 text-center">

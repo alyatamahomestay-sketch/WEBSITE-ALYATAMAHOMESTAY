@@ -30,6 +30,29 @@ function transformSupabaseRecord(item: any): Reservation {
     mappedSnapshot = mappedSnapshot[0] || null;
   }
 
+  // Jika price snapshot di Supabase belum ada atau null, sediakan fallback kalkulasi aman
+  if (!mappedSnapshot) {
+    const defaultRoomRate = mappedRooms[0]?.base_rate || 150000;
+    mappedSnapshot = {
+      id: 'snp-fb-' + item.id,
+      reservation_id: item.id,
+      total_nights: 1,
+      base_subtotal: defaultRoomRate,
+      nightly_breakdown: [],
+      discount_amount: 0,
+      discount_reason: null,
+      promo_code: null,
+      promo_snapshot: null,
+      extra_charges: 0,
+      deposit_required: 0,
+      total_amount: defaultRoomRate,
+      total_paid: item.payment_status === 'paid' ? defaultRoomRate : 0,
+      balance_due: item.payment_status === 'paid' ? 0 : defaultRoomRate,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+    };
+  }
+
   let mappedDeposit = item.deposit;
   if (Array.isArray(mappedDeposit)) {
     mappedDeposit = mappedDeposit[0] || null;
@@ -138,7 +161,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action = 'approve', id, reason, adminId, status } = body;
-    const targetId = (id || body.reservationId || '').trim();
+    const targetId = (id || body.reservationId || body.reservationNumber || body.res_num || '').trim();
 
     if (!targetId && action !== 'create') {
       return NextResponse.json({ success: false, error: 'ID Reservasi wajib disertakan' }, { status: 400 });
@@ -209,16 +232,25 @@ export async function POST(req: NextRequest) {
             updateQuery = updateQuery.eq('reservation_number', targetId.toUpperCase());
           }
 
-          const { data: updatedSupabaseData, error: updateError } = await updateQuery.select().maybeSingle();
+          const { data: updatedSupabaseData, error: updateError } = await updateQuery
+            .select(`
+              *,
+              guest:guests(*),
+              rooms:reservation_rooms(room:rooms(*)),
+              price_snapshot:reservation_price_snapshots(*),
+              payments:payments(*),
+              deposit:deposits(*),
+              whatsapp_consent:whatsapp_consents(*)
+            `)
+            .maybeSingle();
+
           if (!updateError && updatedSupabaseData) {
+            const transformed = transformSupabaseRecord(updatedSupabaseData);
             if (idx !== -1) {
-              reservations[idx] = {
-                ...reservations[idx],
-                status: 'approved_pending_payment',
-                approved_at: approvedAt,
-                approved_by: approvedBy,
-                updated_at: approvedAt,
-              };
+              reservations[idx] = transformed;
+            } else {
+              reservations.unshift(transformed);
+              idx = 0;
             }
           }
         } catch (e) {

@@ -454,28 +454,36 @@ function StatusReservasiContent() {
                   })()}
 
                   {/* Rincian Biaya */}
-                  <div className="p-5 bg-[#392B21] text-[#E7D8C5] rounded-2xl space-y-3 text-xs border border-[#4d3b2e]">
-                    <div className="flex justify-between items-center text-stone-300">
-                      <span>Total Biaya Sewa ({reservation.duration_units ? `${reservation.duration_units} ${reservation.rental_type === 'monthly' ? 'Bulan' : 'Malam'}` : '1 Periode'}):</span>
-                      <span className="font-bold text-white text-base">
-                        {formatRupiah(reservation.price_snapshot?.total_amount)}
-                      </span>
-                    </div>
+                  {(() => {
+                    const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
+                    const totalAmt = snap?.total_amount || ((reservation.rooms?.[0]?.base_rate || 150000) * (reservation.duration_units || 1));
+                    const depReq = snap?.deposit_required ?? (totalAmt * 0.5);
+                    const balDue = snap?.balance_due ?? totalAmt;
+                    return (
+                      <div className="p-5 bg-[#392B21] text-[#E7D8C5] rounded-2xl space-y-3 text-xs border border-[#4d3b2e]">
+                        <div className="flex justify-between items-center text-stone-300">
+                          <span>Total Biaya Sewa ({reservation.duration_units ? `${reservation.duration_units} ${reservation.rental_type === 'monthly' ? 'Bulan' : 'Malam'}` : '1 Periode'}):</span>
+                          <span className="font-bold text-white text-base">
+                            {formatRupiah(totalAmt)}
+                          </span>
+                        </div>
 
-                    <div className="flex justify-between items-center text-stone-300">
-                      <span>Uang Muka / Deposit Diperlukan:</span>
-                      <span className="font-medium text-[#C9A84C]">
-                        {formatRupiah(reservation.price_snapshot?.deposit_required || ((reservation.price_snapshot?.total_amount || 0) * 0.5))}
-                      </span>
-                    </div>
+                        <div className="flex justify-between items-center text-stone-300">
+                          <span>Uang Muka / Deposit Diperlukan:</span>
+                          <span className="font-medium text-[#C9A84C]">
+                            {formatRupiah(depReq)}
+                          </span>
+                        </div>
 
-                    <div className="pt-3 border-t border-[#4d3b2e] flex justify-between items-center text-sm font-bold">
-                      <span>Sisa Pembayaran Saat Tiba:</span>
-                      <span className={reservation.price_snapshot?.balance_due === 0 ? 'text-emerald-400' : 'text-[#FAF7F2]'}>
-                        {formatRupiah(reservation.price_snapshot?.balance_due ?? reservation.price_snapshot?.total_amount)}
-                      </span>
-                    </div>
-                  </div>
+                        <div className="pt-3 border-t border-[#4d3b2e] flex justify-between items-center text-sm font-bold">
+                          <span>Sisa Pembayaran Saat Tiba:</span>
+                          <span className={balDue === 0 ? 'text-emerald-400' : 'text-[#FAF7F2]'}>
+                            {formatRupiah(balDue)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Footer Kartu Bukti */}
                   <div className="pt-3 border-t border-[#E5DCD0] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#756A5F]">

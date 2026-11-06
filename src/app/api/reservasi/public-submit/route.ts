@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { PmsService } from '@/lib/services/pms-service';
 import { calculateReservationPricing, calculateNights } from '@/lib/pricing';
 import { normalizeIndonesianPhone, isValidIndonesianPhone } from '@/lib/phone';
@@ -113,6 +114,34 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Periksa juga nomor sequence yang ada di Supabase agar nomor selalu berurutan
+    if (isSupabaseConfigured()) {
+      try {
+        const adminClient = createAdminClient();
+        if (adminClient) {
+          const { data: dbResList } = await adminClient
+            .from('reservations')
+            .select('reservation_number')
+            .like('reservation_number', `${prefix}%`);
+          if (dbResList) {
+            dbResList.forEach((r) => {
+              if (r.reservation_number) {
+                const parts = r.reservation_number.split('-');
+                if (parts.length >= 3) {
+                  const seq = parseInt(parts[2], 10);
+                  if (!isNaN(seq) && seq > maxSequence) {
+                    maxSequence = seq;
+                  }
+                }
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Error checking supabase sequences:', e);
+      }
+    }
+
     const nextSeqNumber = maxSequence + 1;
     const reservationNumber = `${prefix}${String(nextSeqNumber).padStart(3, '0')}`;
 
@@ -132,8 +161,8 @@ export async function POST(req: NextRequest) {
     }
     combinedRequests += paymentNotice;
 
-    const newResId = 'res-' + Date.now();
-    const guestId = 'gst-' + Date.now();
+    const newResId = crypto.randomUUID();
+    const guestId = crypto.randomUUID();
 
     // Full reservation entity
     const newReservation: Reservation = {
@@ -215,9 +244,10 @@ export async function POST(req: NextRequest) {
         const adminClient = createAdminClient();
         if (adminClient) {
           // A. Insert Guest
-          const { data: dbGuest } = await adminClient
+          const { data: dbGuest, error: guestErr } = await adminClient
             .from('guests')
             .insert([{
+              id: guestId,
               full_name: data.fullName,
               phone: data.phone,
               normalized_phone: normalizedPhone,
@@ -226,10 +256,14 @@ export async function POST(req: NextRequest) {
             .select('id')
             .maybeSingle();
 
+          if (guestErr) {
+            console.error('Guest insert error in Supabase:', guestErr);
+          }
+
           const finalGuestId = dbGuest?.id || guestId;
 
           // B. Insert Reservation
-          const { data: dbRes } = await adminClient
+          const { data: dbRes, error: resErr } = await adminClient
             .from('reservations')
             .insert([{
               id: newResId,
@@ -241,38 +275,68 @@ export async function POST(req: NextRequest) {
               children: data.children,
               status: 'pending_approval',
               payment_status: 'unpaid',
-              payment_preference: data.paymentPreference,
               special_requests: combinedRequests.trim(),
             }])
             .select('id')
             .maybeSingle();
 
+          if (resErr) {
+            console.error('Reservation insert error in Supabase:', resErr);
+          }
+
           const finalResId = dbRes?.id || newResId;
 
           // C. Insert reservation_rooms
-          await adminClient.from('reservation_rooms').insert([{
+          const { error: rrErr } = await adminClient.from('reservation_rooms').insert([{
             reservation_id: finalResId,
             room_id: room.id,
           }]);
+          if (rrErr) {
+            console.error('reservation_rooms insert error in Supabase:', rrErr);
+          }
 
-          // D. Insert price snapshot
-          await adminClient.from('reservation_price_snapshots').insert([{
+          // D. Insert price snapshot (storing rental_type and duration_units inside promo_snapshot)
+          const { error: priceErr } = await adminClient.from('reservation_price_snapshots').insert([{
             reservation_id: finalResId,
-            rental_type: data.rentalType,
-            duration_units: pricing.durationUnits,
-            unit_rate: pricing.unitRate,
             total_nights: pricing.totalNights,
             base_subtotal: pricing.baseSubtotal,
             nightly_breakdown: pricing.nightlyBreakdown,
             discount_amount: 0,
             discount_reason: null,
             promo_code: null,
-            promo_snapshot: null,
+            promo_snapshot: {
+              rental_type: data.rentalType,
+              duration_units: pricing.durationUnits,
+              unit_rate: pricing.unitRate,
+            },
             extra_charges: pricing.extraCharges,
             deposit_required: pricing.depositRequired,
             total_amount: pricing.totalAmount,
             total_paid: 0,
             balance_due: pricing.totalAmount,
+          }]);
+          if (priceErr) {
+            console.error('price_snapshot insert error in Supabase:', priceErr);
+          }
+
+          // E. Insert deposit if required
+          if (pricing.depositRequired > 0) {
+            await adminClient.from('deposits').insert([{
+              reservation_id: finalResId,
+              required_amount: pricing.depositRequired,
+              received_amount: 0,
+              deducted_amount: 0,
+              refunded_amount: 0,
+              status: 'pending',
+            }]);
+          }
+
+          // F. Insert whatsapp_consent
+          await adminClient.from('whatsapp_consents').insert([{
+            reservation_id: finalResId,
+            phone: normalizedPhone,
+            has_consented: true,
+            consent_timestamp: new Date().toISOString(),
           }]);
         }
       } catch (err: any) {
