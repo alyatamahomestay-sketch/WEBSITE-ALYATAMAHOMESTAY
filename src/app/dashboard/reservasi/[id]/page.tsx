@@ -538,119 +538,131 @@ export default function ReservationDetailPage({ params }: Props) {
 
       {/* Record Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl my-auto flex flex-col max-h-[90vh] overflow-hidden border border-stone-100">
+            {/* Header (Fixed) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-stone-100 bg-white shrink-0">
               <h3 className="font-semibold text-stone-900 text-sm">Catat Penerimaan Pembayaran</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="text-stone-400 hover:text-stone-600 font-bold">&times;</button>
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="w-8 h-8 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 flex items-center justify-center font-bold text-lg transition-colors cursor-pointer"
+                title="Tutup Modal"
+              >
+                &times;
+              </button>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded-xl text-[11px] leading-relaxed">
-              <strong>Aturan Transaksi:</strong> Pencatatan pembayaran tamu dibatasi hanya 1 kali transaksi untuk setiap reservasi guna mencegah duplikasi atau pencatatan berlebih.
-            </div>
-
-            <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">
-                  KODE PROMO
-                </label>
-                <select
-                  value={selectedPromoId}
-                  onChange={(e) => handlePromoSelect(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5 bg-white font-medium text-stone-800"
-                >
-                  <option value="">TIDAK ADA PROMO</option>
-                  {promotions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.code ? `[${p.code}] ` : ''}{p.name} - Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : formatRupiah(p.discount_value)}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-stone-500 mt-1">
-                  Pilihan promo diambil dari data resmi pada menu &quot;Sistem Promo &amp; Diskon Fleksibel&quot;.
-                </p>
-              </div>
-
-              {selectedPromoId && calculatedDiscount > 0 && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl space-y-1.5 text-[11px]">
-                  <div className="flex justify-between items-center text-stone-600">
-                    <span>Harga Normal (Subtotal):</span>
-                    <span className="font-semibold text-stone-800">{formatRupiah(getBaseSubtotal(reservation))}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-emerald-700">
-                    <span>Potongan Promo:</span>
-                    <span className="font-bold">-{formatRupiah(calculatedDiscount)}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-1.5 border-t border-emerald-200 font-bold text-emerald-950 text-xs">
-                    <span>Total Bersih yang Harus Dibayar:</span>
-                    <span>{formatRupiah(getBaseSubtotal(reservation) - calculatedDiscount)}</span>
-                  </div>
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleRecordPayment} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs flex-1">
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded-xl text-[11px] leading-relaxed">
+                  <strong>Aturan Transaksi:</strong> Pencatatan pembayaran tamu dibatasi hanya 1 kali transaksi untuk setiap reservasi guna mencegah duplikasi atau pencatatan berlebih.
                 </div>
-              )}
 
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Nominal Pembayaran (Rp)</label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(Number(e.target.value))}
-                  className="w-full rounded-lg border border-stone-300 p-2.5 text-sm font-semibold"
-                />
-                {calculatedDiscount > 0 && (
-                  <p className="text-[10px] text-emerald-700 font-medium mt-1">
-                    *Nominal pembayaran otomatis dikalkulasi sesuai potongan harga promo yang ditentukan.
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    KODE PROMO
+                  </label>
+                  <select
+                    value={selectedPromoId}
+                    onChange={(e) => handlePromoSelect(e.target.value)}
+                    className="w-full rounded-lg border border-stone-300 p-2.5 bg-white font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">TIDAK ADA PROMO</option>
+                    {promotions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.code ? `[${p.code}] ` : ''}{p.name} - Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : formatRupiah(p.discount_value)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-stone-500 mt-1">
+                    Pilihan promo diambil dari data resmi pada menu &quot;Sistem Promo &amp; Diskon Fleksibel&quot;.
                   </p>
+                </div>
+
+                {selectedPromoId && calculatedDiscount > 0 && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl space-y-1.5 text-[11px]">
+                    <div className="flex justify-between items-center text-stone-600">
+                      <span>Harga Normal (Subtotal):</span>
+                      <span className="font-semibold text-stone-800">{formatRupiah(getBaseSubtotal(reservation))}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-emerald-700">
+                      <span>Potongan Promo:</span>
+                      <span className="font-bold">-{formatRupiah(calculatedDiscount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1.5 border-t border-emerald-200 font-bold text-emerald-950 text-xs">
+                      <span>Total Bersih yang Harus Dibayar:</span>
+                      <span>{formatRupiah(getBaseSubtotal(reservation) - calculatedDiscount)}</span>
+                    </div>
+                  </div>
                 )}
+
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">Nominal Pembayaran (Rp)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(Number(e.target.value))}
+                    className="w-full rounded-lg border border-stone-300 p-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  {calculatedDiscount > 0 && (
+                    <p className="text-[10px] text-emerald-700 font-medium mt-1">
+                      *Nominal pembayaran otomatis dikalkulasi sesuai potongan harga promo yang ditentukan.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">Metode Pembayaran</label>
+                  <select
+                    value={payMethod}
+                    onChange={(e) => setPayMethod(e.target.value)}
+                    className="w-full rounded-lg border border-stone-300 p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="qris">QRIS ALYATAMA</option>
+                    <option value="bank_transfer">Transfer Bank (BCA / Mandiri)</option>
+                    <option value="cash">Tunai (Cash di Resepsionis)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">Nomor Referensi Transaksi (Opsional)</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: QRIS-BCA-987123"
+                    value={payRef}
+                    onChange={(e) => setPayRef(e.target.value)}
+                    className="w-full rounded-lg border border-stone-300 p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">Catatan Staf</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Pembayaran deposit 50%"
+                    value={payNotes}
+                    onChange={(e) => setPayNotes(e.target.value)}
+                    className="w-full rounded-lg border border-stone-300 p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Metode Pembayaran</label>
-                <select
-                  value={payMethod}
-                  onChange={(e) => setPayMethod(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5 bg-white"
-                >
-                  <option value="qris">QRIS ALYATAMA</option>
-                  <option value="bank_transfer">Transfer Bank (BCA / Mandiri)</option>
-                  <option value="cash">Tunai (Cash di Resepsionis)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Nomor Referensi Transaksi (Opsional)</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: QRIS-BCA-987123"
-                  value={payRef}
-                  onChange={(e) => setPayRef(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Catatan Staf</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Pembayaran deposit 50%"
-                  value={payNotes}
-                  onChange={(e) => setPayNotes(e.target.value)}
-                  className="w-full rounded-lg border border-stone-300 p-2.5"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              {/* Sticky Footer Action Buttons */}
+              <div className="p-3 sm:p-4 border-t border-stone-100 bg-stone-50/90 rounded-b-2xl flex items-center justify-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700"
+                  className="px-4 py-2 rounded-lg bg-stone-200/80 hover:bg-stone-300 text-stone-700 font-medium transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium"
+                  className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium transition-colors cursor-pointer shadow-sm"
                 >
                   Simpan Pembayaran
                 </button>
