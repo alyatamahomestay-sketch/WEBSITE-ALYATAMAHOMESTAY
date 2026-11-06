@@ -15,7 +15,8 @@ import {
   AlertCircle,
   FileText,
   UserCheck,
-  Printer
+  Printer,
+  RotateCcw
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { Reservation, ReservationStatus } from '@/lib/types';
@@ -26,6 +27,7 @@ import {
   getPaymentStatusMeta 
 } from '@/lib/formatters';
 import { showAdminToast } from '@/components/common/AdminToast';
+import ResetTransactionsModal from '@/components/panel/ResetTransactionsModal';
 
 function ReservasiPanelList() {
   const searchParams = useSearchParams();
@@ -37,6 +39,7 @@ function ReservasiPanelList() {
   const [sourceFilter, setSourceFilter] = useState<'all' | 'walk_in' | 'online'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const loadReservations = async () => {
     setLoading(true);
@@ -105,13 +108,25 @@ function ReservasiPanelList() {
           </p>
         </div>
 
-        <Link
-          href="/panel/reservasi/baru"
-          className="inline-flex items-center gap-2 bg-[#355C46] hover:bg-[#284635] text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs shrink-0"
-        >
-          <PlusCircle className="w-4 h-4 text-emerald-300" />
-          <span>Reservasi Walk-in Baru</span>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3.5 py-2.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+            title="Reset seluruh transaksi di Supabase dengan verifikasi ID & sandi admin"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Seluruh Transaksi</span>
+          </button>
+
+          <Link
+            href="/panel/reservasi/baru"
+            className="inline-flex items-center gap-2 bg-[#355C46] hover:bg-[#284635] text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs shrink-0"
+          >
+            <PlusCircle className="w-4 h-4 text-emerald-300" />
+            <span>Reservasi Walk-in Baru</span>
+          </Link>
+        </div>
       </div>
 
       {actionMessage && (
@@ -294,6 +309,13 @@ function ReservasiPanelList() {
           </table>
         </div>
       </div>
+
+      {/* Modal Reset Seluruh Transaksi dengan Syarat ID & Sandi Admin Supabase */}
+      <ResetTransactionsModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onSuccess={() => loadReservations()}
+      />
     </div>
   );
 }

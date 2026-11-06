@@ -1,28 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, Search, Clock, FileText } from 'lucide-react';
+import { ShieldCheck, Lock, Search, Clock, FileText, RotateCcw, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { AuditLog } from '@/lib/types';
 import { formatDateTimeIndo } from '@/lib/formatters';
+import ResetTransactionsModal from '@/components/panel/ResetTransactionsModal';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const data = await PmsService.getAuditLogs();
+      setLogs(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const data = await PmsService.getAuditLogs();
-        setLogs(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadData();
   }, []);
 
@@ -40,6 +43,31 @@ export default function AuditLogsPage() {
         <p className="text-xs text-stone-500">
           Catatan riwayat perubahan data krusial, persetujuan reservasi, dan aktivitas keuangan yang bersifat permanen (read-only).
         </p>
+      </div>
+
+      {/* Zona Tindakan Krusial: Reset Transaksi */}
+      <div className="bg-white rounded-2xl border border-rose-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>Zona Pengaturan Krusial &bull; Hak Akses Administrator</span>
+          </div>
+          <h3 className="text-sm font-bold text-stone-900">
+            Reset Seluruh Data Transaksi (Reservasi & Pembayaran)
+          </h3>
+          <p className="text-xs text-stone-500 max-w-2xl leading-relaxed">
+            Hapus seluruh data transaksi pemesanan, pembayaran, dan log reservasi dari database Supabase secara permanen. Diperlukan otentikasi ID dan kata sandi admin terkait Supabase.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowResetModal(true)}
+          className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-xs shrink-0 cursor-pointer"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span>Reset Seluruh Transaksi</span>
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
@@ -93,6 +121,12 @@ export default function AuditLogsPage() {
           </table>
         </div>
       </div>
+
+      <ResetTransactionsModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onSuccess={() => loadData()}
+      />
     </div>
   );
 }

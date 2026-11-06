@@ -519,6 +519,51 @@ export const PmsService = {
     return null;
   },
 
+  async resetAllTransactions(params: {
+    identifier: string;
+    password: string;
+    confirmation: boolean;
+  }): Promise<{ success: boolean; message: string; verifiedAdmin?: string }> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/reset-transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params),
+        });
+        const json = await res.json();
+        if (json.success) {
+          memReservations = [];
+          syncMemReservationsToStorage([]);
+
+          memRooms.forEach((r) => {
+            r.operational_status = 'tersedia';
+          });
+          syncMemRoomsToStorage(memRooms);
+
+          window.dispatchEvent(new Event('reservations-updated'));
+          window.dispatchEvent(new Event('rooms-updated'));
+          window.dispatchEvent(new Event('storage'));
+
+          return {
+            success: true,
+            message: json.message || 'Seluruh data transaksi berhasil di-reset.',
+            verifiedAdmin: json.verifiedAdmin,
+          };
+        } else {
+          return {
+            success: false,
+            message: json.error || json.message || 'Gagal mereset data transaksi.',
+          };
+        }
+      } catch (err: any) {
+        return { success: false, message: err.message || 'Terjadi kesalahan jaringan.' };
+      }
+    }
+
+    return { success: false, message: 'Operasi reset hanya dapat dipanggil dari lingkungan browser yang terverifikasi.' };
+  },
+
   async approveReservation(reservationId: string, adminId?: string): Promise<{ success: boolean; message: string }> {
     const targetRes = memReservations.find(r => r.id === reservationId || r.reservation_number === reservationId);
 

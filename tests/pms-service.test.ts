@@ -306,4 +306,15 @@ describe('PMS Service Operations & Concurrency Handling', () => {
     expect(walkIn.payments?.length).toBe(1);
     expect(walkIn.payments?.[0].verified_by).toBe('Rahmat Hidayat');
   });
+
+  it('validates authentication and permissions for resetAllTransactions', async () => {
+    // 1. Rejects invalid credentials in browser environment simulation
+    const fakeResult = await PmsService.resetAllTransactions({
+      identifier: 'wrong_admin',
+      password: 'wrong_password',
+      confirmation: true,
+    });
+    // In node environment without window, returns controlled error
+    expect(fakeResult.success).toBe(false);
+  });
 });

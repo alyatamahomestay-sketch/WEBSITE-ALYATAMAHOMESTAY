@@ -13,7 +13,8 @@ import {
   Calendar, 
   Plus, 
   AlertCircle,
-  FileText
+  FileText,
+  RotateCcw
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { Reservation, ReservationStatus } from '@/lib/types';
@@ -24,6 +25,7 @@ import {
   getPaymentStatusMeta 
 } from '@/lib/formatters';
 import { showAdminToast } from '@/components/common/AdminToast';
+import ResetTransactionsModal from '@/components/panel/ResetTransactionsModal';
 
 function ReservasiListContent() {
   const searchParams = useSearchParams();
@@ -34,6 +36,7 @@ function ReservasiListContent() {
   const [statusFilter, setStatusFilter] = useState(filterFromParam);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const loadReservations = async () => {
     setLoading(true);
@@ -116,14 +119,26 @@ function ReservasiListContent() {
           </p>
         </div>
 
-        <Link
-          href="/booking"
-          target="_blank"
-          className="bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Input Reservasi Baru
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+            title="Reset seluruh transaksi di Supabase dengan verifikasi ID & sandi admin"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Seluruh Transaksi</span>
+          </button>
+
+          <Link
+            href="/booking"
+            target="_blank"
+            className="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            Input Reservasi Baru
+          </Link>
+        </div>
       </div>
 
       {actionMessage && (
@@ -299,6 +314,13 @@ function ReservasiListContent() {
           </table>
         </div>
       </div>
+
+      {/* Modal Reset Seluruh Transaksi dengan Syarat ID & Sandi Admin Supabase */}
+      <ResetTransactionsModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onSuccess={() => loadReservations()}
+      />
     </div>
   );
 }
