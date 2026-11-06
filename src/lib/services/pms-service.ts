@@ -602,7 +602,13 @@ export const PmsService = {
         const res = await fetch('/api/panel/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_status', id: reservationId, status: newStatus }),
+          body: JSON.stringify({
+            action: 'update_status',
+            id: reservationId,
+            status: newStatus,
+            checkedInAt: opts?.checkedInAt,
+            checkedOutAt: opts?.checkedOutAt,
+          }),
         });
         const json = await res.json();
         if (json.success) {
@@ -649,6 +655,25 @@ export const PmsService = {
     notes?: string;
     referenceNumber?: string;
   }): Promise<{ success: boolean; message: string }> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add_payment', id: paymentData.reservationId, ...paymentData }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          const rIdx = memReservations.findIndex(r => r.id === paymentData.reservationId || r.reservation_number === paymentData.reservationId);
+          if (rIdx !== -1 && json.reservation) {
+            memReservations[rIdx] = json.reservation;
+            syncMemReservationsToStorage(memReservations);
+          }
+          return { success: true, message: json.message || 'Pembayaran berhasil dicatat & saldo tagihan diperbarui.' };
+        }
+      } catch (e) {}
+    }
+
     if (!isSupabaseConfigured()) {
       const res = memReservations.find(r => r.id === paymentData.reservationId);
       if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };

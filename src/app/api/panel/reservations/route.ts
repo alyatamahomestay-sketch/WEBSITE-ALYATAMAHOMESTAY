@@ -453,6 +453,161 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === 'update_status') {
+      const newStatus = (status || body.newStatus || '').trim();
+      if (!newStatus) {
+        return NextResponse.json({ success: false, error: 'Status baru wajib ditentukan' }, { status: 400 });
+      }
+
+      const now = new Date().toISOString();
+      const patch: any = {
+        status: newStatus,
+        updated_at: now,
+      };
+
+      if (newStatus === 'checked_in') {
+        patch.checked_in_at = body.checkedInAt || now;
+      }
+      if (newStatus === 'checked_out') {
+        patch.checked_out_at = body.checkedOutAt || now;
+      }
+
+      // 1. Update in Supabase
+      if (isSupabaseConfigured()) {
+        try {
+          let updateQuery = supabase.from('reservations').update(patch);
+          if (isTargetUuid) {
+            updateQuery = updateQuery.eq('id', targetId);
+          } else {
+            updateQuery = updateQuery.eq('reservation_number', targetId.toUpperCase());
+          }
+          await updateQuery;
+
+          // If checked in or out, update room operational status
+          const targetRes = idx !== -1 ? reservations[idx] : null;
+          const roomId = targetRes?.rooms?.[0]?.id;
+          if (roomId) {
+            if (newStatus === 'checked_in') {
+              await supabase.from('rooms').update({ operational_status: 'ditempati', updated_at: now }).eq('id', roomId);
+            } else if (newStatus === 'checked_out') {
+              await supabase.from('rooms').update({ operational_status: 'tersedia', updated_at: now }).eq('id', roomId);
+            }
+          }
+        } catch (e) {
+          console.warn('Supabase status update error:', e);
+        }
+      }
+
+      // 2. Update in local file store
+      if (idx !== -1) {
+        reservations[idx] = {
+          ...reservations[idx],
+          ...patch,
+        };
+        saveReservationsToFile(reservations);
+
+        return NextResponse.json({
+          success: true,
+          message: `Status reservasi berhasil diubah menjadi ${newStatus}.`,
+          reservation: reservations[idx],
+        });
+      }
+
+      return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
+    }
+
+    if (action === 'add_payment') {
+      const { amount, paymentMethod, notes, referenceNumber } = body;
+      const numAmount = Number(amount) || 0;
+      if (numAmount <= 0) {
+        return NextResponse.json({ success: false, error: 'Nominal pembayaran harus lebih besar dari 0' }, { status: 400 });
+      }
+
+      const now = new Date().toISOString();
+      const payId = crypto.randomUUID();
+      const payNum = 'PAY-' + Date.now();
+
+      const newPay: any = {
+        id: payId,
+        payment_number: payNum,
+        reservation_id: targetId,
+        amount: numAmount,
+        payment_method: paymentMethod || 'cash',
+        payment_date: now,
+        status: 'verified',
+        notes: notes || '',
+        reference_number: referenceNumber || '',
+        created_at: now,
+        updated_at: now,
+      };
+
+      // 1. Save to Supabase
+      if (isSupabaseConfigured()) {
+        try {
+          const resUuid = isTargetUuid ? targetId : (idx !== -1 ? reservations[idx].id : targetId);
+          newPay.reservation_id = resUuid;
+
+          await supabase.from('payments').insert([newPay]);
+
+          // Calculate new total_paid
+          const { data: dbPayments } = await supabase.from('payments').select('amount').eq('reservation_id', resUuid);
+          const totalPaid = dbPayments ? dbPayments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) : numAmount;
+
+          // Get snapshot total
+          const { data: dbSnap } = await supabase.from('reservation_price_snapshots').select('total_amount').eq('reservation_id', resUuid).maybeSingle();
+          const totalAmount = dbSnap?.total_amount || (idx !== -1 ? (reservations[idx].price_snapshot?.total_amount || 0) : 0);
+          const balanceDue = Math.max(0, totalAmount - totalPaid);
+
+          // Update price snapshot in Supabase
+          await supabase.from('reservation_price_snapshots').update({
+            total_paid: totalPaid,
+            balance_due: balanceDue,
+            updated_at: now,
+          }).eq('reservation_id', resUuid);
+
+          // Update reservation payment status
+          const newPayStatus = balanceDue === 0 ? 'paid' : (totalPaid > 0 ? 'partially_paid' : 'unpaid');
+          const resPatch: any = { payment_status: newPayStatus, updated_at: now };
+          if (newPayStatus === 'paid' && idx !== -1 && reservations[idx].status === 'approved_pending_payment') {
+            resPatch.status = 'confirmed';
+          }
+          await supabase.from('reservations').update(resPatch).eq('id', resUuid);
+        } catch (e) {
+          console.warn('Supabase payment insert error:', e);
+        }
+      }
+
+      // 2. Update local file store
+      if (idx !== -1) {
+        if (!reservations[idx].payments) reservations[idx].payments = [];
+        reservations[idx].payments!.push(newPay);
+
+        if (reservations[idx].price_snapshot) {
+          reservations[idx].price_snapshot!.total_paid = (reservations[idx].price_snapshot!.total_paid || 0) + numAmount;
+          reservations[idx].price_snapshot!.balance_due = Math.max(0, (reservations[idx].price_snapshot!.total_amount || 0) - reservations[idx].price_snapshot!.total_paid);
+          if (reservations[idx].price_snapshot!.balance_due === 0) {
+            reservations[idx].payment_status = 'paid';
+            if (reservations[idx].status === 'approved_pending_payment') {
+              reservations[idx].status = 'confirmed';
+            }
+          } else {
+            reservations[idx].payment_status = 'partially_paid';
+          }
+        }
+        reservations[idx].updated_at = now;
+        saveReservationsToFile(reservations);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Pembayaran berhasil dicatat dan saldo diperbarui.',
+          reservation: reservations[idx],
+          payment: newPay,
+        });
+      }
+
+      return NextResponse.json({ success: true, message: 'Pembayaran berhasil disimpan.', payment: newPay });
+    }
+
     return NextResponse.json({ success: false, error: 'Aksi tidak dikenali' }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

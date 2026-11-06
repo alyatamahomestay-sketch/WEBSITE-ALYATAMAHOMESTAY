@@ -57,6 +57,22 @@ describe('PMS Service Operations & Concurrency Handling', () => {
 
     const approvedRes = await PmsService.getReservationById(testRes.id);
     expect(approvedRes?.status).toBe('approved_pending_payment');
+
+    // Test check-in
+    const checkinTime = '2026-12-20T14:00:00.000Z';
+    const checkinRes = await PmsService.updateReservationStatus(testRes.id, 'checked_in', { checkedInAt: checkinTime });
+    expect(checkinRes.success).toBe(true);
+    const checkedInRes = await PmsService.getReservationById(testRes.id);
+    expect(checkedInRes?.status).toBe('checked_in');
+    expect(checkedInRes?.checked_in_at).toBe(checkinTime);
+
+    // Test check-out
+    const checkoutTime = '2026-12-22T11:00:00.000Z';
+    const checkoutRes = await PmsService.updateReservationStatus(testRes.id, 'checked_out', { checkedOutAt: checkoutTime });
+    expect(checkoutRes.success).toBe(true);
+    const checkedOutRes = await PmsService.getReservationById(testRes.id);
+    expect(checkedOutRes?.status).toBe('checked_out');
+    expect(checkedOutRes?.checked_out_at).toBe(checkoutTime);
   });
 
   it('records payments and updates balance due accurately', async () => {
