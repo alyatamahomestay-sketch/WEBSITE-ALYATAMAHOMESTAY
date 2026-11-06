@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
@@ -341,6 +342,115 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ success: false, error: 'Reservasi tidak ditemukan' }, { status: 404 });
+    }
+
+    if (action === 'create') {
+      const rawRes = body.reservation;
+      if (!rawRes) {
+        return NextResponse.json({ success: false, error: 'Data reservasi tidak lengkap' }, { status: 400 });
+      }
+
+      const resId = (rawRes.id && UUID_REGEX.test(rawRes.id)) ? rawRes.id : crypto.randomUUID();
+      const guestId = (rawRes.guest?.id && UUID_REGEX.test(rawRes.guest.id)) ? rawRes.guest.id : crypto.randomUUID();
+
+      const newReservation: Reservation = {
+        ...rawRes,
+        id: resId,
+        guest_id: guestId,
+        guest: rawRes.guest ? {
+          ...rawRes.guest,
+          id: guestId,
+        } : undefined,
+      };
+
+      // 1. Save to local server file store
+      reservations.unshift(newReservation);
+      saveReservationsToFile(reservations);
+
+      // 2. Persist to Supabase if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const adminClient = getSupabaseClient();
+          // A. Insert Guest
+          if (newReservation.guest) {
+            await adminClient.from('guests').insert([{
+              id: guestId,
+              full_name: newReservation.guest.full_name,
+              phone: newReservation.guest.phone,
+              normalized_phone: newReservation.guest.normalized_phone || newReservation.guest.phone.replace(/\D/g, ''),
+              email: newReservation.guest.email || null,
+            }]);
+          }
+
+          // B. Insert Reservation
+          await adminClient.from('reservations').insert([{
+            id: resId,
+            reservation_number: newReservation.reservation_number,
+            guest_id: guestId,
+            checkin_date: newReservation.checkin_date,
+            checkout_date: newReservation.checkout_date,
+            adults: newReservation.adults || 1,
+            children: newReservation.children || 0,
+            status: newReservation.status || 'confirmed',
+            payment_status: newReservation.payment_status || 'unpaid',
+            special_requests: newReservation.special_requests || null,
+          }]);
+
+          // C. Insert reservation_rooms
+          if (newReservation.rooms && newReservation.rooms[0]?.id) {
+            await adminClient.from('reservation_rooms').insert([{
+              reservation_id: resId,
+              room_id: newReservation.rooms[0].id,
+            }]);
+          }
+
+          // D. Insert price snapshot
+          const snap = newReservation.price_snapshot;
+          if (snap) {
+            await adminClient.from('reservation_price_snapshots').insert([{
+              reservation_id: resId,
+              total_nights: snap.total_nights || 1,
+              base_subtotal: snap.base_subtotal || 0,
+              nightly_breakdown: snap.nightly_breakdown || [],
+              discount_amount: snap.discount_amount || 0,
+              promo_snapshot: {
+                rental_type: snap.rental_type || newReservation.rental_type || 'daily',
+                duration_units: snap.duration_units || newReservation.duration_units || 1,
+              },
+              extra_charges: snap.extra_charges || 0,
+              deposit_required: snap.deposit_required || 0,
+              total_amount: snap.total_amount || 0,
+              total_paid: snap.total_paid || 0,
+              balance_due: snap.balance_due || 0,
+            }]);
+          }
+
+          // E. Insert payments if any
+          if (Array.isArray(newReservation.payments) && newReservation.payments.length > 0) {
+            for (const p of newReservation.payments) {
+              const payId = (p.id && UUID_REGEX.test(p.id)) ? p.id : crypto.randomUUID();
+              await adminClient.from('payments').insert([{
+                id: payId,
+                payment_number: p.payment_number,
+                reservation_id: resId,
+                amount: p.amount,
+                payment_method: p.payment_method || 'cash',
+                payment_date: p.payment_date || new Date().toISOString(),
+                status: p.status || 'verified',
+                notes: p.notes || '',
+              }]);
+            }
+          }
+        } catch (e) {
+          console.warn('Supabase walk-in insert error:', e);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Reservasi berhasil dibuat dan disimpan permanen.',
+        reservation: newReservation,
+      });
     }
 
     return NextResponse.json({ success: false, error: 'Aksi tidak dikenali' }, { status: 400 });

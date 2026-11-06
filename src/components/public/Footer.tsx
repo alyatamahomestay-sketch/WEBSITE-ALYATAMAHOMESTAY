@@ -23,11 +23,11 @@ export default function PublicFooter() {
     description: 'Penginapan Syariah terpercaya di Bangkinang Kota, Kampar, Riau. Melayani sewa harian dan bulanan dengan suasana bersih, tenang, aman, dan penuh keberkahan ibadah jariyah.',
     address: 'Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Belakang SPBU Bangkinang Kota, Samping RS Norpa Husada, Kabupaten Kampar, Riau 28411.',
     landmark: 'Belakang SPBU Bangkinang Kota, tepat di samping RS Norpa Husada.',
-    phone: '0822-8547-2008',
-    whatsapp_number: '6282285472008',
+    phone: '0882-7992-7664',
+    whatsapp_number: '088279927664',
     checkin_time: '14:00',
     checkout_time: '12:00',
-    google_maps_url: 'https://maps.google.com/?q=Jl.+Mayor+Ali+Rasyid+No+19+Bangkinang+Kota+Kampar+Riau',
+    google_maps_url: 'https://maps.app.goo.gl/M2HcHTp2wSDMNyfj7',
   });
 
   useEffect(() => {
@@ -43,11 +43,11 @@ export default function PublicFooter() {
               description: json.property.description || 'Penginapan Syariah terpercaya di Bangkinang Kota, Kampar, Riau. Melayani sewa harian dan bulanan dengan suasana bersih, tenang, aman, dan penuh keberkahan ibadah jariyah.',
               address: json.property.address || 'Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Belakang SPBU Bangkinang Kota, Samping RS Norpa Husada, Kabupaten Kampar, Riau 28411.',
               landmark: json.property.landmark || 'Belakang SPBU Bangkinang Kota, tepat di samping RS Norpa Husada.',
-              phone: json.property.phone || '0822-8547-2008',
-              whatsapp_number: json.property.whatsapp_number || '6282285472008',
+              phone: json.property.phone || '0882-7992-7664',
+              whatsapp_number: json.property.whatsapp_number || '088279927664',
               checkin_time: json.property.checkin_time || '14:00',
               checkout_time: json.property.checkout_time || '12:00',
-              google_maps_url: json.property.google_maps_url || 'https://maps.google.com/?q=Jl.+Mayor+Ali+Rasyid+No+19+Bangkinang+Kota+Kampar+Riau',
+              google_maps_url: json.property.google_maps_url || 'https://maps.app.goo.gl/M2HcHTp2wSDMNyfj7',
             });
           }
         }

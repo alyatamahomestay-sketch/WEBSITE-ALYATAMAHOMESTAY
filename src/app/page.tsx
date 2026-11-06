@@ -30,7 +30,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const [rooms, reservations] = await Promise.all([PmsService.getRooms(), PmsService.getReservations()]);
+  const [rooms, reservations, property] = await Promise.all([
+    PmsService.getRooms(), 
+    PmsService.getReservations(),
+    PmsService.getPropertySettings(),
+  ]);
+
+  const cleanWa = (property.whatsapp_number || '088279927664').replace(/[^0-9]/g, '');
+  const displayPhone = property.phone || '0882 7992 7664';
+  const googleMapsUrl = property.google_maps_url || 'https://maps.app.goo.gl/M2HcHTp2wSDMNyfj7';
 
   // Group rooms cleanly into REGULER and VIP (Clean Partitioning)
   const activeRooms = rooms.filter((r) => !r.is_archived);
@@ -156,13 +164,13 @@ export default async function HomePage() {
                   </Link>
 
                   <a
-                    href="https://wa.me/6282285472008"
+                    href={`https://wa.me/${cleanWa}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-[#2A1F17] hover:bg-[#221912] text-[#F6F0E7] text-sm px-5 py-3.5 rounded-xl inline-flex items-center gap-2 transition-colors border border-[#806044]/60"
                   >
                     <Phone className="w-4 h-4 text-[#C9A84C]" />
-                    <span>WhatsApp: 0822 8547 2008</span>
+                    <span>WhatsApp: {displayPhone}</span>
                   </a>
                 </div>
               </div>
@@ -289,13 +297,13 @@ export default async function HomePage() {
                     <ArrowRight className="w-4 h-4" />
                   </a>
                   <a
-                    href="https://wa.me/6282285472008"
+                    href={`https://wa.me/${cleanWa}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="border border-[#806044] text-[#806044] hover:bg-[#FAF7F2] text-xs sm:text-sm font-medium px-4 py-3 rounded-xl transition-colors inline-flex items-center gap-2"
                   >
                     <PhoneCall className="w-4 h-4" />
-                    Telepon / WA: 0822 8547 2008
+                    Telepon / WA: {displayPhone}
                   </a>
                 </div>
               </div>

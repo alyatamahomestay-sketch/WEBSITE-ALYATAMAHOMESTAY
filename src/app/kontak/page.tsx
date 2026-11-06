@@ -10,8 +10,8 @@ export const revalidate = 0;
 
 export default async function KontakPage() {
   const property = await PmsService.getPropertySettings();
-  const cleanWa = (property.whatsapp_number || '6282285472008').replace(/[^0-9]/g, '');
-  const displayPhone = property.phone || '0822 8547 2008';
+  const cleanWa = (property.whatsapp_number || '088279927664').replace(/[^0-9]/g, '');
+  const displayPhone = property.phone || '0882 7992 7664';
 
   return (
     <div className="min-h-screen flex flex-col w-full">

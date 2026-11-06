@@ -17,8 +17,8 @@ export default function PublicNavbar() {
     announcement_banner: string;
     is_announcement_active: boolean;
   }>({
-    phone: '0822-8547-2008',
-    whatsapp_number: '6282285472008',
+    phone: '0882-7992-7664',
+    whatsapp_number: '088279927664',
     announcement_banner: 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian & Bulanan',
     is_announcement_active: true,
   });
@@ -31,8 +31,8 @@ export default function PublicNavbar() {
           const json = await res.json();
           if (json.success && json.property) {
             setProperty({
-              phone: json.property.phone || '0822-8547-2008',
-              whatsapp_number: json.property.whatsapp_number || '6282285472008',
+              phone: json.property.phone || '0882-7992-7664',
+              whatsapp_number: json.property.whatsapp_number || '088279927664',
               announcement_banner: json.property.announcement_banner || 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian & Bulanan',
               is_announcement_active: json.property.is_announcement_active !== false,
             });
@@ -55,8 +55,8 @@ export default function PublicNavbar() {
     };
   }, []);
 
-  const cleanWaNumber = (property.whatsapp_number || '6282285472008').replace(/[^0-9]/g, '');
-  const displayPhone = property.phone || '0822 8547 2008';
+  const cleanWaNumber = (property.whatsapp_number || '088279927664').replace(/[^0-9]/g, '');
+  const displayPhone = property.phone || '0882 7992 7664';
 
   const navItems = [
     { label: 'Beranda', href: '/', exact: true },

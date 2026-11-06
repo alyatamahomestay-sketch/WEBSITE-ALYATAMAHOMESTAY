@@ -165,12 +165,15 @@ describe('PMS Service Operations & Concurrency Handling', () => {
     expect(adminLogin.user?.role).toBe('admin');
 
     // 2. Verify active staff login
-    const staffLogin = await PmsService.verifyStaffLogin('rahmat', '1234');
+    const allUsers = await PmsService.getStaffUsers();
+    const activeStaff = allUsers.find(u => u.status === 'ACTIVE' && u.role === 'staff');
+    const staffLogin = await PmsService.verifyStaffLogin(activeStaff?.username || 'rendi', activeStaff?.password_hash || '1234');
     expect(staffLogin.success).toBe(true);
     expect(staffLogin.user?.role).toBe('staff');
 
     // 3. Verify inactive staff login is rejected
-    const inactiveLogin = await PmsService.verifyStaffLogin('ahmad', '1234');
+    const inactiveStaff = allUsers.find(u => u.status === 'INACTIVE');
+    const inactiveLogin = await PmsService.verifyStaffLogin(inactiveStaff?.username || 'sandi', inactiveStaff?.password_hash || '1234');
     expect(inactiveLogin.success).toBe(false);
     expect(inactiveLogin.error).toContain('Akses ditolak');
 

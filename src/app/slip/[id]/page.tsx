@@ -54,7 +54,7 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Kabupaten Kampar, Riau 28411
               </p>
               <p className="text-[11px] text-stone-500 mt-0.5">
-                Telp/WA: 0822 8547 2008 | Syariah & Berkah
+                Telp/WA: {property.phone || '0882-7992-7664'} | Syariah & Berkah
               </p>
             </div>
 

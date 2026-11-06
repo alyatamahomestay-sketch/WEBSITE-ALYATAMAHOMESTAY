@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
@@ -162,9 +163,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Default: create
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const newRoomId = (room && room.id && UUID_REGEX.test(room.id)) ? room.id : crypto.randomUUID();
     const newRoom: Room = {
       ...(room || body),
-      id: (room && room.id) || 'room-' + Date.now(),
+      id: newRoomId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

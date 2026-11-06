@@ -69,8 +69,8 @@ export async function downloadReservationSlipJpg(
   const address = propertySettings?.address || 'Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah';
   ctx.fillText(address, width / 2, 146);
 
-  const phone = propertySettings?.phone || '0822-8547-2008';
-  const wa = propertySettings?.whatsapp_number || '0822-8547-2008';
+  const phone = propertySettings?.phone || '0882-7992-7664';
+  const wa = propertySettings?.whatsapp_number || '088279927664';
   ctx.fillText(`Telp: ${phone} | WhatsApp Konfirmasi: ${wa}`, width / 2, 168);
 
   // --- Document Type Ribbon / Badge ---
@@ -380,8 +380,8 @@ export function getGuestToAdminWhatsAppUrl(params: {
   propertySettings?: PropertySettings | null;
 }): string {
   const { reservation, propertySettings } = params;
-  const rawAdminPhone = propertySettings?.whatsapp_number || propertySettings?.phone || '0822-8547-2008';
-  const cleanPhone = normalizeIndonesianPhone(rawAdminPhone) || '6282285472008';
+  const rawAdminPhone = propertySettings?.whatsapp_number || propertySettings?.phone || '0882-7992-7664';
+  const cleanPhone = normalizeIndonesianPhone(rawAdminPhone) || '6288279927664';
 
   const guestName = reservation.guest?.full_name || 'Tamu';
   const resNumber = reservation.reservation_number;
