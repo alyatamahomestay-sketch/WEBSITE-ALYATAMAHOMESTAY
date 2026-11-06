@@ -63,20 +63,6 @@ export default async function KamarPage({ searchParams }: KamarPageProps) {
             </div>
           </div>
 
-          {/* Quick Notice on Availability */}
-          <div className="bg-[#FAF7F2] border border-[#D4C3AD] rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-            <div className="text-xs text-[#30231A]">
-              <strong className="font-bold text-[#806044] block sm:inline mr-1">Catatan Pemesanan:</strong>
-              Tarif harian dihitung per malam. Untuk sewa bulanan, Anda dapat langsung memilih opsi masa sewa pada formulir pemesanan online.
-            </div>
-            <Link
-              href="/cek-ketersediaan"
-              className="text-xs bg-[#806044] hover:bg-[#684D36] text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-xs whitespace-nowrap"
-            >
-              Cek Ketersediaan Kamar &rarr;
-            </Link>
-          </div>
-
           {/* Interactive Room List with Filter Tabs (REGULER / VIP / SEMUA) */}
           <Suspense fallback={
             <div className="bg-white rounded-3xl border border-[#E5DCD0] p-12 text-center">

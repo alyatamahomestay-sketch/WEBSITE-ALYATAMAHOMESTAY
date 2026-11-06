@@ -71,27 +71,27 @@ export function getReservationStatusMeta(status: ReservationStatus): {
       };
     case 'approved_pending_payment':
       return {
-        label: 'Disetujui (Menunggu Pembayaran)',
-        badgeClass: 'bg-blue-50 text-blue-800 border-blue-200',
+        label: 'Disetujui',
+        badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       };
     case 'confirmed':
       return {
-        label: 'Terkonfirmasi',
+        label: 'Disetujui',
         badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       };
     case 'checked_in':
       return {
-        label: 'Sedang Menginap (Check-in)',
+        label: 'Check-in',
         badgeClass: 'bg-teal-50 text-teal-800 border-teal-200',
       };
     case 'checked_out':
       return {
-        label: 'Selesai (Check-out)',
+        label: 'Check-out',
         badgeClass: 'bg-stone-100 text-stone-800 border-stone-300',
       };
     case 'rejected':
       return {
-        label: 'Ditolak Admin',
+        label: 'Ditolak',
         badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
       };
     case 'cancelled':

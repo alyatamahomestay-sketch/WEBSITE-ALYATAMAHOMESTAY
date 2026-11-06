@@ -457,8 +457,9 @@ function StatusReservasiContent() {
                   {(() => {
                     const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
                     const totalAmt = snap?.total_amount || ((reservation.rooms?.[0]?.base_rate || 150000) * (reservation.duration_units || 1));
-                    const depReq = snap?.deposit_required ?? (totalAmt * 0.5);
-                    const balDue = snap?.balance_due ?? totalAmt;
+                    const totalPaid = snap?.total_paid || 0;
+                    const isPaid = reservation.payment_status === 'paid';
+                    const balDue = isPaid ? 0 : (totalPaid > 0 ? Math.max(0, totalAmt - totalPaid) : totalAmt);
                     return (
                       <div className="p-5 bg-[#392B21] text-[#E7D8C5] rounded-2xl space-y-3 text-xs border border-[#4d3b2e]">
                         <div className="flex justify-between items-center text-stone-300">
@@ -469,9 +470,9 @@ function StatusReservasiContent() {
                         </div>
 
                         <div className="flex justify-between items-center text-stone-300">
-                          <span>Uang Muka / Deposit Diperlukan:</span>
-                          <span className="font-medium text-[#C9A84C]">
-                            {formatRupiah(depReq)}
+                          <span>Status Pembayaran:</span>
+                          <span className={isPaid ? 'font-bold text-emerald-400' : 'font-medium text-[#C9A84C]'}>
+                            {isPaid ? 'Lunas' : 'Belum Dibayar (Bayar di Tempat Sebelum Terima Kunci)'}
                           </span>
                         </div>
 

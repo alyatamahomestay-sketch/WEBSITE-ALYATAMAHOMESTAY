@@ -49,7 +49,8 @@ function BookingContent() {
   const [checkoutDate, setCheckoutDate] = useState(
     searchParams.get('checkout') || getDefaultCheckoutWIB(initialCheckin, queryRental)
   );
-  const [roomId, setRoomId] = useState(searchParams.get('room_id') || '');
+  const queryRoomId = searchParams.get('room_id') || searchParams.get('roomId') || '';
+  const [roomId, setRoomId] = useState(queryRoomId);
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
   const [children, setChildren] = useState(0);
   const [marriageConfirmed, setMarriageConfirmed] = useState(false);
@@ -69,7 +70,8 @@ function BookingContent() {
           if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
             setRooms(json.rooms);
             if (!roomId) {
-              setRoomId(json.rooms[0].id);
+              const matched = queryRoomId ? json.rooms.find((r: Room) => r.id === queryRoomId) : null;
+              setRoomId(matched ? matched.id : json.rooms[0].id);
             }
             return;
           }
@@ -77,7 +79,8 @@ function BookingContent() {
         const data = await PmsService.getRooms();
         setRooms(data);
         if (!roomId && data.length > 0) {
-          setRoomId(data[0].id);
+          const matched = queryRoomId ? data.find((r) => r.id === queryRoomId) : null;
+          setRoomId(matched ? matched.id : data[0].id);
         }
       } catch (err) {
         console.error(err);
@@ -289,7 +292,7 @@ function BookingContent() {
                         <input
                           type="tel"
                           required
-                          placeholder="Contoh: 082285472008 atau 081234567890"
+                          placeholder="Contoh: 088279927664 atau 081234567890"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
@@ -343,26 +346,59 @@ function BookingContent() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#392B21] mb-1">
-                          Pilih Unit Kamar <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          value={roomId}
-                          onChange={(e) => setRoomId(e.target.value)}
-                          className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
-                        >
-                          {rooms.map((r) => {
-                            let rateDisplay = `${formatRupiah(r.base_rate)}/malam`;
-                            if (rentalType === 'monthly' && r.monthly_rate) {
-                              rateDisplay = `${formatRupiah(r.monthly_rate)}/bulan`;
-                            }
-                            return (
-                              <option key={r.id} value={r.id}>
-                                {r.name} - {r.room_type} ({rateDisplay})
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-semibold text-[#392B21]">
+                            Unit Kamar Dipilih <span className="text-rose-500">*</span>
+                          </label>
+                          <Link
+                            href="/kamar"
+                            className="text-[11px] font-semibold text-[#806044] hover:underline flex items-center gap-1"
+                          >
+                            <span>Ganti Pilihan Kamar</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
+
+                        {selectedRoom ? (
+                          <div className="p-3.5 rounded-xl border-2 border-[#806044]/30 bg-[#FAF7F2] flex items-center justify-between gap-3 shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-[#806044] text-white flex items-center justify-center shrink-0 font-bold text-xs shadow-xs">
+                                {selectedRoom.room_number}
+                              </div>
+                              <div>
+                                <div className="text-xs sm:text-sm font-bold text-[#30231A]">
+                                  {selectedRoom.name}
+                                </div>
+                                <div className="text-[11px] text-[#756A5F] flex items-center gap-2">
+                                  <span className="font-semibold text-[#806044] uppercase tracking-wider">{selectedRoom.room_type}</span>
+                                  <span>•</span>
+                                  <span>Kapasitas {selectedRoom.capacity_adults} Dewasa</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-xs sm:text-sm font-bold text-[#30231A] block">
+                                {rentalType === 'monthly' && selectedRoom.monthly_rate
+                                  ? `${formatRupiah(selectedRoom.monthly_rate)}/bln`
+                                  : `${formatRupiah(selectedRoom.base_rate)}/malam`}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
+                                Terpilih Otomatis
+                              </span>
+                            </div>
+                            <input type="hidden" name="roomId" value={selectedRoom.id} />
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl border border-dashed border-[#D4C3AD] bg-white text-center">
+                            <p className="text-xs text-[#756A5F] mb-2">Belum ada unit kamar yang dipilih.</p>
+                            <Link
+                              href="/kamar"
+                              className="inline-flex items-center gap-1 text-xs bg-[#806044] text-white px-3 py-1.5 rounded-lg font-bold"
+                            >
+                              Pilih Kamar di Halaman Kamar &rarr;
+                            </Link>
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

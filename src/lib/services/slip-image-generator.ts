@@ -183,17 +183,21 @@ export async function downloadReservationSlipJpg(
   ctx.fillText('2. RINCIAN BIAYA & STATUS PEMBAYARAN', 65, curY + 25);
 
   const priceSnapshot = reservation.price_snapshot;
-  const totalAmount = formatRupiah(priceSnapshot?.total_amount);
-  const totalPaid = formatRupiah(priceSnapshot?.total_paid || 0);
-  const balanceDue = formatRupiah(priceSnapshot?.balance_due ?? priceSnapshot?.total_amount);
-  const depositReq = formatRupiah(priceSnapshot?.deposit_required || 0);
+  const totalAmountNum = priceSnapshot?.total_amount || ((reservation.rooms?.[0]?.base_rate || 150000) * (reservation.duration_units || 1));
+  const totalPaidNum = priceSnapshot?.total_paid || 0;
+  const isPaid = reservation.payment_status === 'paid';
+  const balanceDueNum = isPaid ? 0 : (totalPaidNum > 0 ? Math.max(0, totalAmountNum - totalPaidNum) : totalAmountNum);
+
+  const totalAmount = formatRupiah(totalAmountNum);
+  const totalPaid = formatRupiah(totalPaidNum);
+  const balanceDue = formatRupiah(balanceDueNum);
 
   // Financial Grid Box
   ctx.fillStyle = '#392B21';
   roundRect(ctx, 65, curY + 55, width - 130, 130, 10);
   ctx.fill();
 
-  // Total
+  // Total Biaya
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillText('TOTAL BIAYA SEWA', 90, curY + 85);
@@ -201,21 +205,13 @@ export async function downloadReservationSlipJpg(
   ctx.font = 'bold 20px monospace';
   ctx.fillText(totalAmount, 90, curY + 115);
 
-  // DP
-  ctx.fillStyle = '#E7D8C5';
-  ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('UANG MUKA (DP)', 380, curY + 85);
-  ctx.fillStyle = '#C9A84C';
-  ctx.font = 'bold 18px monospace';
-  ctx.fillText(depositReq, 380, curY + 115);
-
   // Pembayaran Terverifikasi
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('DITERIMA SISTEM', 620, curY + 85);
-  ctx.fillStyle = '#4ade80';
+  ctx.fillText('PEMBAYARAN DITERIMA', 480, curY + 85);
+  ctx.fillStyle = isPaid ? '#4ade80' : '#E7D8C5';
   ctx.font = 'bold 18px monospace';
-  ctx.fillText(totalPaid, 620, curY + 115);
+  ctx.fillText(totalPaid, 480, curY + 115);
 
   // Bottom Line of Financial Grid
   ctx.strokeStyle = '#5a4638';
@@ -226,10 +222,10 @@ export async function downloadReservationSlipJpg(
 
   ctx.fillStyle = '#E7D8C5';
   ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText('SISA TAGIHAN SAAT CHECK-IN:', 90, curY + 162);
-  ctx.fillStyle = '#FDE047';
+  ctx.fillText('SISA PEMBAYARAN SAAT TIBA (SEBELUM TERIMA KUNCI):', 90, curY + 162);
+  ctx.fillStyle = balanceDueNum === 0 ? '#4ade80' : '#FDE047';
   ctx.font = 'bold 16px monospace';
-  ctx.fillText(balanceDue, 380, curY + 162);
+  ctx.fillText(balanceDue, 520, curY + 162);
 
   // --- Section 3: Rekening Pembayaran & Instruksi WhatsApp ---
   curY = 880;
@@ -246,7 +242,7 @@ export async function downloadReservationSlipJpg(
   ctx.fill();
   ctx.fillStyle = '#806044';
   ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText('3. INSTRUKSI PEMBAYARAN & KONFIRMASI WHATSAPP ADMIN', 65, curY + 25);
+  ctx.fillText('3. SISTEM PEMBAYARAN (CASH/TRANSFER) DAN KONFIRMASI WHATSAPP ADMIN', 65, curY + 25);
 
   // Bank Info Card
   const bankMethod = paymentMethods.find((pm) => pm.code === 'bank_transfer' && pm.is_active);

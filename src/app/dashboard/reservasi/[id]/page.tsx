@@ -117,6 +117,11 @@ export default function ReservationDetailPage({ params }: Props) {
       alert('Nominal pembayaran harus lebih dari 0.');
       return;
     }
+    const hasExisting = (reservation.payments && reservation.payments.length > 0) || reservation.payment_status === 'paid';
+    if (hasExisting) {
+      alert('Pembayaran untuk reservasi ini sudah pernah dicatat sebelumnya. Sistem membatasi pencatatan hanya satu kali transaksi.');
+      return;
+    }
     const res = await PmsService.addPayment({
       reservationId: reservation.id,
       amount: Number(payAmount),
@@ -359,13 +364,26 @@ export default function ReservationDetailPage({ params }: Props) {
               <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-900">
                 Pencatatan Pembayaran
               </h3>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-              >
-                <DollarSign className="w-3.5 h-3.5" />
-                Catat Pembayaran
-              </button>
+              {(reservation.payments && reservation.payments.length > 0) || reservation.payment_status === 'paid' ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  1x Transaksi Tercatat (Lunas)
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
+                    const defaultAmt = snap?.balance_due != null && snap.balance_due > 0 ? snap.balance_due : (snap?.total_amount || 0);
+                    setPayAmount(defaultAmt);
+                    setShowPaymentModal(true);
+                  }}
+                  className="bg-[#355C46] hover:bg-[#284635] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  Catat Pembayaran
+                </button>
+              )}
             </div>
 
             {reservation.payments && reservation.payments.length > 0 ? (
@@ -460,6 +478,10 @@ export default function ReservationDetailPage({ params }: Props) {
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <h3 className="font-semibold text-stone-900 text-sm">Catat Penerimaan Pembayaran</h3>
               <button onClick={() => setShowPaymentModal(false)} className="text-stone-400 hover:text-stone-600 font-bold">&times;</button>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded-xl text-[11px] leading-relaxed">
+              <strong>Aturan Transaksi:</strong> Pencatatan pembayaran tamu dibatasi hanya 1 kali transaksi untuk setiap reservasi guna mencegah duplikasi atau pencatatan berlebih.
             </div>
 
             <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">

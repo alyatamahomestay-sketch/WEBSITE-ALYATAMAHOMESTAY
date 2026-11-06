@@ -88,7 +88,12 @@ function ReservasiListContent() {
   };
 
   const filtered = reservations.filter((r) => {
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+    let matchesStatus = statusFilter === 'all';
+    if (statusFilter === 'disetujui' || statusFilter === 'approved_pending_payment' || statusFilter === 'confirmed') {
+      matchesStatus = r.status === 'approved_pending_payment' || r.status === 'confirmed';
+    } else if (statusFilter !== 'all') {
+      matchesStatus = r.status === statusFilter;
+    }
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
       !query ||
@@ -134,10 +139,9 @@ function ReservasiListContent() {
           {[
             { id: 'all', label: 'Semua' },
             { id: 'pending_approval', label: 'Menunggu Persetujuan' },
-            { id: 'approved_pending_payment', label: 'Menunggu Bayar' },
-            { id: 'confirmed', label: 'Terkonfirmasi' },
-            { id: 'checked_in', label: 'In-House' },
-            { id: 'checked_out', label: 'Selesai' },
+            { id: 'disetujui', label: 'Disetujui' },
+            { id: 'checked_in', label: 'Check-in' },
+            { id: 'checked_out', label: 'Check-out' },
             { id: 'rejected', label: 'Ditolak' },
           ].map((tab) => (
             <button

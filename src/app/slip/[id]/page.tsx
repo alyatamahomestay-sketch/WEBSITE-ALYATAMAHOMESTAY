@@ -165,13 +165,8 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 Catatan Penting:
               </span>
               <p className="leading-relaxed">
-                Tamu wajib mematuhi waktu check-in (14:00) dan check-out (12:00). Dokumen ini diterbitkan oleh sistem ALYATAMA HOMESTAY.
+                Tamu wajib mematuhi waktu check-in (14:00) dan check-out (12:00). Pembayaran penuh (Tunai/Transfer) diselesaikan di tempat sebelum serah terima kunci. Dokumen ini diterbitkan resmi oleh sistem ALYATAMA HOMESTAY.
               </p>
-              {reservation.deposit && reservation.deposit.required_amount > 0 && (
-                <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-200 text-[11px]">
-                  <strong>Uang Muka / Deposit:</strong> {formatRupiah(reservation.deposit.required_amount)} (Status: {reservation.deposit.status})
-                </div>
-              )}
             </div>
 
             <div className="w-full sm:w-64 space-y-2 text-xs">
@@ -186,7 +181,11 @@ export default async function SlipPage({ params }: SlipPageProps) {
               <div className="flex justify-between py-2 border-t border-stone-200 text-sm font-bold text-stone-900">
                 <span>Sisa Tagihan:</span>
                 <span className={priceSnapshot?.balance_due === 0 ? 'text-emerald-700' : 'text-stone-900'}>
-                  {formatRupiah(priceSnapshot?.balance_due)}
+                  {formatRupiah(
+                    reservation.payment_status === 'paid' 
+                      ? 0 
+                      : (priceSnapshot?.balance_due != null && priceSnapshot.balance_due > 0 ? priceSnapshot.balance_due : (priceSnapshot?.total_amount || 0))
+                  )}
                 </span>
               </div>
             </div>

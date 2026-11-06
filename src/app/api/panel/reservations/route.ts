@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
@@ -254,6 +256,13 @@ export async function POST(req: NextRequest) {
               idx = 0;
             }
           }
+
+          // Update room operational status to 'ditempati'
+          const targetRes = idx !== -1 ? reservations[idx] : null;
+          const roomId = targetRes?.rooms?.[0]?.id;
+          if (roomId) {
+            await supabase.from('rooms').update({ operational_status: 'ditempati', updated_at: approvedAt }).eq('id', roomId);
+          }
         } catch (e) {
           console.warn('Supabase approve update error:', e);
         }
@@ -270,9 +279,25 @@ export async function POST(req: NextRequest) {
         };
         saveReservationsToFile(reservations);
 
+        // Update local rooms file store
+        const roomId = reservations[idx].rooms?.[0]?.id;
+        if (roomId) {
+          try {
+            const roomsPath = path.join(process.cwd(), '.server-rooms.json');
+            if (fs.existsSync(roomsPath)) {
+              const rawRooms = JSON.parse(fs.readFileSync(roomsPath, 'utf8'));
+              const rIdx = rawRooms.findIndex((r: any) => r.id === roomId);
+              if (rIdx !== -1) {
+                rawRooms[rIdx].operational_status = 'ditempati';
+                fs.writeFileSync(roomsPath, JSON.stringify(rawRooms, null, 2), 'utf8');
+              }
+            }
+          } catch (e) {}
+        }
+
         return NextResponse.json({
           success: true,
-          message: 'Status reservasi berhasil disetujui! Status kini Menunggu Pembayaran / DP.',
+          message: 'Status reservasi berhasil disetujui! Status kamar kini Tidak Tersedia.',
           reservation: reservations[idx],
         });
       }
@@ -523,6 +548,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Nominal pembayaran harus lebih besar dari 0' }, { status: 400 });
       }
 
+      // Check if this reservation already has a payment recorded (single transaction limit)
+      const targetRes = idx !== -1 ? reservations[idx] : null;
+      if (targetRes) {
+        const hasExistingPayment = (Array.isArray(targetRes.payments) && targetRes.payments.length > 0) || targetRes.payment_status === 'paid';
+        if (hasExistingPayment) {
+          return NextResponse.json({
+            success: false,
+            error: 'Pembayaran untuk reservasi ini sudah pernah dicatat sebelumnya. Sistem membatasi pencatatan hanya satu kali transaksi untuk mencegah duplikasi.',
+          }, { status: 400 });
+        }
+      }
+
       const now = new Date().toISOString();
       const payId = crypto.randomUUID();
       const payNum = 'PAY-' + Date.now();
@@ -546,6 +583,15 @@ export async function POST(req: NextRequest) {
         try {
           const resUuid = isTargetUuid ? targetId : (idx !== -1 ? reservations[idx].id : targetId);
           newPay.reservation_id = resUuid;
+
+          // Double check database if payment already exists
+          const { data: existingPayments } = await supabase.from('payments').select('id').eq('reservation_id', resUuid);
+          if (existingPayments && existingPayments.length > 0) {
+            return NextResponse.json({
+              success: false,
+              error: 'Pembayaran untuk reservasi ini sudah tercatat di sistem. Pencatatan transaksi dibatasi satu kali saja.',
+            }, { status: 400 });
+          }
 
           await supabase.from('payments').insert([newPay]);
 

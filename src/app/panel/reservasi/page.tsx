@@ -61,7 +61,7 @@ function ReservasiPanelList() {
       const res = await PmsService.approveReservation(id, 'Petugas Bertugas');
       if (res.success) {
         showAdminToast('edit', 'Status reservasi berhasil diubah menjadi Disetujui.');
-        setActionMessage('Berhasil Disetujui: Permintaan reservasi berhasil disetujui (Menunggu Pembayaran / DP)!');
+        setActionMessage('Berhasil Disetujui: Permintaan reservasi berhasil disetujui!');
         await loadReservations();
         setTimeout(() => setActionMessage(''), 4000);
       } else {
@@ -75,7 +75,12 @@ function ReservasiPanelList() {
   };
 
   const filteredReservations = reservations.filter((r) => {
-    const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+    let matchStatus = statusFilter === 'all';
+    if (statusFilter === 'disetujui' || statusFilter === 'approved_pending_payment' || statusFilter === 'confirmed') {
+      matchStatus = r.status === 'approved_pending_payment' || r.status === 'confirmed';
+    } else if (statusFilter !== 'all') {
+      matchStatus = r.status === statusFilter;
+    }
     const matchSource = sourceFilter === 'all' || (r.booking_source || 'online') === sourceFilter;
     const q = searchQuery.toLowerCase();
     const matchQuery = 
@@ -142,11 +147,10 @@ function ReservasiPanelList() {
             >
               <option value="all">Semua Status</option>
               <option value="pending_approval">Menunggu Persetujuan</option>
-              <option value="approved_pending_payment">Disetujui (Belum Bayar)</option>
-              <option value="confirmed">Terkonfirmasi</option>
+              <option value="disetujui">Disetujui</option>
               <option value="checked_in">Check-in</option>
               <option value="checked_out">Check-out</option>
-              <option value="cancelled">Dibatalkan</option>
+              <option value="rejected">Ditolak</option>
             </select>
 
             {/* Source Filter */}

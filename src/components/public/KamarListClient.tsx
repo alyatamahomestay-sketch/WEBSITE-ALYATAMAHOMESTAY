@@ -30,32 +30,46 @@ export default function KamarListClient({
   const urlType = searchParams?.get('type')?.toLowerCase();
 
   const [roomList, setRoomList] = useState<Room[]>(rooms);
+  const [reservationList, setReservationList] = useState<Reservation[]>(reservations);
 
-  // Sync rooms in realtime from server
+  // Sync rooms and reservations in realtime from server
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchRoomsAndReservations = async () => {
       try {
-        const res = await fetch('/api/panel/rooms', { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
+        const [roomsRes, resRes] = await Promise.all([
+          fetch('/api/panel/rooms', { cache: 'no-store' }),
+          fetch('/api/panel/reservations', { cache: 'no-store' }),
+        ]);
+
+        if (roomsRes.ok) {
+          const json = await roomsRes.json();
           if (json.success && Array.isArray(json.rooms) && json.rooms.length > 0) {
             setRoomList(json.rooms);
+          }
+        }
+
+        if (resRes.ok) {
+          const resJson = await resRes.json();
+          if (resJson.success && Array.isArray(resJson.reservations)) {
+            setReservationList(resJson.reservations);
           }
         }
       } catch (e) {}
     };
 
-    fetchRooms();
+    fetchRoomsAndReservations();
 
-    const onSync = () => fetchRooms();
+    const onSync = () => fetchRoomsAndReservations();
     window.addEventListener('focus', onSync);
     window.addEventListener('storage', onSync);
     window.addEventListener('rooms-updated', onSync);
+    window.addEventListener('reservations-updated', onSync);
 
     return () => {
       window.removeEventListener('focus', onSync);
       window.removeEventListener('storage', onSync);
       window.removeEventListener('rooms-updated', onSync);
+      window.removeEventListener('reservations-updated', onSync);
     };
   }, []);
 
@@ -191,38 +205,12 @@ export default function KamarListClient({
             </button>
           </div>
         </div>
-
-        {/* Informational Sub-Banner based on Active Filter */}
-        <div className="mt-4 pt-3.5 border-t border-[#E5DCD0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-[#756A5F]">
-            <span className="font-semibold text-[#392B21]">Status Tampilan:</span>
-            {activeFilter === 'reguler' && (
-              <span className="inline-flex items-center gap-1 font-bold text-[#806044]">
-                Hanya Menampilkan 4 Unit Kamar Tipe REGULER (No. 101, 102, 103, 104)
-              </span>
-            )}
-            {activeFilter === 'vip' && (
-              <span className="inline-flex items-center gap-1 font-bold text-[#806044]">
-                Hanya Menampilkan 4 Unit Kamar Tipe VIP (No. 201, 202, 203, 204)
-              </span>
-            )}
-            {activeFilter === 'all' && (
-              <span className="inline-flex items-center gap-1 font-medium text-[#756A5F]">
-                Menampilkan seluruh {activeRooms.length} unit kamar (4 Reguler &amp; 4 VIP)
-              </span>
-            )}
-          </div>
-
-          <div className="text-[11px] text-[#756A5F]">
-            Menampilkan <strong className="text-[#392B21] font-bold">{displayedRooms.length}</strong> dari {activeRooms.length} unit
-          </div>
-        </div>
       </div>
 
       {/* ROOMS GRID: Clean, Responsive, High Quality */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {displayedRooms.map((room) => (
-          <RoomCard key={room.id} room={room} reservations={reservations} />
+          <RoomCard key={room.id} room={room} reservations={reservationList} />
         ))}
       </div>
 

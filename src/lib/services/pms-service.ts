@@ -537,8 +537,17 @@ export const PmsService = {
             memReservations[rIdx].approved_at = new Date().toISOString();
             memReservations[rIdx].approved_by = adminId || 'Administrator';
             syncMemReservationsToStorage(memReservations);
+
+            const roomId = memReservations[rIdx].rooms?.[0]?.id;
+            if (roomId) {
+              const rm = memRooms.find(r => r.id === roomId);
+              if (rm) {
+                rm.operational_status = 'ditempati';
+                syncMemRoomsToStorage(memRooms);
+              }
+            }
           }
-          return { success: true, message: json.message || 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
+          return { success: true, message: json.message || 'Reservasi berhasil disetujui. Status kamar kini Tidak Tersedia.' };
         } else {
           return { success: false, message: json.error || json.message || 'Gagal menyetujui reservasi di database.' };
         }
@@ -551,7 +560,16 @@ export const PmsService = {
       targetRes.approved_by = adminId || 'Administrator';
       targetRes.updated_at = new Date().toISOString();
       syncMemReservationsToStorage(memReservations);
-      return { success: true, message: 'Reservasi berhasil disetujui (Menunggu Pembayaran / DP).' };
+
+      const roomId = targetRes.rooms?.[0]?.id;
+      if (roomId) {
+        const rm = memRooms.find(r => r.id === roomId);
+        if (rm) {
+          rm.operational_status = 'ditempati';
+          syncMemRoomsToStorage(memRooms);
+        }
+      }
+      return { success: true, message: 'Reservasi berhasil disetujui. Status kamar kini Tidak Tersedia.' };
     }
 
     return { success: false, message: 'Reservasi tidak ditemukan.' };
@@ -670,6 +688,8 @@ export const PmsService = {
             syncMemReservationsToStorage(memReservations);
           }
           return { success: true, message: json.message || 'Pembayaran berhasil dicatat & saldo tagihan diperbarui.' };
+        } else {
+          return { success: false, message: json.error || json.message || 'Gagal mencatat pembayaran.' };
         }
       } catch (e) {}
     }
@@ -677,6 +697,9 @@ export const PmsService = {
     if (!isSupabaseConfigured()) {
       const res = memReservations.find(r => r.id === paymentData.reservationId);
       if (!res) return { success: false, message: 'Reservasi tidak ditemukan' };
+      if ((res.payments && res.payments.length > 0) || res.payment_status === 'paid') {
+        return { success: false, message: 'Pembayaran untuk reservasi ini sudah pernah dicatat sebelumnya. Transaksi dibatasi satu kali saja.' };
+      }
       const newPay: Payment = {
         id: 'pay-' + Date.now(),
         payment_number: 'PAY-' + Date.now(),
