@@ -717,6 +717,10 @@ export const PmsService = {
     paymentMethod: string;
     notes?: string;
     referenceNumber?: string;
+    promoId?: string;
+    promoCode?: string;
+    promoName?: string;
+    discountAmount?: number;
   }): Promise<{ success: boolean; message: string }> {
     if (typeof window !== 'undefined') {
       try {
@@ -761,8 +765,22 @@ export const PmsService = {
       if (!res.payments) res.payments = [];
       res.payments.push(newPay);
 
-      // Recalculate price snapshot
+      // Recalculate price snapshot (including promo discount if applied)
       if (res.price_snapshot) {
+        const base = res.price_snapshot.base_subtotal || res.price_snapshot.total_amount || 0;
+        if (paymentData.discountAmount && paymentData.discountAmount > 0) {
+          res.price_snapshot.base_subtotal = base;
+          res.price_snapshot.discount_amount = paymentData.discountAmount;
+          res.price_snapshot.discount_reason = paymentData.promoName || paymentData.promoCode || 'Promo Diskon';
+          res.price_snapshot.promo_code = paymentData.promoCode || null;
+          res.price_snapshot.promo_snapshot = {
+            promo_id: paymentData.promoId,
+            name: paymentData.promoName,
+            code: paymentData.promoCode,
+            discount: paymentData.discountAmount,
+          };
+          res.price_snapshot.total_amount = Math.max(0, base - paymentData.discountAmount);
+        }
         res.price_snapshot.total_paid += paymentData.amount;
         res.price_snapshot.balance_due = Math.max(0, res.price_snapshot.total_amount - res.price_snapshot.total_paid);
         if (res.price_snapshot.balance_due === 0) {
@@ -774,6 +792,14 @@ export const PmsService = {
           res.payment_status = 'partially_paid';
         }
       }
+
+      if (paymentData.promoId) {
+        const pIdx = memPromotions.findIndex(p => p.id === paymentData.promoId);
+        if (pIdx !== -1) {
+          memPromotions[pIdx].used_count = (memPromotions[pIdx].used_count || 0) + 1;
+        }
+      }
+      syncMemReservationsToStorage(memReservations);
       return { success: true, message: 'Pembayaran berhasil dicatat & saldo tagihan diperbarui.' };
     }
 

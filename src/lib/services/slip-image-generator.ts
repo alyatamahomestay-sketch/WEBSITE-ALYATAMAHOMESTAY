@@ -197,21 +197,28 @@ export async function downloadReservationSlipJpg(
   roundRect(ctx, 65, curY + 55, width - 130, 130, 10);
   ctx.fill();
 
+  const discountAmt = priceSnapshot?.discount_amount || 0;
+
   // Total Biaya
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('TOTAL BIAYA SEWA', 90, curY + 85);
+  ctx.fillText(discountAmt > 0 ? 'TOTAL BIAYA (SETELAH DISKON)' : 'TOTAL BIAYA SEWA', 90, curY + 80);
   ctx.fillStyle = '#FFFFFF';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText(totalAmount, 90, curY + 115);
+  ctx.fillText(totalAmount, 90, curY + 105);
+  if (discountAmt > 0) {
+    ctx.font = 'bold 10px system-ui, sans-serif';
+    ctx.fillStyle = '#4ade80';
+    ctx.fillText(`Hemat ${formatRupiah(discountAmt)} (${priceSnapshot?.discount_reason || priceSnapshot?.promo_code || 'Promo'})`, 90, curY + 123);
+  }
 
   // Pembayaran Terverifikasi
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('PEMBAYARAN DITERIMA', 480, curY + 85);
+  ctx.fillText('PEMBAYARAN DITERIMA', 480, curY + 80);
   ctx.fillStyle = isPaid ? '#4ade80' : '#E7D8C5';
   ctx.font = 'bold 18px monospace';
-  ctx.fillText(totalPaid, 480, curY + 115);
+  ctx.fillText(totalPaid, 480, curY + 105);
 
   // Bottom Line of Financial Grid
   ctx.strokeStyle = '#5a4638';

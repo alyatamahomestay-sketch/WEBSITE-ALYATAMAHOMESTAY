@@ -549,8 +549,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'add_payment') {
-      const { amount, paymentMethod, notes, referenceNumber } = body;
+      const { amount, paymentMethod, notes, referenceNumber, promoId, promoCode, promoName, discountAmount } = body;
       const numAmount = Number(amount) || 0;
+      const numDiscount = Number(discountAmount) || 0;
       if (numAmount <= 0) {
         return NextResponse.json({ success: false, error: 'Nominal pembayaran harus lebih besar dari 0' }, { status: 400 });
       }
@@ -606,17 +607,54 @@ export async function POST(req: NextRequest) {
           const { data: dbPayments } = await supabase.from('payments').select('amount').eq('reservation_id', resUuid);
           const totalPaid = dbPayments ? dbPayments.reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) : numAmount;
 
-          // Get snapshot total
-          const { data: dbSnap } = await supabase.from('reservation_price_snapshots').select('total_amount').eq('reservation_id', resUuid).maybeSingle();
-          const totalAmount = dbSnap?.total_amount || (idx !== -1 ? (reservations[idx].price_snapshot?.total_amount || 0) : 0);
-          const balanceDue = Math.max(0, totalAmount - totalPaid);
+          // Get snapshot data
+          const { data: dbSnap } = await supabase.from('reservation_price_snapshots').select('*').eq('reservation_id', resUuid).maybeSingle();
+          
+          let currentBaseSubtotal = dbSnap?.base_subtotal || dbSnap?.total_amount || (idx !== -1 ? (reservations[idx].price_snapshot?.base_subtotal || reservations[idx].price_snapshot?.total_amount || 0) : 0);
+          if (currentBaseSubtotal <= 0 && idx !== -1) {
+            currentBaseSubtotal = (reservations[idx].rooms?.[0]?.base_rate || 150000) * (reservations[idx].duration_units || 1);
+          }
+
+          let finalTotalAmount = currentBaseSubtotal;
+          const snapUpdatePayload: any = {
+            total_paid: totalPaid,
+            updated_at: now,
+          };
+
+          if (numDiscount > 0) {
+            finalTotalAmount = Math.max(0, currentBaseSubtotal - numDiscount);
+            snapUpdatePayload.base_subtotal = currentBaseSubtotal;
+            snapUpdatePayload.discount_amount = numDiscount;
+            snapUpdatePayload.discount_reason = promoName || promoCode || 'Promo Diskon';
+            snapUpdatePayload.promo_code = promoCode || null;
+            snapUpdatePayload.promo_snapshot = {
+              promo_id: promoId,
+              name: promoName,
+              code: promoCode,
+              discount: numDiscount,
+            };
+            snapUpdatePayload.total_amount = finalTotalAmount;
+          } else {
+            finalTotalAmount = dbSnap?.total_amount || (idx !== -1 ? (reservations[idx].price_snapshot?.total_amount || currentBaseSubtotal) : currentBaseSubtotal);
+          }
+
+          const balanceDue = Math.max(0, finalTotalAmount - totalPaid);
+          snapUpdatePayload.balance_due = balanceDue;
 
           // Update price snapshot in Supabase
-          await supabase.from('reservation_price_snapshots').update({
-            total_paid: totalPaid,
-            balance_due: balanceDue,
-            updated_at: now,
-          }).eq('reservation_id', resUuid);
+          await supabase.from('reservation_price_snapshots').update(snapUpdatePayload).eq('reservation_id', resUuid);
+
+          // Update promo usage count if promoId was passed
+          if (promoId) {
+            try {
+              const { data: promoData } = await supabase.from('promotions').select('used_count').eq('id', promoId).maybeSingle();
+              if (promoData) {
+                await supabase.from('promotions').update({ used_count: (promoData.used_count || 0) + 1 }).eq('id', promoId);
+              }
+            } catch (pErr) {
+              console.warn('Promo usage increment warning:', pErr);
+            }
+          }
 
           // Update reservation payment status
           const newPayStatus = balanceDue === 0 ? 'paid' : (totalPaid > 0 ? 'partially_paid' : 'unpaid');
@@ -636,6 +674,21 @@ export async function POST(req: NextRequest) {
         reservations[idx].payments!.push(newPay);
 
         if (reservations[idx].price_snapshot) {
+          const currentBase = reservations[idx].price_snapshot!.base_subtotal || reservations[idx].price_snapshot!.total_amount || 0;
+          if (numDiscount > 0) {
+            reservations[idx].price_snapshot!.base_subtotal = currentBase;
+            reservations[idx].price_snapshot!.discount_amount = numDiscount;
+            reservations[idx].price_snapshot!.discount_reason = promoName || promoCode || 'Promo Diskon';
+            reservations[idx].price_snapshot!.promo_code = promoCode || null;
+            reservations[idx].price_snapshot!.promo_snapshot = {
+              promo_id: promoId,
+              name: promoName,
+              code: promoCode,
+              discount: numDiscount,
+            };
+            reservations[idx].price_snapshot!.total_amount = Math.max(0, currentBase - numDiscount);
+          }
+
           reservations[idx].price_snapshot!.total_paid = (reservations[idx].price_snapshot!.total_paid || 0) + numAmount;
           reservations[idx].price_snapshot!.balance_due = Math.max(0, (reservations[idx].price_snapshot!.total_amount || 0) - reservations[idx].price_snapshot!.total_paid);
           if (reservations[idx].price_snapshot!.balance_due === 0) {

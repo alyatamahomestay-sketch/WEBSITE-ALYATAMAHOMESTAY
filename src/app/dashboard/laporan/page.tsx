@@ -164,7 +164,10 @@ export default function LaporanPage() {
       'Tanggal Check-in': r.checkin_date,
       'Tanggal Check-out': r.checkout_date,
       'Durasi Malam': r.price_snapshot?.total_nights || 1,
-      'Total Biaya (Rp)': r.price_snapshot?.total_amount || 0,
+      'Harga Normal (Rp)': r.price_snapshot?.base_subtotal || ((r.price_snapshot?.total_amount || 0) + (r.price_snapshot?.discount_amount || 0)),
+      'Kode / Promo Digunakan': r.price_snapshot?.discount_reason || r.price_snapshot?.promo_code || 'Tidak Ada Promo',
+      'Potongan Promo (Rp)': r.price_snapshot?.discount_amount || 0,
+      'Total Biaya Akhir (Rp)': r.price_snapshot?.total_amount || 0,
       'Total Dibayar (Rp)': r.price_snapshot?.total_paid || 0,
       'Sisa Tagihan (Rp)': r.price_snapshot?.balance_due || 0,
       'Status Reservasi': r.status,
@@ -185,10 +188,16 @@ export default function LaporanPage() {
       'Dicatat Oleh': e.recorded_by || 'Admin',
     }));
 
+    const totalDiscountsGiven = validReservations.reduce(
+      (sum, r) => sum + Number(r.price_snapshot?.discount_amount || 0),
+      0
+    );
+
     // Sheet 3: Summary
     const summaryRows = [
       { 'Indikator Finansial': 'Periode Laporan', 'Nilai': `${startDate || 'Awal'} s/d ${endDate || 'Sekarang'}` },
       { 'Indikator Finansial': 'Total Kas Masuk Terverifikasi', 'Nilai': totalVerifiedRevenue },
+      { 'Indikator Finansial': 'Total Potongan Promo Diberikan', 'Nilai': totalDiscountsGiven },
       { 'Indikator Finansial': 'Total Pengeluaran Operasional', 'Nilai': totalExpenses },
       { 'Indikator Finansial': 'Estimasi Arus Kas Bersih (Net)', 'Nilai': netOperationalCashflow },
       { 'Indikator Finansial': 'Total Piutang Belum Lunas', 'Nilai': totalReceivables },
@@ -483,6 +492,7 @@ export default function LaporanPage() {
                     <th className="py-2.5 px-3 font-semibold">Sumber</th>
                     <th className="py-2.5 px-3 font-semibold">Check-in</th>
                     <th className="py-2.5 px-3 font-semibold">Check-out</th>
+                    <th className="py-2.5 px-3 font-semibold">Promo / Diskon</th>
                     <th className="py-2.5 px-3 font-semibold text-right">Total Biaya</th>
                     <th className="py-2.5 px-3 font-semibold text-right">Terbayar</th>
                     <th className="py-2.5 px-3 font-semibold text-right">Sisa</th>
@@ -492,7 +502,7 @@ export default function LaporanPage() {
                 <tbody className="divide-y divide-stone-100">
                   {filteredReservations.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-8 text-center text-stone-400 italic">
+                      <td colSpan={11} className="py-8 text-center text-stone-400 italic">
                         Tidak ada transaksi reservasi pada rentang tanggal ini.
                       </td>
                     </tr>
@@ -513,6 +523,20 @@ export default function LaporanPage() {
                         </td>
                         <td className="py-3 px-3">{r.checkin_date}</td>
                         <td className="py-3 px-3">{r.checkout_date}</td>
+                        <td className="py-3 px-3">
+                          {r.price_snapshot?.discount_amount && r.price_snapshot.discount_amount > 0 ? (
+                            <div className="space-y-0.5">
+                              <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                {r.price_snapshot.discount_reason || r.price_snapshot.promo_code || 'PROMO'}
+                              </span>
+                              <div className="text-[10px] text-emerald-700 font-medium">
+                                -{formatRupiah(r.price_snapshot.discount_amount)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-stone-400 text-[10px]">-</span>
+                          )}
+                        </td>
                         <td className="py-3 px-3 text-right font-medium">{formatRupiah(r.price_snapshot?.total_amount)}</td>
                         <td className="py-3 px-3 text-right text-emerald-700 font-medium">{formatRupiah(r.price_snapshot?.total_paid || 0)}</td>
                         <td className="py-3 px-3 text-right text-stone-700">{formatRupiah(r.price_snapshot?.balance_due)}</td>

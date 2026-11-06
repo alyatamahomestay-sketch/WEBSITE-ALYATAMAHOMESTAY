@@ -317,4 +317,56 @@ describe('PMS Service Operations & Concurrency Handling', () => {
     // In node environment without window, returns controlled error
     expect(fakeResult.success).toBe(false);
   });
+
+  it('records payment with promo code and accurately recalculates price snapshot and balance', async () => {
+    const rooms = await PmsService.getRooms();
+    const walkIn = await PmsService.createWalkInReservation({
+      guest: {
+        full_name: 'Budi Promo Test',
+        phone: '081234567890',
+      },
+      roomId: rooms[0].id,
+      checkinDate: '2026-11-20',
+      checkoutDate: '2026-11-22',
+      rentalType: 'daily',
+      adults: 2,
+      children: 0,
+      baseSubtotal: rooms[0].base_rate * 2,
+      totalAmount: rooms[0].base_rate * 2,
+      paymentAmount: 0,
+      paymentMethod: 'Tunai',
+      staffUserId: 'staff-001',
+      staffRole: 'staff',
+      staffNameSnapshot: 'Admin',
+      notes: 'Uji promo',
+    });
+
+    // Reset payment_status to unpaid and remove dummy payment if any so we can record payment
+    walkIn.payments = [];
+    walkIn.payment_status = 'unpaid';
+
+    const initialTotal = walkIn.price_snapshot?.total_amount || 300000;
+    const discount = 50000;
+    const discountedTotal = initialTotal - discount;
+
+    const paymentResult = await PmsService.addPayment({
+      reservationId: walkIn.id,
+      amount: discountedTotal,
+      paymentMethod: 'cash',
+      promoCode: 'HEMAT50K',
+      promoName: 'Promo Diskon Rp 50.000',
+      discountAmount: discount,
+      notes: 'Pembayaran lunas dengan potongan promo',
+    });
+
+    expect(paymentResult.success).toBe(true);
+
+    const updated = await PmsService.getReservationById(walkIn.id);
+    expect(updated?.price_snapshot?.discount_amount).toBe(discount);
+    expect(updated?.price_snapshot?.promo_code).toBe('HEMAT50K');
+    expect(updated?.price_snapshot?.total_amount).toBe(discountedTotal);
+    expect(updated?.price_snapshot?.total_paid).toBe(discountedTotal);
+    expect(updated?.price_snapshot?.balance_due).toBe(0);
+    expect(updated?.payment_status).toBe('paid');
+  });
 });

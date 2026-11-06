@@ -126,19 +126,19 @@ export default async function SlipPage({ params }: SlipPageProps) {
                   </td>
                   <td className="py-3 px-4 text-center">{priceSnapshot?.total_nights || 1} Malam</td>
                   <td className="py-3 px-4 text-right">
-                    {formatRupiah(priceSnapshot?.base_subtotal ? priceSnapshot.base_subtotal / (priceSnapshot.total_nights || 1) : 0)}
+                    {formatRupiah((priceSnapshot?.base_subtotal || ((priceSnapshot?.total_amount || 0) + (priceSnapshot?.discount_amount || 0))) / (priceSnapshot?.total_nights || 1))}
                   </td>
                   <td className="py-3 px-4 text-right font-medium">
-                    {formatRupiah(priceSnapshot?.base_subtotal)}
+                    {formatRupiah(priceSnapshot?.base_subtotal || ((priceSnapshot?.total_amount || 0) + (priceSnapshot?.discount_amount || 0)))}
                   </td>
                 </tr>
 
                 {priceSnapshot?.discount_amount ? (
                   <tr className="text-emerald-700 bg-emerald-50/40">
-                    <td colSpan={3} className="py-2 px-4 text-left">
-                      Potongan Diskon ({priceSnapshot.discount_reason || 'Promo'})
+                    <td colSpan={3} className="py-2 px-4 text-left font-medium">
+                      Potongan Diskon Promo ({priceSnapshot.discount_reason || priceSnapshot.promo_code || 'Promo'})
                     </td>
-                    <td className="py-2 px-4 text-right font-medium">
+                    <td className="py-2 px-4 text-right font-bold text-emerald-700">
                       -{formatRupiah(priceSnapshot.discount_amount)}
                     </td>
                   </tr>
@@ -169,9 +169,23 @@ export default async function SlipPage({ params }: SlipPageProps) {
               </p>
             </div>
 
-            <div className="w-full sm:w-64 space-y-2 text-xs">
+            <div className="w-full sm:w-72 space-y-2 text-xs">
+              {priceSnapshot?.discount_amount ? (
+                <>
+                  <div className="flex justify-between py-1 text-stone-600">
+                    <span>Subtotal Harga Normal:</span>
+                    <span className="font-medium text-stone-800">
+                      {formatRupiah(priceSnapshot.base_subtotal || ((priceSnapshot.total_amount || 0) + priceSnapshot.discount_amount))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 text-emerald-700 bg-emerald-50/50 px-2 rounded-lg">
+                    <span>Diskon Promo ({priceSnapshot.discount_reason || priceSnapshot.promo_code || 'Promo'}):</span>
+                    <span className="font-bold">-{formatRupiah(priceSnapshot.discount_amount)}</span>
+                  </div>
+                </>
+              ) : null}
               <div className="flex justify-between py-1 text-stone-600">
-                <span>Total Biaya:</span>
+                <span>Total Biaya Akhir:</span>
                 <span className="font-semibold text-stone-900">{formatRupiah(priceSnapshot?.total_amount)}</span>
               </div>
               <div className="flex justify-between py-1 text-stone-600">

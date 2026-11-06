@@ -17,7 +17,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
-import { Reservation, PaymentMethod } from '@/lib/types';
+import { Reservation, PaymentMethod, Promotion } from '@/lib/types';
 import { 
   formatRupiah, 
   formatDateIndo, 
@@ -45,8 +45,54 @@ export default function ReservationDetailPage({ params }: Props) {
   const [payRef, setPayRef] = useState('');
   const [payNotes, setPayNotes] = useState('');
 
+  // Promo state
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [selectedPromoId, setSelectedPromoId] = useState<string>('');
+  const [calculatedDiscount, setCalculatedDiscount] = useState<number>(0);
+
   // Status message
   const [feedbackMessage, setFeedbackMessage] = useState('');
+
+  const getBaseSubtotal = (res: Reservation | null): number => {
+    if (!res) return 0;
+    const snap = res.price_snapshot;
+    if (snap?.base_subtotal && snap.base_subtotal > 0) {
+      return snap.base_subtotal;
+    }
+    if (snap?.total_amount && snap.total_amount > 0) {
+      return snap.total_amount + (snap.discount_amount || 0);
+    }
+    const rate = res.rooms?.[0]?.base_rate || 150000;
+    const nights = res.duration_units || snap?.total_nights || 1;
+    return rate * nights;
+  };
+
+  const handlePromoSelect = (promoId: string) => {
+    setSelectedPromoId(promoId);
+    if (!reservation) return;
+    const baseSubtotal = getBaseSubtotal(reservation);
+    if (!promoId) {
+      setCalculatedDiscount(0);
+      setPayAmount(baseSubtotal);
+      return;
+    }
+    const promo = promotions.find((p) => p.id === promoId);
+    if (!promo) {
+      setCalculatedDiscount(0);
+      setPayAmount(baseSubtotal);
+      return;
+    }
+
+    let discount = 0;
+    if (promo.discount_type === 'percentage') {
+      discount = Math.round((baseSubtotal * promo.discount_value) / 100);
+    } else {
+      discount = Math.min(baseSubtotal, promo.discount_value);
+    }
+    setCalculatedDiscount(discount);
+    const netAmount = Math.max(0, baseSubtotal - discount);
+    setPayAmount(netAmount);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -58,6 +104,8 @@ export default function ReservationDetailPage({ params }: Props) {
       }
       const methods = await PmsService.getPaymentMethods();
       setPaymentMethods(methods);
+      const promos = await PmsService.getPromotions();
+      setPromotions(promos.filter((p) => (p as any).is_active !== false));
     } catch (err) {
       console.error(err);
     } finally {
@@ -122,12 +170,17 @@ export default function ReservationDetailPage({ params }: Props) {
       alert('Pembayaran untuk reservasi ini sudah pernah dicatat sebelumnya. Sistem membatasi pencatatan hanya satu kali transaksi.');
       return;
     }
+    const selectedPromo = promotions.find((p) => p.id === selectedPromoId);
     const res = await PmsService.addPayment({
       reservationId: reservation.id,
       amount: Number(payAmount),
       paymentMethod: payMethod,
       referenceNumber: payRef,
       notes: payNotes,
+      promoId: selectedPromo ? selectedPromo.id : undefined,
+      promoCode: selectedPromo ? (selectedPromo.code || selectedPromo.name) : undefined,
+      promoName: selectedPromo ? selectedPromo.name : undefined,
+      discountAmount: calculatedDiscount > 0 ? calculatedDiscount : undefined,
     });
     if (res.success) {
       setShowPaymentModal(false);
@@ -386,6 +439,8 @@ export default function ReservationDetailPage({ params }: Props) {
                     const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
                     const defaultAmt = snap?.balance_due != null && snap.balance_due > 0 ? snap.balance_due : (snap?.total_amount || 0);
                     setPayAmount(defaultAmt);
+                    setSelectedPromoId('');
+                    setCalculatedDiscount(0);
                     setShowPaymentModal(true);
                   }}
                   className="bg-[#355C46] hover:bg-[#284635] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
@@ -496,6 +551,44 @@ export default function ReservationDetailPage({ params }: Props) {
 
             <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">
               <div>
+                <label className="block font-semibold text-stone-700 mb-1">
+                  KODE PROMO
+                </label>
+                <select
+                  value={selectedPromoId}
+                  onChange={(e) => handlePromoSelect(e.target.value)}
+                  className="w-full rounded-lg border border-stone-300 p-2.5 bg-white font-medium text-stone-800"
+                >
+                  <option value="">TIDAK ADA PROMO</option>
+                  {promotions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.code ? `[${p.code}] ` : ''}{p.name} - Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : formatRupiah(p.discount_value)}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-stone-500 mt-1">
+                  Pilihan promo diambil dari data resmi pada menu &quot;Sistem Promo &amp; Diskon Fleksibel&quot;.
+                </p>
+              </div>
+
+              {selectedPromoId && calculatedDiscount > 0 && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center text-stone-600">
+                    <span>Harga Normal (Subtotal):</span>
+                    <span className="font-semibold text-stone-800">{formatRupiah(getBaseSubtotal(reservation))}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-700">
+                    <span>Potongan Promo:</span>
+                    <span className="font-bold">-{formatRupiah(calculatedDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1.5 border-t border-emerald-200 font-bold text-emerald-950 text-xs">
+                    <span>Total Bersih yang Harus Dibayar:</span>
+                    <span>{formatRupiah(getBaseSubtotal(reservation) - calculatedDiscount)}</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
                 <label className="block font-semibold text-stone-700 mb-1">Nominal Pembayaran (Rp)</label>
                 <input
                   type="number"
@@ -505,6 +598,11 @@ export default function ReservationDetailPage({ params }: Props) {
                   onChange={(e) => setPayAmount(Number(e.target.value))}
                   className="w-full rounded-lg border border-stone-300 p-2.5 text-sm font-semibold"
                 />
+                {calculatedDiscount > 0 && (
+                  <p className="text-[10px] text-emerald-700 font-medium mt-1">
+                    *Nominal pembayaran otomatis dikalkulasi sesuai potongan harga promo yang ditentukan.
+                  </p>
+                )}
               </div>
 
               <div>

@@ -70,6 +70,11 @@ export default function ReportPrintTemplate({
 
   const netProfit = totalGrossRevenue - totalOperationalExpenses;
 
+  const totalDiscountsGiven = validReservations.reduce(
+    (sum, r) => sum + Number(r.price_snapshot?.discount_amount || 0),
+    0
+  );
+
   const totalNightsSold = validReservations.reduce(
     (sum, r) => sum + Number(r.price_snapshot?.total_nights || 1),
     0
@@ -448,8 +453,10 @@ export default function ReportPrintTemplate({
                   <td className="px-3 py-1.5 text-right text-slate-400">Rp 0</td>
                 </tr>
                 <tr>
-                  <td className="px-3 py-1.5 text-slate-400 italic">Penyesuaian Selisih / Diskon</td>
-                  <td className="px-3 py-1.5 text-right text-slate-400">Rp 0</td>
+                  <td className="px-3 py-1.5 text-slate-700">Penyesuaian Selisih / Diskon Promo</td>
+                  <td className="px-3 py-1.5 text-right font-medium text-emerald-800">
+                    {totalDiscountsGiven > 0 ? `-${formatRupiah(totalDiscountsGiven)}` : 'Rp 0'}
+                  </td>
                 </tr>
               </tbody>
               <tfoot className="bg-slate-50 border-t border-slate-300 font-bold text-slate-900">
