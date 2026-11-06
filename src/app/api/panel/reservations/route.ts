@@ -10,6 +10,7 @@ import {
   loadReservationsFromFile,
   saveReservationsToFile,
   normalizeReservation,
+  extractPaymentPreference,
 } from '@/lib/server-reservations-store';
 
 export const dynamic = 'force-dynamic';
@@ -66,12 +67,18 @@ function transformSupabaseRecord(item: any): Reservation {
     mappedGuest = mappedGuest[0] || null;
   }
 
+  const pref = extractPaymentPreference({
+    ...item,
+    price_snapshot: mappedSnapshot,
+  });
+
   return {
     ...item,
     guest: mappedGuest,
     rooms: mappedRooms,
     price_snapshot: mappedSnapshot,
     deposit: mappedDeposit,
+    payment_preference: pref,
   };
 }
 

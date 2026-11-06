@@ -237,6 +237,13 @@ function ReservasiListContent() {
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${pMeta.badgeClass}`}>
                         {pMeta.label}
                       </span>
+                      <div className="text-[10px] text-stone-500 mt-1 font-medium">
+                        {res.payment_preference === 'transfer' || 
+                         (res.price_snapshot as any)?.promo_snapshot?.payment_preference === 'transfer' ||
+                         String(res.special_requests || '').toLowerCase().includes('transfer')
+                          ? 'Transfer Bank' 
+                          : 'Bayar Tunai'}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px] w-[140px] shrink-0">
                       <div className="flex items-center justify-end gap-1.5 shrink-0 whitespace-nowrap">

@@ -261,6 +261,16 @@ export default function ReservationDetailPage({ params }: Props) {
                 <span className="text-stone-500 block">Kategori Pelanggan:</span>
                 <span className="capitalize font-medium text-stone-800">{reservation.guest?.category}</span>
               </div>
+              <div>
+                <span className="text-stone-500 block">Sistem Pembayaran Dipilih:</span>
+                <span className="font-bold text-[#806044]">
+                  {reservation.payment_preference === 'transfer' ||
+                   (reservation.price_snapshot as any)?.promo_snapshot?.payment_preference === 'transfer' ||
+                   String(reservation.special_requests || '').toLowerCase().includes('transfer')
+                    ? 'Transfer ke Rekening Homestay'
+                    : 'Bayar Tunai / Cash di Tempat'}
+                </span>
+              </div>
             </div>
 
             {reservation.special_requests && (

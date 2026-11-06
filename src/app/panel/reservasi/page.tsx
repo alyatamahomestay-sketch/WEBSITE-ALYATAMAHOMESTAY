@@ -250,7 +250,11 @@ function ReservasiPanelList() {
                           {payMeta.label}
                         </span>
                         <div className="text-[10px] text-stone-500 mt-0.5 font-medium">
-                          {res.payment_preference === 'transfer' ? 'Transfer Bank' : 'Bayar Tunai'}
+                          {res.payment_preference === 'transfer' || 
+                           (res.price_snapshot as any)?.promo_snapshot?.payment_preference === 'transfer' ||
+                           String(res.special_requests || '').toLowerCase().includes('transfer')
+                            ? 'Transfer Bank' 
+                            : 'Bayar Tunai'}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap min-w-[130px] w-[130px] shrink-0">

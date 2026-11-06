@@ -1,7 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import { PmsService } from '../src/lib/services/pms-service';
+import { extractPaymentPreference } from '../src/lib/server-reservations-store';
 
 describe('PMS Service Operations & Concurrency Handling', () => {
+  it('accurately resolves payment preference from multiple data sources', () => {
+    // 1. Explicit payment_preference === 'transfer'
+    expect(extractPaymentPreference({ payment_preference: 'transfer' })).toBe('transfer');
+
+    // 2. From special_requests containing transfer keyword
+    expect(extractPaymentPreference({
+      special_requests: 'Tolong siapkan extra bed.\n[Sistem Pembayaran Dipilih: Transfer ke Nomor Rekening Homestay]',
+    })).toBe('transfer');
+
+    // 3. From promo_snapshot inside price_snapshot
+    expect(extractPaymentPreference({
+      price_snapshot: {
+        promo_snapshot: { payment_preference: 'transfer' },
+      },
+    })).toBe('transfer');
+
+    // 4. Default cash / tunai
+    expect(extractPaymentPreference({ payment_preference: 'cash' })).toBe('cash');
+    expect(extractPaymentPreference({
+      special_requests: '[Sistem Pembayaran Dipilih: Bayar Cash / Tunai di Tempat]',
+    })).toBe('cash');
+    expect(extractPaymentPreference({})).toBe('cash');
+  });
   it('retrieves default rooms and supports adding/updating rooms', async () => {
     const rooms = await PmsService.getRooms();
     expect(rooms.length).toBeGreaterThan(0);
