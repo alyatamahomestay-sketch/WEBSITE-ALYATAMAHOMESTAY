@@ -1546,6 +1546,8 @@ export const PmsService = {
     adults: number;
     children: number;
     baseSubtotal: number;
+    extraCharges?: number;
+    extraChargesBreakdown?: any[];
     totalAmount: number;
     paymentAmount: number;
     paymentMethod: string;
@@ -1618,7 +1620,8 @@ export const PmsService = {
         base_subtotal: params.baseSubtotal,
         nightly_breakdown: [],
         discount_amount: 0,
-        extra_charges: 0,
+        extra_charges: params.extraCharges || 0,
+        extra_charges_breakdown: params.extraChargesBreakdown || [],
         deposit_required: 0,
         total_amount: params.totalAmount,
         total_paid: params.paymentAmount,

@@ -53,6 +53,8 @@ function BookingContent() {
   const [roomId, setRoomId] = useState(queryRoomId);
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
   const [children, setChildren] = useState(0);
+  const [extraBedQty, setExtraBedQty] = useState<number>(0);
+  const EXTRA_BED_RATE_PER_NIGHT = 50000;
   const [marriageConfirmed, setMarriageConfirmed] = useState(false);
   const [specialRequests, setSpecialRequests] = useState('');
   const [dataConsent, setDataConsent] = useState(false);
@@ -110,6 +112,7 @@ function BookingContent() {
 
   const selectedRoom = rooms.find((r) => r.id === roomId);
   const durationInfo = calculateRentalDuration(checkinDate, checkoutDate, rentalType);
+  const extraBedTotal = extraBedQty * EXTRA_BED_RATE_PER_NIGHT * Math.max(1, durationInfo.totalNights);
 
   // Dynamic estimate calculation
   let dynamicPricing = null;
@@ -120,6 +123,7 @@ function BookingContent() {
       room: selectedRoom,
       rentalType,
       durationUnits: durationInfo.durationUnits,
+      extraCharges: extraBedTotal,
     });
   }
 
@@ -158,9 +162,13 @@ function BookingContent() {
           durationUnits: durationInfo.durationUnits,
           adults,
           children,
+          extraBedQty,
+          extraCharges: extraBedTotal,
           marriageConfirmed,
           paymentPreference,
-          specialRequests,
+          specialRequests: extraBedQty > 0 
+            ? (specialRequests ? `${specialRequests}\n[Permintaan: +${extraBedQty} Unit Ekstra Bed]` : `[Permintaan: +${extraBedQty} Unit Ekstra Bed]`)
+            : specialRequests,
           dataConsent,
         }),
       });
@@ -382,9 +390,6 @@ function BookingContent() {
                                   ? `${formatRupiah(selectedRoom.monthly_rate)}/bln`
                                   : `${formatRupiah(selectedRoom.base_rate)}/malam`}
                               </span>
-                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
-                                Terpilih Otomatis
-                              </span>
                             </div>
                             <input type="hidden" name="roomId" value={selectedRoom.id} />
                           </div>
@@ -429,6 +434,52 @@ function BookingContent() {
                             className="w-full text-xs sm:text-sm rounded-xl border border-[#E5DCD0] px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#806044] bg-[#FAF7F2]"
                           />
                         </div>
+                      </div>
+
+                      {/* Penambahan Ekstra Bed (Kasur Tambahan) */}
+                      <div className="bg-[#FAF7F2] border border-[#d4c3ad] p-4 rounded-2xl space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-start gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-[#806044]/10 text-[#806044] flex items-center justify-center shrink-0 mt-0.5">
+                              <BedDouble className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-[#392B21] block">
+                                Penambahan Ekstra Bed (Kasur Tambahan)
+                              </span>
+                              <span className="text-[11px] text-[#756A5F] block leading-tight">
+                                Biaya resmi: <strong className="text-[#806044]">{formatRupiah(EXTRA_BED_RATE_PER_NIGHT)}/malam</strong> per unit (termasuk bantal &amp; sprei bersih)
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <label htmlFor="extraBedSelect" className="text-xs font-semibold text-[#392B21] whitespace-nowrap">
+                              Jumlah:
+                            </label>
+                            <select
+                              id="extraBedSelect"
+                              value={extraBedQty}
+                              onChange={(e) => setExtraBedQty(Number(e.target.value))}
+                              className="text-xs font-bold rounded-xl border border-[#d4c3ad] bg-white px-3 py-2 text-[#392B21] focus:outline-none focus:ring-2 focus:ring-[#806044] cursor-pointer"
+                            >
+                              <option value="0">Tidak Perlu (+Rp 0)</option>
+                              <option value="1">+1 Ekstra Bed (+Rp 50.000/malam)</option>
+                              <option value="2">+2 Ekstra Bed (+Rp 100.000/malam)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {extraBedQty > 0 && (
+                          <div className="pt-2.5 border-t border-[#e5dcd0] flex items-center justify-between text-xs bg-white/70 p-2.5 rounded-xl border border-[#e5dcd0]/60">
+                            <span className="text-[#756A5F]">
+                              Subtotal Ekstra Bed ({extraBedQty} unit × {durationInfo.totalNights} malam):
+                            </span>
+                            <strong className="text-sm font-bold text-[#806044]">
+                              +{formatRupiah(extraBedTotal)}
+                            </strong>
+                          </div>
+                        )}
                       </div>
 
                       {/* Syariah Marriage Declaration for 2+ adults */}
@@ -645,6 +696,12 @@ function BookingContent() {
                             {formatRupiah(dynamicPricing.baseSubtotal)}
                           </span>
                         </div>
+                        {extraBedQty > 0 && (
+                          <div className="flex justify-between text-emerald-800 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/60 font-medium">
+                            <span>Ekstra Bed ({extraBedQty} unit × {durationInfo.totalNights} malam):</span>
+                            <span className="font-bold">+{formatRupiah(extraBedTotal)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between font-bold text-[#392B21] text-base pt-3 border-t border-[#E5DCD0]">
                           <span>Total Estimasi:</span>
                           <span className="text-[#806044]">

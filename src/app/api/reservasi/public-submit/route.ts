@@ -24,6 +24,8 @@ const bookingFormSchema = z.object({
   durationUnits: z.number().int().min(1).optional(),
   adults: z.number().int().min(1).default(1),
   children: z.number().int().min(0).default(0),
+  extraBedQty: z.number().int().min(0).default(0).optional(),
+  extraCharges: z.number().min(0).default(0).optional(),
   marriageConfirmed: z.boolean().optional().default(false),
   promoCode: z.string().optional(),
   specialRequests: z.string().max(500).optional(),
@@ -81,13 +83,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Server-side safe price calculation according to rentalType
+    // Server-side safe price calculation according to rentalType & extra bed
+    const extraBedCount = data.extraBedQty || 0;
+    const calculatedExtraCharges = extraBedCount > 0 ? (extraBedCount * 50000 * nights) : (data.extraCharges || 0);
+
     const pricing = calculateReservationPricing({
       checkinDateStr: data.checkinDate,
       checkoutDateStr: data.checkoutDate,
       room,
       rentalType: data.rentalType,
       durationUnits: data.durationUnits,
+      extraCharges: calculatedExtraCharges,
       promotion: null,
     });
 
@@ -211,6 +217,10 @@ export async function POST(req: NextRequest) {
           payment_preference: data.paymentPreference,
         },
         extra_charges: pricing.extraCharges,
+        extra_charges_breakdown: extraBedCount > 0 ? [{
+          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam)`,
+          amount: calculatedExtraCharges,
+        }] : [],
         deposit_required: pricing.depositRequired,
         total_amount: pricing.totalAmount,
         total_paid: 0,
@@ -316,6 +326,10 @@ export async function POST(req: NextRequest) {
               payment_preference: data.paymentPreference,
             },
             extra_charges: pricing.extraCharges,
+            extra_charges_breakdown: extraBedCount > 0 ? [{
+              description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam)`,
+              amount: calculatedExtraCharges,
+            }] : [],
             deposit_required: pricing.depositRequired,
             total_amount: pricing.totalAmount,
             total_paid: 0,

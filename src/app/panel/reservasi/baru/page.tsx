@@ -19,8 +19,9 @@ import {
   UserCheck
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
-import { Room, StaffShift, Reservation } from '@/lib/types';
+import { Room, StaffShift, Reservation, PaymentMethod } from '@/lib/types';
 import { formatRupiah } from '@/lib/formatters';
+import { evaluateRoomAvailability } from '@/lib/room-availability';
 import { showAdminToast } from '@/components/common/AdminToast';
 
 export default function WalkInReservationPage() {
@@ -35,7 +36,7 @@ export default function WalkInReservationPage() {
   const [guestPhone, setGuestPhone] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   
-  const [rentalType, setRentalType] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const [rentalType, setRentalType] = useState<'daily' | 'monthly'>('daily');
   const [checkinDate, setCheckinDate] = useState(new Date().toISOString().split('T')[0]);
   const [checkoutDate, setCheckoutDate] = useState(() => {
     const d = new Date();
@@ -45,10 +46,20 @@ export default function WalkInReservationPage() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
-  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  // Ekstra Bed State
+  const [extraBedQty, setExtraBedQty] = useState<number>(0);
+  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
+
+  // Rooms & Reservations
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
+  const [allReservations, setAllReservations] = useState<Reservation[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
+
+  // Payment & QRIS verification
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState('Tunai / Kasir');
+  const [qrisVerified, setQrisVerified] = useState(false);
   const [notes, setNotes] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -74,51 +85,65 @@ export default function WalkInReservationPage() {
     }
   }, []);
 
-  // Check available rooms when dates change
+  // Fetch all rooms, reservations, and payment methods
   useEffect(() => {
-    async function fetchRooms() {
+    async function loadData() {
       try {
-        const rooms = await PmsService.getRooms(true);
-        // Filter available rooms
-        const avail: Room[] = [];
-        for (const r of rooms) {
-          const isAvail = await PmsService.checkRoomAvailability(r.id, checkinDate, checkoutDate);
-          if (isAvail) avail.push(r);
-        }
-        setAvailableRooms(avail);
-        if (avail.length > 0 && !selectedRoomId) {
-          setSelectedRoomId(avail[0].id);
+        const [rooms, reservations, methods] = await Promise.all([
+          PmsService.getRooms(true),
+          PmsService.getReservations(),
+          PmsService.getPaymentMethods(),
+        ]);
+        setAllRooms(rooms.filter(r => !r.is_archived));
+        setAllReservations(reservations);
+        setPaymentMethods(methods);
+
+        // Auto select first available room if none selected
+        if (!selectedRoomId && rooms.length > 0) {
+          const firstAvail = rooms.find((r) => {
+            const avail = evaluateRoomAvailability(r, reservations, checkinDate);
+            return avail.isAvailable;
+          });
+          if (firstAvail) {
+            setSelectedRoomId(firstAvail.id);
+          } else {
+            setSelectedRoomId(rooms[0].id);
+          }
         }
       } catch (err) {
         console.error(err);
       }
     }
-    if (checkinDate && checkoutDate) {
-      fetchRooms();
-    }
-  }, [checkinDate, checkoutDate]);
+    loadData();
+  }, [checkinDate]);
 
-  // Calculate pricing based on selected room & rental type
-  const selectedRoom = availableRooms.find((r) => r.id === selectedRoomId);
+  // Calculate pricing based on selected room, rental type, & extra bed
+  const selectedRoom = allRooms.find((r) => r.id === selectedRoomId);
   const diffDays = Math.max(1, Math.round((new Date(checkoutDate).getTime() - new Date(checkinDate).getTime()) / (1000 * 3600 * 24)));
   
-  let calculatedTotal = 0;
+  let calculatedRoomTotal = 0;
   if (selectedRoom) {
     if (rentalType === 'daily') {
-      calculatedTotal = selectedRoom.base_rate * diffDays;
+      calculatedRoomTotal = selectedRoom.base_rate * diffDays;
     } else if (rentalType === 'monthly') {
-      calculatedTotal = selectedRoom.monthly_rate || 2500000;
-    } else if (rentalType === 'yearly') {
-      calculatedTotal = selectedRoom.yearly_rate || 24000000;
+      calculatedRoomTotal = selectedRoom.monthly_rate || 2500000;
     }
   }
 
+  const totalExtraBed = extraBedQty * extraBedRate * diffDays;
+  const calculatedTotal = calculatedRoomTotal + totalExtraBed;
+
   // Update default payment amount to total
   useEffect(() => {
-    if (calculatedTotal > 0 && paymentAmount === 0) {
+    if (calculatedTotal > 0) {
       setPaymentAmount(calculatedTotal);
     }
   }, [calculatedTotal]);
+
+  // QRIS image check
+  const isQrisSelected = paymentMethod.toLowerCase().includes('qris');
+  const qrisMethod = paymentMethods.find((m) => m.code === 'qris');
+  const qrisImageUrl = qrisMethod?.qris_image_url || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,8 +157,24 @@ export default function WalkInReservationPage() {
       return;
     }
 
+    if (isQrisSelected && !qrisVerified) {
+      alert('Wajib mencentang kotak konfirmasi bahwa pembayaran QRIS tamu telah berhasil masuk / diverifikasi.');
+      return;
+    }
+
     setLoading(true);
     try {
+      const extraBreakdown = extraBedQty > 0 ? [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedQty} Unit x ${diffDays} Malam)`,
+        amount: totalExtraBed,
+      }] : [];
+
+      const walkInNotes = [
+        notes.trim(),
+        extraBedQty > 0 ? `[Ekstra Bed: +${extraBedQty} Unit x Rp ${extraBedRate.toLocaleString('id-ID')}]` : '',
+        isQrisSelected ? '[Pembayaran Terverifikasi via QRIS]' : '',
+      ].filter(Boolean).join('\n');
+
       const res = await PmsService.createWalkInReservation({
         guest: {
           full_name: guestName.trim(),
@@ -146,7 +187,9 @@ export default function WalkInReservationPage() {
         rentalType,
         adults,
         children,
-        baseSubtotal: calculatedTotal,
+        baseSubtotal: calculatedRoomTotal,
+        extraCharges: totalExtraBed,
+        extraChargesBreakdown: extraBreakdown,
         totalAmount: calculatedTotal,
         paymentAmount: Number(paymentAmount),
         paymentMethod,
@@ -154,7 +197,7 @@ export default function WalkInReservationPage() {
         staffRole: staffUser?.role || 'staff',
         staffShiftId: activeShift?.id || null,
         staffNameSnapshot: activeShift?.staff_name_snapshot || staffUser?.full_name || 'Petugas Bertugas',
-        notes: notes.trim() || undefined,
+        notes: walkInNotes || undefined,
       });
 
       setSuccessReservation(res);
@@ -308,22 +351,23 @@ export default function WalkInReservationPage() {
           <div className="space-y-4 pt-3 border-t border-stone-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#355C46] pb-2 border-b border-stone-100 flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
-              <span>2. Model Sewa & Tanggal Menginap</span>
+              <span>2. Model Sewa &amp; Tanggal Menginap</span>
             </h3>
 
-            <div className="grid grid-cols-3 gap-3">
-              {(['daily', 'monthly', 'yearly'] as const).map((mode) => (
+            {/* Pilihan Model Sewa: Hanya Harian & Bulanan (Tahunan Dihapus) */}
+            <div className="grid grid-cols-2 gap-3">
+              {(['daily', 'monthly'] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setRentalType(mode)}
-                  className={`p-3 rounded-xl border text-center transition font-semibold capitalize ${
+                  className={`p-3 rounded-xl border text-center transition font-semibold capitalize cursor-pointer ${
                     rentalType === mode
                       ? 'bg-[#355C46] text-white border-[#355C46] shadow-xs'
                       : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
                   }`}
                 >
-                  Sewa {mode === 'daily' ? 'Harian' : mode === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                  Sewa {mode === 'daily' ? 'Harian (Per Malam)' : 'Bulanan'}
                 </button>
               ))}
             </div>
@@ -376,56 +420,156 @@ export default function WalkInReservationPage() {
                 />
               </div>
             </div>
+
+            {/* Form Penambahan Ekstra Bed (Tarif Ditentukan Admin) */}
+            <div className="bg-[#FAF7F2] border border-[#E5DCD0] p-4 rounded-xl space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <BedDouble className="w-4 h-4 text-[#806044] shrink-0" />
+                  <div>
+                    <span className="text-xs font-bold text-stone-900 block">
+                      Penambahan Ekstra Bed (Kasur Tambahan)
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Biaya diatur oleh admin dan otomatis diakumulasikan ke total tagihan walk-in.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <label htmlFor="adminExtraBedQty" className="text-xs font-semibold text-stone-700">
+                    Jumlah Kasur:
+                  </label>
+                  <select
+                    id="adminExtraBedQty"
+                    value={extraBedQty}
+                    onChange={(e) => setExtraBedQty(Number(e.target.value))}
+                    className="p-2 rounded-xl border border-stone-300 bg-white font-bold text-xs focus:ring-2 focus:ring-[#355C46]"
+                  >
+                    <option value="0">0 (Tidak Ada)</option>
+                    <option value="1">1 Unit</option>
+                    <option value="2">2 Unit</option>
+                    <option value="3">3 Unit</option>
+                  </select>
+                </div>
+              </div>
+
+              {extraBedQty > 0 && (
+                <div className="pt-3 border-t border-[#E5DCD0] grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-700 mb-1">
+                      Tarif Ekstra Bed / Malam (Ditentukan Admin):
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-bold text-stone-500">Rp</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="5000"
+                        value={extraBedRate}
+                        onChange={(e) => setExtraBedRate(Number(e.target.value))}
+                        className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-stone-300 font-bold bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#355C46]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-lg border border-[#E5DCD0] text-right">
+                    <span className="text-[11px] text-stone-500 block">
+                      Total Ekstra Bed ({extraBedQty} unit × {diffDays} malam):
+                    </span>
+                    <strong className="text-xs text-[#355C46] font-bold">
+                      +{formatRupiah(totalExtraBed)}
+                    </strong>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Section 3: Room Selection */}
+          {/* Section 3: Room Selection (Sama Seperti Halaman Pilihan Kamar Tamu) */}
           <div className="space-y-4 pt-3 border-t border-stone-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#355C46] pb-2 border-b border-stone-100 flex items-center gap-1.5">
-              <BedDouble className="w-4 h-4" />
-              <span>3. Pilih Kamar Tersedia ({availableRooms.length} Unit)</span>
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-stone-100">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#355C46] flex items-center gap-1.5">
+                <BedDouble className="w-4 h-4" />
+                <span>3. Pilih Kamar Tersedia ({allRooms.length} Unit)</span>
+              </h3>
+              <span className="text-[11px] text-stone-500">
+                Status ketersediaan terhubung langsung dengan sistem reservasi &amp; halaman tamu
+              </span>
+            </div>
 
-            {availableRooms.length === 0 ? (
+            {allRooms.length === 0 ? (
               <div className="p-4 bg-amber-50 text-amber-800 rounded-xl border border-amber-200">
-                Tidak ada kamar yang tersedia pada rentang tanggal terpilih. Silakan ubah tanggal check-in/out.
+                Memuat daftar unit kamar ALYATAMA HOMESTAY...
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {availableRooms.map((room) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {allRooms.map((room) => {
+                  const availInfo = evaluateRoomAvailability(room, allReservations, checkinDate);
+                  const isAvail = availInfo.isAvailable;
                   const isSelected = selectedRoomId === room.id;
                   const rate = rentalType === 'daily' 
                     ? formatRupiah(room.base_rate) + '/malam'
-                    : rentalType === 'monthly'
-                    ? formatRupiah(room.monthly_rate || 2500000) + '/bln'
-                    : formatRupiah(room.yearly_rate || 24000000) + '/thn';
+                    : formatRupiah(room.monthly_rate || 2500000) + '/bln';
 
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={room.id}
-                      onClick={() => setSelectedRoomId(room.id)}
-                      className={`p-3.5 rounded-xl border text-left transition flex items-start justify-between gap-3 ${
-                        isSelected
-                          ? 'border-[#355C46] bg-[#355C46]/5 ring-2 ring-[#355C46]'
-                          : 'border-stone-200 bg-stone-50 hover:bg-white'
+                      onClick={() => {
+                        if (isAvail) {
+                          setSelectedRoomId(room.id);
+                        }
+                      }}
+                      className={`p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-3 relative ${
+                        !isAvail
+                          ? 'opacity-65 bg-stone-100/90 border-stone-200 cursor-not-allowed select-none'
+                          : isSelected
+                          ? 'border-[#355C46] bg-[#355C46]/5 ring-2 ring-[#355C46] shadow-sm cursor-pointer'
+                          : 'border-stone-200 bg-stone-50 hover:bg-white hover:border-[#806044] cursor-pointer'
                       }`}
                     >
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs bg-[#30291F] text-white px-2 py-0.5 rounded">
-                            No. {room.room_number}
-                          </span>
-                          <span className="text-[11px] font-semibold text-[#806044]">
-                            {room.room_type}
-                          </span>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs bg-[#30291F] text-white px-2.5 py-0.5 rounded-md">
+                              No. {room.room_number}
+                            </span>
+                            <span className="text-xs font-semibold text-[#806044] uppercase tracking-wider">
+                              {room.room_type}
+                            </span>
+                          </div>
+
+                          {/* Status Badge identik dengan halaman tamu */}
+                          {isAvail ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-500 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                              Tersedia
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-500 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                              Tidak Tersedia
+                            </span>
+                          )}
                         </div>
-                        <h4 className="font-bold text-stone-900 mt-1">{room.name}</h4>
-                        <p className="text-[11px] text-stone-500 line-clamp-1">{room.amenities.slice(0, 3).join(', ')}</p>
+
+                        <h4 className="font-bold text-stone-900 text-sm">{room.name}</h4>
+                        <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
+                          {room.amenities.slice(0, 3).join(', ')} • Kapasitas {room.capacity_adults} Dewasa
+                        </p>
+
+                        {!isAvail && (
+                          <p className="text-[10px] text-rose-700 font-medium mt-1.5 bg-rose-50/80 p-1.5 rounded border border-rose-200/60 leading-tight">
+                            *{availInfo.reason || 'Kamar tidak dapat dipilih pada tanggal ini'}
+                          </p>
+                        )}
                       </div>
-                      <div className="text-right shrink-0">
+
+                      <div className="flex items-center justify-between pt-2 border-t border-stone-200/60 mt-1">
+                        <span className="text-[11px] text-stone-500">Tarif Sewa:</span>
                         <strong className="text-xs text-[#355C46] font-bold block">{rate}</strong>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -436,13 +580,24 @@ export default function WalkInReservationPage() {
           <div className="space-y-4 pt-3 border-t border-stone-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#355C46] pb-2 border-b border-stone-100 flex items-center gap-1.5">
               <CreditCard className="w-4 h-4" />
-              <span>4. Rincian Tagihan & Pembayaran Kasir</span>
+              <span>4. Rincian Tagihan &amp; Pembayaran Kasir</span>
             </h3>
 
-            <div className="bg-[#FAF7F2] p-4 rounded-xl border border-stone-200 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-stone-600">Total Biaya Sewa ({rentalType}):</span>
-                <strong className="text-stone-900 text-sm">{formatRupiah(calculatedTotal)}</strong>
+            {/* Rincian Finansial Walk-in */}
+            <div className="bg-[#FAF7F2] p-4 rounded-xl border border-stone-200 space-y-2 text-xs">
+              <div className="flex justify-between text-stone-600">
+                <span>Biaya Sewa Kamar ({rentalType === 'daily' ? `${diffDays} Malam` : '1 Bulan'}):</span>
+                <span className="font-semibold text-stone-900">{formatRupiah(calculatedRoomTotal)}</span>
+              </div>
+              {extraBedQty > 0 && (
+                <div className="flex justify-between text-emerald-800 bg-emerald-50/60 p-1.5 rounded-lg font-medium">
+                  <span>Tambahan Ekstra Bed ({extraBedQty} Unit × {diffDays} Malam):</span>
+                  <span>+{formatRupiah(totalExtraBed)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-sm text-stone-900 pt-2 border-t border-stone-200">
+                <span>Total Biaya Keseluruhan:</span>
+                <strong className="text-[#355C46]">{formatRupiah(calculatedTotal)}</strong>
               </div>
             </div>
 
@@ -463,16 +618,66 @@ export default function WalkInReservationPage() {
                 <label className="block font-semibold text-stone-700 mb-1">Metode Pembayaran</label>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#355C46]"
+                  onChange={(e) => {
+                    setPaymentMethod(e.target.value);
+                    if (!e.target.value.toLowerCase().includes('qris')) {
+                      setQrisVerified(false);
+                    }
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#355C46] bg-white font-medium text-stone-800"
                 >
-                  <option value="Tunai / Kasir">Tunai (Cash di Tempat)</option>
-                  <option value="QRIS Statis ALYATAMA">QRIS Statis Properti</option>
-                  <option value="Transfer Bank BSI">Transfer Bank Syariah (BSI)</option>
-                  <option value="Kartu Debit">Kartu Debit</option>
+                  <option value="Tunai / Kasir">Tunai (Cash di Resepsionis)</option>
+                  <option value="QRIS ALYATAMA">QRIS ALYATAMA HOMESTAY</option>
+                  <option value="Transfer Bank BSI">Transfer Bank (BCA / BSI / Mandiri)</option>
+                  <option value="Kartu Debit">Kartu Debit Kasir</option>
                 </select>
               </div>
             </div>
+
+            {/* QRIS Image & Verification Checklist (Tampil jika Metode QRIS Dipilih) */}
+            {isQrisSelected && (
+              <div className="p-4 bg-emerald-50/70 border-2 border-emerald-300 rounded-2xl space-y-4 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-[#355C46] text-white">
+                    <CreditCard className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-stone-900 text-xs sm:text-sm">
+                      Pindai QRIS Resmi ALYATAMA HOMESTAY
+                    </h4>
+                    <p className="text-[11px] text-stone-600">
+                      Tunjukkan gambar QRIS kepada tamu dan pastikan nominal pembayaran tepat sebesar {formatRupiah(paymentAmount)}.
+                    </p>
+                  </div>
+                </div>
+
+                {/* QRIS Display Container */}
+                <div className="bg-white p-4 rounded-xl border border-emerald-200 max-w-xs mx-auto text-center space-y-2 shadow-xs">
+                  <img
+                    src={qrisImageUrl}
+                    alt="QRIS ALYATAMA HOMESTAY"
+                    className="w-56 h-56 object-contain mx-auto rounded-lg border border-stone-100"
+                  />
+                  <div className="text-[11px] text-stone-500 font-mono">
+                    NMID / Merchant: ALYATAMA HOMESTAY
+                  </div>
+                </div>
+
+                {/* Checklist Konfirmasi QRIS (Wajib Dicentang) */}
+                <div className="p-3.5 bg-white border-2 border-emerald-500/60 rounded-xl flex items-start gap-3 shadow-2xs">
+                  <input
+                    type="checkbox"
+                    id="qrisVerifiedCheckbox"
+                    checked={qrisVerified}
+                    onChange={(e) => setQrisVerified(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[#355C46] focus:ring-[#355C46] cursor-pointer shrink-0"
+                  />
+                  <label htmlFor="qrisVerifiedCheckbox" className="text-xs text-stone-800 font-semibold leading-relaxed cursor-pointer select-none">
+                    Saya mengonfirmasi bahwa tamu telah memindai QRIS dan pembayaran sejumlah <span className="text-[#355C46] font-bold">{formatRupiah(paymentAmount)}</span> telah berhasil masuk dan terverifikasi pada rekening kasir ALYATAMA HOMESTAY. <span className="text-rose-600">*</span>
+                  </label>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block font-semibold text-stone-700 mb-1">Catatan Tambahan (Opsional)</label>
@@ -487,21 +692,25 @@ export default function WalkInReservationPage() {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
+          <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-stone-500 text-[11px]">
-              Otomatis mengunci unit kamar & mencatat staf penerima.
+              {isQrisSelected && !qrisVerified ? (
+                <span className="text-amber-700 font-medium">*Centang konfirmasi pembayaran QRIS untuk mengaktifkan tombol simpan.</span>
+              ) : (
+                'Otomatis mengunci unit kamar & mencatat staf penerima.'
+              )}
             </span>
             <button
               type="submit"
-              disabled={loading || availableRooms.length === 0}
-              className="bg-[#355C46] hover:bg-[#284635] text-white px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
+              disabled={loading || allRooms.length === 0 || (isQrisSelected && !qrisVerified)}
+              className="w-full sm:w-auto bg-[#355C46] hover:bg-[#284635] text-white px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span>Memproses Data Walk-in...</span>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                  <span>Konfirmasi & Simpan Reservasi Walk-in</span>
+                  <span>Konfirmasi &amp; Simpan Reservasi Walk-in</span>
                 </>
               )}
             </button>
