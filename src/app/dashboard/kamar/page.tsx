@@ -28,8 +28,8 @@ export default function KamarManagementPage() {
   const [feedback, setFeedback] = useState('');
 
   // Ekstra Bed Tariff State
-  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
-  const [tempExtraBedRate, setTempExtraBedRate] = useState<number>(50000);
+  const [extraBedRate, setExtraBedRate] = useState<number>(30000);
+  const [tempExtraBedRate, setTempExtraBedRate] = useState<number>(30000);
   const [editingExtraBed, setEditingExtraBed] = useState<boolean>(false);
   const [savingExtraBed, setSavingExtraBed] = useState<boolean>(false);
 
@@ -394,7 +394,7 @@ export default function KamarManagementPage() {
                 </label>
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
                   <span className="text-[11px] font-medium text-stone-600">Pilihan nominal cepat:</span>
-                  {[35000, 50000, 75000, 100000].map((preset) => (
+                  {[30000, 35000, 50000, 75000, 100000].map((preset) => (
                     <button
                       key={preset}
                       type="button"
@@ -424,7 +424,7 @@ export default function KamarManagementPage() {
                     value={tempExtraBedRate}
                     onChange={(e) => setTempExtraBedRate(Math.max(0, Number(e.target.value)))}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[#806044] bg-[#FAF7F2] text-sm font-bold text-[#392B21] focus:outline-none focus:ring-2 focus:ring-[#806044]/20"
-                    placeholder="Contoh: 50000"
+                    placeholder="Contoh: 30000"
                   />
                 </div>
 

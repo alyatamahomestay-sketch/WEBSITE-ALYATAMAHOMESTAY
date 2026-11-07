@@ -489,17 +489,23 @@ function StatusReservasiContent() {
                           </span>
                         </div>
 
-                        {extraCharges > 0 && (
-                          <div className="flex justify-between items-center text-amber-300 bg-amber-950/40 p-2.5 rounded-lg border border-amber-800/40">
-                            <div className="flex flex-col">
-                              <span className="font-bold">{extraBreakdown[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}</span>
-                              <span className="text-[10px] text-amber-200/70">Layanan kasur resmi ALYATAMA</span>
+                        {extraCharges > 0 && (() => {
+                          const unitExtra = Math.round(extraCharges / Math.max(1, nights));
+                          const cleanDesc = extraBreakdown[0]?.description 
+                            ? extraBreakdown[0].description.replace(/@\s*Rp[\d\.\s]+/i, `@ ${formatRupiah(unitExtra)}`)
+                            : `Penambahan Ekstra Bed (Kasur Tambahan @ ${formatRupiah(unitExtra)})`;
+                          return (
+                            <div className="flex justify-between items-center text-amber-300 bg-amber-950/40 p-2.5 rounded-lg border border-amber-800/40">
+                              <div className="flex flex-col">
+                                <span className="font-bold">{cleanDesc}</span>
+                                <span className="text-[10px] text-amber-200/70">Layanan kasur resmi ALYATAMA</span>
+                              </div>
+                              <span className="font-bold text-amber-300 text-sm">
+                                +{formatRupiah(extraCharges)}
+                              </span>
                             </div>
-                            <span className="font-bold text-amber-300 text-sm">
-                              +{formatRupiah(extraCharges)}
-                            </span>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {discountAmt > 0 && (
                           <div className="flex justify-between items-center text-emerald-400 bg-emerald-950/40 p-2.5 rounded-lg border border-emerald-800/40">

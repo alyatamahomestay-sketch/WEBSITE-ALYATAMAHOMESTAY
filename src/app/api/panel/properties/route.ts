@@ -27,7 +27,7 @@ function loadExtraBedRateFromFile(): number {
       }
     }
   } catch (e) {}
-  return 50000;
+  return 30000;
 }
 
 function saveExtraBedRateToFile(rate: number) {

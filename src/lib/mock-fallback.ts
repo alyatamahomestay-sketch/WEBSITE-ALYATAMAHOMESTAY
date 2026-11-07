@@ -28,7 +28,7 @@ export const INITIAL_PROPERTY_SETTINGS: PropertySettings = {
   booking_policy: 'Permintaan sewa harian, bulanan, maupun tahunan diproses oleh pengelola. Konfirmasi ketersediaan dan rincian instruksi pembayaran akan disampaikan setelah disetujui.',
   cancellation_policy: 'Pembatalan sewa harian sebelum H-3 bebas biaya potongan. Untuk sewa bulanan dan tahunan, deposit keamanan diatur sesuai perjanjian sewa syariah.',
   pending_expiration_hours: 24,
-  extra_bed_rate: 50000,
+  extra_bed_rate: 30000,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

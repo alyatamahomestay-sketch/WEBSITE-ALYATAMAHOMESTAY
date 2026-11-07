@@ -51,7 +51,7 @@ export default function WalkInReservationPage() {
 
   // Ekstra Bed State
   const [extraBedQty, setExtraBedQty] = useState<number>(0);
-  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
+  const [extraBedRate, setExtraBedRate] = useState<number>(30000);
 
   // Rooms & Reservations
   const [allRooms, setAllRooms] = useState<Room[]>([]);

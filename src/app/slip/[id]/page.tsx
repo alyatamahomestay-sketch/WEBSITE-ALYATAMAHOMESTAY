@@ -154,25 +154,30 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 </tr>
 
                 {/* 2. Rincian Ekstra Bed / Kasur Tambahan jika memesan */}
-                {extraCharges > 0 && (
-                  <tr className="bg-amber-50/40">
-                    <td className="py-3 px-4">
-                      <strong className="text-stone-900 block">
-                        {extraBreakdown[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}
-                      </strong>
-                      <span className="text-stone-500 text-[11px]">
-                        Layanan kasur tambahan resmi ALYATAMA (termasuk bantal empuk &amp; sprei bersih)
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">{nights} {unitLabel}</td>
-                    <td className="py-3 px-4 text-right text-stone-700">
-                      +{formatRupiah(Math.round(extraCharges / Math.max(1, nights)))} / {unitLabel}
-                    </td>
-                    <td className="py-3 px-4 text-right font-bold text-[#806044]">
-                      +{formatRupiah(extraCharges)}
-                    </td>
-                  </tr>
-                )}
+                {extraCharges > 0 && (() => {
+                  const unitExtra = Math.round(extraCharges / Math.max(1, nights));
+                  const rawDesc = extraBreakdown[0]?.description || `Ekstra Bed / Kasur Tambahan (@ ${formatRupiah(unitExtra)})`;
+                  const cleanDesc = rawDesc.replace(/@\s*Rp[\d\.\s]+/i, `@ ${formatRupiah(unitExtra)}`);
+                  return (
+                    <tr className="bg-amber-50/40">
+                      <td className="py-3 px-4">
+                        <strong className="text-stone-900 block">
+                          {cleanDesc}
+                        </strong>
+                        <span className="text-stone-500 text-[11px]">
+                          Layanan kasur tambahan resmi ALYATAMA (termasuk bantal empuk &amp; sprei bersih)
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">{nights} {unitLabel}</td>
+                      <td className="py-3 px-4 text-right text-stone-700">
+                        +{formatRupiah(unitExtra)} / {unitLabel}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-[#806044]">
+                        +{formatRupiah(extraCharges)}
+                      </td>
+                    </tr>
+                  );
+                })()}
 
                 {/* 3. Potongan Diskon Promo jika ada */}
                 {discountAmt > 0 && (

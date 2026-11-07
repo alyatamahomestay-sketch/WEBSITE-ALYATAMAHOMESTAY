@@ -14,10 +14,10 @@ export async function downloadReservationSlipJpg(
     throw new Error('Hanya dapat dijalankan di browser');
   }
 
-  // Target high-resolution canvas: 1000 x 1560 (Retina-quality 2x)
+  // Target high-resolution canvas: 1000 x 1480 (Retina-quality 2x)
   const canvas = document.createElement('canvas');
   const width = 1000;
-  const height = 1560;
+  const height = 1480;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
@@ -143,9 +143,10 @@ export async function downloadReservationSlipJpg(
     extraBedCount = parseInt(extraBedMatch[1], 10);
   }
 
+  const configuredExtraRate = propertySettings?.extra_bed_rate || 30000;
   const defaultRoomRate = room?.base_rate || 200000;
   const baseSubtotalNum = Number(priceSnapshot?.base_subtotal) || (defaultRoomRate * nights);
-  let extraChargesNum = Number(priceSnapshot?.extra_charges) || (extraBedCount > 0 ? (extraBedCount * 50000 * nights) : 0);
+  let extraChargesNum = Number(priceSnapshot?.extra_charges) || (extraBedCount > 0 ? (extraBedCount * configuredExtraRate * nights) : 0);
   const discountAmt = Number(priceSnapshot?.discount_amount) || 0;
   const totalAmountNum = Number(priceSnapshot?.total_amount) || ((baseSubtotalNum - discountAmt) + extraChargesNum);
   const totalPaidNum = Number(priceSnapshot?.total_paid) || (reservation.payment_status === 'paid' ? totalAmountNum : 0);
@@ -274,8 +275,9 @@ export async function downloadReservationSlipJpg(
   // --- Section 3: Rekening Pembayaran & Instruksi WhatsApp ---
   curY = curY + sec2Height + 20;
 
+  const sec3Height = 285;
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 44, curY, width - 88, 290, 14);
+  roundRect(ctx, 44, curY, width - 88, sec3Height, 14);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
@@ -294,64 +296,66 @@ export async function downloadReservationSlipJpg(
   const bankOwner = bankMethod?.account_name || 'ALYATAMA HOMESTAY';
 
   ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 55, 410, 120, 10);
+  roundRect(ctx, 65, curY + 55, 410, 115, 10);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
 
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('Rekening Transfer Bank Resmi:', 85, curY + 80);
+  ctx.fillText('Rekening Transfer Bank Resmi:', 85, curY + 78);
   ctx.font = 'bold 18px monospace';
   ctx.fillStyle = '#806044';
-  ctx.fillText(bankAccount, 85, curY + 110);
+  ctx.fillText(bankAccount, 85, curY + 105);
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#756A5F';
-  ctx.fillText(`a.n. ${bankOwner}`, 85, curY + 132);
+  ctx.fillText(`a.n. ${bankOwner}`, 85, curY + 128);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#9ca3af';
-  ctx.fillText('Sertakan No. Reservasi pada berita transfer.', 85, curY + 155);
+  ctx.fillText('Sertakan No. Reservasi pada berita transfer.', 85, curY + 150);
 
   // WhatsApp Instructions Card
   ctx.fillStyle = '#F0FDF4';
-  roundRect(ctx, 505, curY + 55, 430, 120, 10);
+  roundRect(ctx, 505, curY + 55, 430, 115, 10);
   ctx.fill();
   ctx.strokeStyle = '#BBF7D0';
   ctx.stroke();
 
   ctx.fillStyle = '#166534';
   ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('WhatsApp Konfirmasi Admin Homestay:', 525, curY + 80);
+  ctx.fillText('WhatsApp Konfirmasi Admin Homestay:', 525, curY + 78);
   ctx.font = 'bold 18px monospace';
   ctx.fillStyle = '#15803d';
-  ctx.fillText(wa, 525, curY + 110);
+  ctx.fillText(wa, 525, curY + 105);
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#166534';
-  ctx.fillText('Petugas bertugas melayani verifikasi 24 Jam', 525, curY + 132);
+  ctx.fillText('Petugas bertugas melayani verifikasi 24 Jam', 525, curY + 128);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#15803d';
-  ctx.fillText('Kirimkan gambar bukti ini via chat WhatsApp admin.', 525, curY + 155);
+  ctx.fillText('Kirimkan gambar bukti ini via chat WhatsApp admin.', 525, curY + 150);
 
-  // Instructions Note Box
+  // Instructions Note Box (Clean and comfortably spaced)
   ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 190, width - 130, 65, 8);
+  roundRect(ctx, 65, curY + 185, width - 130, 85, 8);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
 
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 11px system-ui, sans-serif';
-  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH:', 85, curY + 212);
+  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH:', 85, curY + 206);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#756A5F';
-  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 85, curY + 230);
-  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 85, curY + 245);
+  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 85, curY + 226);
+  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 85, curY + 242);
+  ctx.fillText('• Waktu Check-in mulai 14:00 WIB, Check-out maksimal 12:00 WIB. Pelunasan di tempat sebelum serah kunci.', 85, curY + 258);
 
-  // --- Section 4: Footer Stamp & Verification Seal ---
-  curY = 1195;
+  // --- Section 4: Footer Stamp & Verification Seal (Flows dynamically, never overlaps) ---
+  curY = curY + sec3Height + 20;
 
+  const sec4Height = 115;
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 44, curY, width - 88, 120, 14);
+  roundRect(ctx, 44, curY, width - 88, sec4Height, 14);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
@@ -359,31 +363,32 @@ export async function downloadReservationSlipJpg(
   // Seal Graphic
   ctx.fillStyle = '#15803d';
   ctx.beginPath();
-  ctx.arc(85, curY + 60, 24, 0, Math.PI * 2);
+  ctx.arc(85, curY + 57, 24, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#FFFFFF';
   ctx.font = 'bold 20px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✓', 85, curY + 67);
+  ctx.fillText('✓', 85, curY + 65);
 
   ctx.textAlign = 'left';
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 14px system-ui, sans-serif';
-  ctx.fillText('DOKUMEN RESMI TERCATAT DALAM SISTEM PMS ALYATAMA', 125, curY + 50);
+  ctx.fillText('DOKUMEN RESMI TERCATAT DALAM SISTEM PMS ALYATAMA', 125, curY + 48);
 
   ctx.fillStyle = '#756A5F';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('Panti Asuhan Putra Muhammadiyah Bangkinang Kota, Kabupaten Kampar, Riau 28411', 125, curY + 72);
+  ctx.fillText('Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Kampar, Riau', 125, curY + 70);
   ctx.font = '11px monospace';
   ctx.fillStyle = '#9ca3af';
-  ctx.fillText(`Hash Validasi: SHA256-${reservation.id.slice(0, 12)} | Generator: PMS-ALYATAMA-CLIENT`, 125, curY + 92);
+  ctx.fillText(`Hash Validasi: SHA256-${reservation.id.slice(0, 12)} | Generator: PMS-ALYATAMA-CLIENT`, 125, curY + 90);
 
   // Bottom Notice
+  curY = curY + sec4Height + 25;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#756A5F';
   ctx.font = '11px system-ui, sans-serif';
-  ctx.fillText('Harap simpan file gambar (.jpg) ini sebagai bukti pemesanan saat tiba di homestay.', width / 2, 1345);
+  ctx.fillText('Harap simpan file gambar (.jpg) ini sebagai bukti pemesanan saat tiba di homestay.', width / 2, curY);
 
   // Convert canvas to Blob (image/jpeg)
   return new Promise((resolve, reject) => {

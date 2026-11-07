@@ -441,7 +441,13 @@ export default function ReservationDetailPage({ params }: Props) {
                   {Boolean(reservation.price_snapshot?.extra_charges && reservation.price_snapshot.extra_charges > 0) && (
                     <tr className="text-amber-900 bg-amber-50/70">
                       <td className="py-2 px-3">
-                        {reservation.price_snapshot?.extra_charges_breakdown?.[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}
+                        {(() => {
+                          const rawDesc = reservation.price_snapshot?.extra_charges_breakdown?.[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)';
+                          const nights = reservation.duration_units || reservation.price_snapshot?.total_nights || 1;
+                          const extraCharges = reservation.price_snapshot?.extra_charges || 0;
+                          const unitExtra = Math.round(extraCharges / Math.max(1, nights));
+                          return rawDesc.replace(/@\s*Rp[\d\.\s]+/i, `@ ${formatRupiah(unitExtra)}`);
+                        })()}
                       </td>
                       <td className="py-2 px-3 text-right font-bold text-amber-900">
                         +{formatRupiah(reservation.price_snapshot?.extra_charges || 0)}

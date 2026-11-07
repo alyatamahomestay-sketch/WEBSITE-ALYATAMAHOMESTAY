@@ -2,8 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { Reservation, Room } from '@/lib/types';
 import { INITIAL_RESERVATIONS, INITIAL_ROOMS } from '@/lib/mock-fallback';
+import { formatRupiah } from '@/lib/formatters';
 
 export const RESERVATIONS_FILE_PATH = path.join(process.cwd(), '.server-reservations.json');
+
+function getActiveExtraBedRate(): number {
+  try {
+    const extraBedFile = path.join(process.cwd(), '.server-extra-bed.json');
+    if (fs.existsSync(extraBedFile)) {
+      const extraData = JSON.parse(fs.readFileSync(extraBedFile, 'utf8'));
+      if (extraData && typeof extraData.extra_bed_rate === 'number' && extraData.extra_bed_rate >= 0) {
+        return Number(extraData.extra_bed_rate);
+      }
+    }
+  } catch (e) {}
+  return 30000;
+}
 
 export function extractPaymentPreference(r: any): 'cash' | 'transfer' {
   if (r.payment_preference === 'transfer' || r.payment_preference === 'cash') {
@@ -51,8 +65,10 @@ export function normalizeReservation(r: any): Reservation {
   const defaultRoomRate = mappedRooms[0]?.base_rate || 200000;
   const nights = r.duration_units || mappedSnapshot?.total_nights || 1;
 
+  const activeExtraRate = getActiveExtraBedRate();
+
   if (!mappedSnapshot) {
-    const extraTotal = extraBedCount * 50000 * nights;
+    const extraTotal = extraBedCount * activeExtraRate * nights;
     const baseSubtotal = defaultRoomRate * nights;
     const totalAmount = baseSubtotal + extraTotal;
     mappedSnapshot = {
@@ -67,7 +83,7 @@ export function normalizeReservation(r: any): Reservation {
       promo_snapshot: null,
       extra_charges: extraTotal,
       extra_charges_breakdown: extraBedCount > 0 ? [{
-        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(activeExtraRate)})`,
         amount: extraTotal,
       }] : [],
       deposit_required: Math.round(totalAmount * 0.5),
@@ -84,13 +100,18 @@ export function normalizeReservation(r: any): Reservation {
     let extraBreakdown = Array.isArray(mappedSnapshot.extra_charges_breakdown) ? mappedSnapshot.extra_charges_breakdown : [];
 
     if (extraCharges === 0 && extraBedCount > 0) {
-      extraCharges = extraBedCount * 50000 * nights;
-      if (extraBreakdown.length === 0) {
-        extraBreakdown = [{
-          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
-          amount: extraCharges,
-        }];
-      }
+      extraCharges = extraBedCount * activeExtraRate * nights;
+      extraBreakdown = [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(activeExtraRate)})`,
+        amount: extraCharges,
+      }];
+    } else if (extraCharges > 0 && extraBedCount > 0) {
+      // Ensure description reflects the actual unit rate accurately without stale hardcoded values
+      const calculatedUnitRate = Math.round(extraCharges / (extraBedCount * nights));
+      extraBreakdown = [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(calculatedUnitRate)})`,
+        amount: extraCharges,
+      }];
     }
 
     const discountAmount = Number(mappedSnapshot.discount_amount) || 0;

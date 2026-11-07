@@ -32,6 +32,7 @@ import {
 } from '../mock-fallback';
 import { isSupabaseConfigured } from '../supabase/check-env';
 import { createClient } from '../supabase/client';
+import { formatRupiah } from '../formatters';
 
 // Global memory state for interactive preview when Supabase env is not yet entered
 let memRooms: Room[] = [...INITIAL_ROOMS];
@@ -147,9 +148,10 @@ function normalizeReservationRecord(r: any): Reservation {
 
   const defaultRoomRate = mappedRooms[0]?.base_rate || 200000;
   const nights = r.duration_units || mappedSnapshot?.total_nights || 1;
+  const activeExtraRate = memProperty.extra_bed_rate || 30000;
 
   if (!mappedSnapshot) {
-    const extraTotal = extraBedCount * 50000 * nights;
+    const extraTotal = extraBedCount * activeExtraRate * nights;
     const baseSubtotal = defaultRoomRate * nights;
     const totalAmount = baseSubtotal + extraTotal;
     mappedSnapshot = {
@@ -164,7 +166,7 @@ function normalizeReservationRecord(r: any): Reservation {
       promo_snapshot: null,
       extra_charges: extraTotal,
       extra_charges_breakdown: extraBedCount > 0 ? [{
-        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(activeExtraRate)})`,
         amount: extraTotal,
       }] : [],
       deposit_required: Math.round(totalAmount * 0.5),
@@ -180,13 +182,18 @@ function normalizeReservationRecord(r: any): Reservation {
     let extraBreakdown = Array.isArray(mappedSnapshot.extra_charges_breakdown) ? mappedSnapshot.extra_charges_breakdown : [];
 
     if (extraCharges === 0 && extraBedCount > 0) {
-      extraCharges = extraBedCount * 50000 * nights;
-      if (extraBreakdown.length === 0) {
-        extraBreakdown = [{
-          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
-          amount: extraCharges,
-        }];
-      }
+      extraCharges = extraBedCount * activeExtraRate * nights;
+      extraBreakdown = [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(activeExtraRate)})`,
+        amount: extraCharges,
+      }];
+    } else if (extraCharges > 0 && extraBedCount > 0) {
+      // Ensure description reflects the actual unit rate accurately without stale hardcoded values
+      const calculatedUnitRate = Math.round(extraCharges / (extraBedCount * nights));
+      extraBreakdown = [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(calculatedUnitRate)})`,
+        amount: extraCharges,
+      }];
     }
 
     const discountAmount = Number(mappedSnapshot.discount_amount) || 0;
@@ -284,7 +291,7 @@ export const PmsService = {
         const supabase = createClient();
         const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
         if (!error && data) {
-          let activeRate = memProperty.extra_bed_rate ?? 50000;
+          let activeRate = memProperty.extra_bed_rate ?? 30000;
           if (data.extra_bed_rate !== undefined && data.extra_bed_rate !== null) {
             activeRate = Number(data.extra_bed_rate);
           } else if (data.booking_policy && data.booking_policy.includes('[EXTRA_BED_RATE:')) {
@@ -330,7 +337,7 @@ export const PmsService = {
   },
 
   async updatePropertySettings(updates: Partial<PropertySettings>): Promise<PropertySettings> {
-    const currentRate = updates.extra_bed_rate ?? memProperty.extra_bed_rate ?? 50000;
+    const currentRate = updates.extra_bed_rate ?? memProperty.extra_bed_rate ?? 30000;
     memProperty = { ...memProperty, ...updates, extra_bed_rate: currentRate, updated_at: new Date().toISOString() };
     syncMemPropertyToStorage(memProperty);
 

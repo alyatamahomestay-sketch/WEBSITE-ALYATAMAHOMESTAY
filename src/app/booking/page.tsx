@@ -54,7 +54,7 @@ function BookingContent() {
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
   const [children, setChildren] = useState(0);
   const [extraBedQty, setExtraBedQty] = useState<number>(0);
-  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
+  const [extraBedRate, setExtraBedRate] = useState<number>(30000);
   const [marriageConfirmed, setMarriageConfirmed] = useState(false);
   const [specialRequests, setSpecialRequests] = useState('');
   const [dataConsent, setDataConsent] = useState(false);

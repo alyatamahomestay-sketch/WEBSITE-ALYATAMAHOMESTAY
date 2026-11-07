@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Server-side safe price calculation according to rentalType & extra bed
-    let extraBedRate = 50000;
+    let extraBedRate = 30000;
     try {
       const extraBedFile = path.join(process.cwd(), '.server-extra-bed.json');
       if (fs.existsSync(extraBedFile)) {
@@ -108,12 +108,13 @@ export async function POST(req: NextRequest) {
       try {
         const adminClient = createAdminClient();
         if (adminClient) {
-          const { data: propData } = await adminClient
+          const { data: propData, error: propErr } = await adminClient
             .from('properties')
-            .select('booking_policy, extra_bed_rate')
+            .select('*')
             .limit(1)
             .maybeSingle();
-          if (propData) {
+
+          if (!propErr && propData) {
             if (propData.extra_bed_rate !== undefined && propData.extra_bed_rate !== null) {
               extraBedRate = Number(propData.extra_bed_rate);
             } else if (propData.booking_policy && propData.booking_policy.includes('[EXTRA_BED_RATE:')) {
@@ -122,6 +123,20 @@ export async function POST(req: NextRequest) {
                 extraBedRate = parseInt(match[1], 10);
               }
             }
+          }
+
+          // Fallback to inventory items if not yet parsed
+          if (extraBedRate === 30000 || !propData) {
+            try {
+              const { data: inv } = await adminClient
+                .from('inventory_items')
+                .select('purchase_price')
+                .eq('name', 'Tarif Ekstra Bed Resmi')
+                .maybeSingle();
+              if (inv && typeof inv.purchase_price === 'number' && inv.purchase_price >= 0) {
+                extraBedRate = inv.purchase_price;
+              }
+            } catch (invErr) {}
           }
         }
       } catch (e) {}
