@@ -27,6 +27,12 @@ export default function KamarManagementPage() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
 
+  // Ekstra Bed Tariff State
+  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
+  const [tempExtraBedRate, setTempExtraBedRate] = useState<number>(50000);
+  const [editingExtraBed, setEditingExtraBed] = useState<boolean>(false);
+  const [savingExtraBed, setSavingExtraBed] = useState<boolean>(false);
+
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -58,8 +64,48 @@ export default function KamarManagementPage() {
     }
   };
 
+  const loadExtraBedRate = async () => {
+    try {
+      const prop = await PmsService.getPropertySettings();
+      if (prop && prop.extra_bed_rate !== undefined && Number(prop.extra_bed_rate) >= 0) {
+        setExtraBedRate(Number(prop.extra_bed_rate));
+        setTempExtraBedRate(Number(prop.extra_bed_rate));
+      }
+    } catch (err) {
+      console.error('Failed to load extra bed rate:', err);
+    }
+  };
+
+  const handleSaveExtraBedRate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (tempExtraBedRate < 0) {
+      alert('Biaya ekstra bed tidak boleh bernilai negatif.');
+      return;
+    }
+    setSavingExtraBed(true);
+    try {
+      await PmsService.updatePropertySettings({
+        extra_bed_rate: tempExtraBedRate,
+      });
+      setExtraBedRate(tempExtraBedRate);
+      setEditingExtraBed(false);
+      showAdminToast('edit', `Tarif ekstra bed berhasil diperbarui menjadi ${formatRupiah(tempExtraBedRate)}/malam.`);
+      setFeedback(`Berhasil Diperbarui: Tarif sewa ekstra bed kini ${formatRupiah(tempExtraBedRate)}/malam/unit.`);
+      
+      // Notify other tabs/forms if listening
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan tarif ekstra bed');
+    } finally {
+      setSavingExtraBed(false);
+    }
+  };
+
   useEffect(() => {
     loadRooms();
+    loadExtraBedRate();
   }, []);
 
   const openAddModal = () => {
@@ -225,6 +271,134 @@ export default function KamarManagementPage() {
           <button onClick={() => setFeedback('')} className="text-emerald-700 font-bold text-xs">&times;</button>
         </div>
       )}
+
+      {/* Pengaturan Tarif Ekstra Bed Homestay */}
+      <div className="bg-gradient-to-br from-[#FAF7F2] via-white to-[#F5ECE0] rounded-2xl border border-[#E5DCD0] p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-[#806044]/10 border border-[#806044]/20 flex items-center justify-center shrink-0 text-[#806044] mt-0.5 shadow-2xs">
+              <BedDouble className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-serif font-bold text-[#392B21]">
+                  Pengaturan Tarif Ekstra Bed / Kasur Tambahan
+                </h3>
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Sinkron Otomatis (Web Tamu &amp; Walk-in)
+                </span>
+              </div>
+              <p className="text-xs text-[#756A5F] mt-1 leading-relaxed max-w-2xl">
+                Tentukan biaya resmi sewa kasur tambahan (ekstra bed) per unit per malam. Tarif ini langsung digunakan secara otomatis pada formulir reservasi resmi tamu dan pendaftaran kasir walk-in.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-start md:self-center shrink-0">
+            {!editingExtraBed ? (
+              <div className="flex items-center gap-3 bg-white p-2.5 px-4 rounded-xl border border-[#E5DCD0] shadow-2xs">
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-[#756A5F] block tracking-wider">
+                    Tarif Ekstra Bed
+                  </span>
+                  <span className="text-base font-bold text-[#806044] font-mono">
+                    {formatRupiah(extraBedRate)}
+                    <span className="text-xs font-normal text-stone-500 font-sans"> / mlm</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempExtraBedRate(extraBedRate);
+                    setEditingExtraBed(true);
+                  }}
+                  className="bg-[#806044] hover:bg-[#6c5037] text-white text-xs font-semibold px-3 py-2 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Ubah Biaya Ekstra Bed
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Panel Form Ubah Biaya Ekstra Bed */}
+        {editingExtraBed && (
+          <form onSubmit={handleSaveExtraBedRate} className="mt-4 pt-4 border-t border-[#E5DCD0]">
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#806044]/30 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-bold text-[#392B21] flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-[#806044]" />
+                  Masukkan Nominal Biaya Ekstra Bed yang Diinginkan:
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+                  <span className="text-[11px] font-medium text-stone-600">Pilihan nominal cepat:</span>
+                  {[35000, 50000, 75000, 100000].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTempExtraBedRate(preset)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                        tempExtraBedRate === preset
+                          ? 'bg-[#806044] text-white border-[#806044] shadow-xs'
+                          : 'bg-[#FAF7F2] text-stone-700 hover:bg-stone-100 border-[#E5DCD0]'
+                      }`}
+                    >
+                      {formatRupiah(preset)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="relative flex-1">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#756A5F]">
+                    Rp
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="5000"
+                    required
+                    value={tempExtraBedRate}
+                    onChange={(e) => setTempExtraBedRate(Math.max(0, Number(e.target.value)))}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[#806044] bg-[#FAF7F2] text-sm font-bold text-[#392B21] focus:outline-none focus:ring-2 focus:ring-[#806044]/20"
+                    placeholder="Contoh: 50000"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEditingExtraBed(false)}
+                    className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold cursor-pointer transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingExtraBed}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer transition shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {savingExtraBed ? 'Menyimpan...' : 'Simpan Biaya Ekstra Bed'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[#756A5F] pt-1">
+                <span>
+                  Preview tampilan: <strong className="text-[#806044] font-semibold">{formatRupiah(tempExtraBedRate)}</strong> / unit / malam
+                </span>
+                <span className="italic">
+                  * Otomatis terakumulasi pada formulir reservasi online dan walk-in kasir
+                </span>
+              </div>
+            </div>
+          </form>
+        )}
+      </div>
 
       {/* Rooms Table */}
       <div className="bg-white rounded-2xl border border-[#E5DCD0] shadow-sm overflow-hidden">
@@ -399,7 +573,12 @@ export default function KamarManagementPage() {
 
               {/* 2 Model Sewa Rates (Harian & Bulanan) */}
               <div className="bg-[#FAF7F2] p-3.5 rounded-2xl border border-[#E5DCD0] space-y-3">
-                <span className="font-bold text-[#806044] block">Pengaturan Tarif Masa Sewa (IDR)</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#806044] block">Pengaturan Tarif Masa Sewa (IDR)</span>
+                  <span className="text-[11px] text-[#756A5F]">
+                    Tarif Ekstra Bed: <strong className="text-[#806044] font-semibold">{formatRupiah(extraBedRate)}/mlm</strong>
+                  </span>
+                </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>

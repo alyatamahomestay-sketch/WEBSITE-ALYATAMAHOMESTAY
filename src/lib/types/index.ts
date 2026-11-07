@@ -428,6 +428,7 @@ export interface PropertySettings {
   booking_policy: string;
   cancellation_policy: string;
   pending_expiration_hours: number;
+  extra_bed_rate?: number;
   created_at: string;
   updated_at: string;
 }

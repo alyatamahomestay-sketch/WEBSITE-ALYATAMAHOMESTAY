@@ -5,6 +5,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { PmsService } from '@/lib/services/pms-service';
 import { calculateReservationPricing, calculateNights } from '@/lib/pricing';
+import { formatRupiah } from '@/lib/formatters';
 import { normalizeIndonesianPhone, isValidIndonesianPhone } from '@/lib/phone';
 import { isSupabaseConfigured } from '@/lib/supabase/check-env';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -84,8 +85,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Server-side safe price calculation according to rentalType & extra bed
+    let extraBedRate = 50000;
+    try {
+      const propFilePath = path.join(process.cwd(), '.server-property.json');
+      if (fs.existsSync(propFilePath)) {
+        const propData = JSON.parse(fs.readFileSync(propFilePath, 'utf8'));
+        if (propData && propData.extra_bed_rate !== undefined && Number(propData.extra_bed_rate) >= 0) {
+          extraBedRate = Number(propData.extra_bed_rate);
+        }
+      }
+    } catch (e) {}
+
     const extraBedCount = data.extraBedQty || 0;
-    const calculatedExtraCharges = extraBedCount > 0 ? (extraBedCount * 50000 * nights) : (data.extraCharges || 0);
+    const calculatedExtraCharges = extraBedCount > 0 ? (extraBedCount * extraBedRate * nights) : (data.extraCharges || 0);
 
     const pricing = calculateReservationPricing({
       checkinDateStr: data.checkinDate,
@@ -218,7 +230,7 @@ export async function POST(req: NextRequest) {
         },
         extra_charges: pricing.extraCharges,
         extra_charges_breakdown: extraBedCount > 0 ? [{
-          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam)`,
+          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(extraBedRate)})`,
           amount: calculatedExtraCharges,
         }] : [],
         deposit_required: pricing.depositRequired,
@@ -327,7 +339,7 @@ export async function POST(req: NextRequest) {
             },
             extra_charges: pricing.extraCharges,
             extra_charges_breakdown: extraBedCount > 0 ? [{
-              description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam)`,
+              description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ ${formatRupiah(extraBedRate)})`,
               amount: calculatedExtraCharges,
             }] : [],
             deposit_required: pricing.depositRequired,

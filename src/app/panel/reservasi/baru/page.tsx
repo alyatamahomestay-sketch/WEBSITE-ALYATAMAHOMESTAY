@@ -89,14 +89,18 @@ export default function WalkInReservationPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [rooms, reservations, methods] = await Promise.all([
+        const [rooms, reservations, methods, prop] = await Promise.all([
           PmsService.getRooms(true),
           PmsService.getReservations(),
           PmsService.getPaymentMethods(),
+          PmsService.getPropertySettings(),
         ]);
         setAllRooms(rooms.filter(r => !r.is_archived));
         setAllReservations(reservations);
         setPaymentMethods(methods);
+        if (prop && prop.extra_bed_rate !== undefined && Number(prop.extra_bed_rate) >= 0) {
+          setExtraBedRate(Number(prop.extra_bed_rate));
+        }
 
         // Auto select first available room if none selected
         if (!selectedRoomId && rooms.length > 0) {

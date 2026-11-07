@@ -54,7 +54,7 @@ function BookingContent() {
   const [adults, setAdults] = useState(Number(searchParams.get('adults')) || 2);
   const [children, setChildren] = useState(0);
   const [extraBedQty, setExtraBedQty] = useState<number>(0);
-  const EXTRA_BED_RATE_PER_NIGHT = 50000;
+  const [extraBedRate, setExtraBedRate] = useState<number>(50000);
   const [marriageConfirmed, setMarriageConfirmed] = useState(false);
   const [specialRequests, setSpecialRequests] = useState('');
   const [dataConsent, setDataConsent] = useState(false);
@@ -62,6 +62,26 @@ function BookingContent() {
   // UI state
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    async function fetchPropertySettings() {
+      try {
+        const res = await fetch('/api/panel/properties', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.property?.extra_bed_rate !== undefined) {
+            setExtraBedRate(Number(json.property.extra_bed_rate));
+            return;
+          }
+        }
+        const prop = await PmsService.getPropertySettings();
+        if (prop && prop.extra_bed_rate !== undefined) {
+          setExtraBedRate(Number(prop.extra_bed_rate));
+        }
+      } catch (e) {}
+    }
+    fetchPropertySettings();
+  }, []);
 
   useEffect(() => {
     async function fetchRooms() {
@@ -112,7 +132,7 @@ function BookingContent() {
 
   const selectedRoom = rooms.find((r) => r.id === roomId);
   const durationInfo = calculateRentalDuration(checkinDate, checkoutDate, rentalType);
-  const extraBedTotal = extraBedQty * EXTRA_BED_RATE_PER_NIGHT * Math.max(1, durationInfo.totalNights);
+  const extraBedTotal = extraBedQty * extraBedRate * Math.max(1, durationInfo.totalNights);
 
   // Dynamic estimate calculation
   let dynamicPricing = null;
@@ -448,7 +468,7 @@ function BookingContent() {
                                 Penambahan Ekstra Bed (Kasur Tambahan)
                               </span>
                               <span className="text-[11px] text-[#756A5F] block leading-tight">
-                                Biaya resmi: <strong className="text-[#806044]">{formatRupiah(EXTRA_BED_RATE_PER_NIGHT)}/malam</strong> per unit (termasuk bantal &amp; sprei bersih)
+                                Biaya resmi: <strong className="text-[#806044]">{formatRupiah(extraBedRate)}/malam</strong> per unit (termasuk bantal &amp; sprei bersih)
                               </span>
                             </div>
                           </div>
@@ -464,8 +484,9 @@ function BookingContent() {
                               className="text-xs font-bold rounded-xl border border-[#d4c3ad] bg-white px-3 py-2 text-[#392B21] focus:outline-none focus:ring-2 focus:ring-[#806044] cursor-pointer"
                             >
                               <option value="0">Tidak Perlu (+Rp 0)</option>
-                              <option value="1">+1 Ekstra Bed (+Rp 50.000/malam)</option>
-                              <option value="2">+2 Ekstra Bed (+Rp 100.000/malam)</option>
+                              <option value="1">+1 Ekstra Bed (+{formatRupiah(extraBedRate)}/malam)</option>
+                              <option value="2">+2 Ekstra Bed (+{formatRupiah(extraBedRate * 2)}/malam)</option>
+                              <option value="3">+3 Ekstra Bed (+{formatRupiah(extraBedRate * 3)}/malam)</option>
                             </select>
                           </div>
                         </div>
