@@ -400,10 +400,11 @@ export default async function HomePage() {
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/booking"
-                className="bg-[#806044] hover:bg-[#684D36] text-white font-medium text-sm px-6 py-3.5 rounded-xl transition-colors shadow-xs"
+                href="/kamar"
+                className="bg-[#806044] hover:bg-[#684D36] text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors shadow-xs inline-flex items-center gap-2"
               >
-                Isi Formulir Reservasi
+                <BedDouble className="w-4 h-4" />
+                <span>Pilih Kamar</span>
               </Link>
               <Link
                 href="/status-reservasi"
