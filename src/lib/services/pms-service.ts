@@ -162,7 +162,7 @@ export const PmsService = {
   async getPropertySettings(): Promise<PropertySettings> {
     if (typeof window !== 'undefined') {
       try {
-        const res = await fetch('/api/panel/properties');
+        const res = await fetch('/api/panel/properties', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.property) {
@@ -174,34 +174,59 @@ export const PmsService = {
       } catch (e) {}
     }
 
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
+        if (!error && data) {
+          let activeRate = memProperty.extra_bed_rate ?? 50000;
+          if (data.extra_bed_rate !== undefined && data.extra_bed_rate !== null) {
+            activeRate = Number(data.extra_bed_rate);
+          } else if (data.booking_policy && data.booking_policy.includes('[EXTRA_BED_RATE:')) {
+            const match = data.booking_policy.match(/\[EXTRA_BED_RATE:(\d+)\]/);
+            if (match && match[1]) {
+              activeRate = parseInt(match[1], 10);
+            }
+          } else {
+            try {
+              const { data: inv } = await supabase
+                .from('inventory_items')
+                .select('purchase_price')
+                .eq('name', 'Tarif Ekstra Bed Resmi')
+                .maybeSingle();
+              if (inv && typeof inv.purchase_price === 'number' && inv.purchase_price >= 0) {
+                activeRate = inv.purchase_price;
+              }
+            } catch (invErr) {}
+          }
+
+          const cleanBookingPolicy = data.booking_policy 
+            ? data.booking_policy.replace(/\s*\[EXTRA_BED_RATE:\d+\]/g, '').trim()
+            : (data.booking_policy || '');
+
+          memProperty = {
+            ...data,
+            booking_policy: cleanBookingPolicy,
+            extra_bed_rate: activeRate,
+          } as PropertySettings;
+          syncMemPropertyToStorage(memProperty);
+          return memProperty;
+        }
+      } catch (e) {}
+    }
+
     const fromStorage = loadMemPropertyFromStorage();
     if (fromStorage) {
       memProperty = fromStorage;
       return memProperty;
     }
-    if (!isSupabaseConfigured()) {
-      syncMemPropertyToStorage(memProperty);
-      return memProperty;
-    }
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
-      if (!error && data) {
-        const preservedRate = memProperty.extra_bed_rate;
-        memProperty = data as PropertySettings;
-        if (memProperty.extra_bed_rate === undefined && preservedRate !== undefined) {
-          memProperty.extra_bed_rate = preservedRate;
-        }
-        syncMemPropertyToStorage(memProperty);
-        return memProperty;
-      }
-    } catch (e) {}
     syncMemPropertyToStorage(memProperty);
     return memProperty;
   },
 
   async updatePropertySettings(updates: Partial<PropertySettings>): Promise<PropertySettings> {
-    memProperty = { ...memProperty, ...updates, updated_at: new Date().toISOString() };
+    const currentRate = updates.extra_bed_rate ?? memProperty.extra_bed_rate ?? 50000;
+    memProperty = { ...memProperty, ...updates, extra_bed_rate: currentRate, updated_at: new Date().toISOString() };
     syncMemPropertyToStorage(memProperty);
 
     if (typeof window !== 'undefined') {
@@ -209,7 +234,7 @@ export const PmsService = {
         const res = await fetch('/api/panel/properties', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ updates }),
+          body: JSON.stringify({ updates: { ...updates, extra_bed_rate: currentRate } }),
         });
         const json = await res.json();
         if (json.success && json.property) {
@@ -223,17 +248,61 @@ export const PmsService = {
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
-        const { extra_bed_rate, ...cleanUpdates } = updates;
-        const { data, error } = await supabase
+        let basePolicy = updates.booking_policy || memProperty.booking_policy || '';
+        basePolicy = basePolicy.replace(/\s*\[EXTRA_BED_RATE:\d+\]/g, '').trim();
+        const taggedPolicy = `${basePolicy}\n[EXTRA_BED_RATE:${currentRate}]`;
+
+        const payload = {
+          ...updates,
+          booking_policy: taggedPolicy,
+          extra_bed_rate: currentRate,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: nativeError } = await supabase
           .from('properties')
-          .update({ ...cleanUpdates, updated_at: new Date().toISOString() })
-          .eq('id', memProperty.id)
-          .select()
-          .maybeSingle();
-        if (!error && data) {
-          memProperty = { ...data, extra_bed_rate: updates.extra_bed_rate ?? memProperty.extra_bed_rate } as PropertySettings;
-          syncMemPropertyToStorage(memProperty);
+          .update(payload)
+          .eq('id', memProperty.id);
+
+        if (nativeError) {
+          const { extra_bed_rate, ...safePayload } = payload;
+          await supabase
+            .from('properties')
+            .update(safePayload)
+            .eq('id', memProperty.id);
         }
+
+        try {
+          const { data: inv } = await supabase
+            .from('inventory_items')
+            .select('id')
+            .eq('name', 'Tarif Ekstra Bed Resmi')
+            .maybeSingle();
+
+          if (inv) {
+            await supabase.from('inventory_items').update({
+              purchase_price: currentRate,
+              updated_at: new Date().toISOString()
+            }).eq('id', inv.id);
+          } else {
+            await supabase.from('inventory_items').insert([{
+              name: 'Tarif Ekstra Bed Resmi',
+              category: 'perlengkapan_kamar',
+              purchase_price: currentRate,
+              current_stock: 10,
+              unit: 'unit',
+              min_stock_alert: 1,
+            }]);
+          }
+        } catch (invE) {}
+
+        memProperty = {
+          ...memProperty,
+          ...updates,
+          booking_policy: basePolicy,
+          extra_bed_rate: currentRate,
+        };
+        syncMemPropertyToStorage(memProperty);
       } catch (e) {}
     }
     return memProperty;

@@ -77,22 +77,51 @@ function savePropertyToFile(property: PropertySettings) {
 export async function GET() {
   try {
     let property = loadPropertyFromFile();
-    const serverRate = loadExtraBedRateFromFile();
+    let serverRate = loadExtraBedRateFromFile();
 
     if (isSupabaseConfigured()) {
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
         if (!error && data) {
-          // CRITICAL: Supabase properties table might not have extra_bed_rate column.
-          // Never let it wipe out our persistent rate!
-          const activeRate = data.extra_bed_rate !== undefined && data.extra_bed_rate !== null
-            ? Number(data.extra_bed_rate)
-            : (property.extra_bed_rate ?? serverRate);
+          // 1. Check if Supabase properties table has extra_bed_rate column natively
+          if (data.extra_bed_rate !== undefined && data.extra_bed_rate !== null) {
+            serverRate = Number(data.extra_bed_rate);
+          } 
+          // 2. Check if embedded in booking_policy tag [EXTRA_BED_RATE:xxx]
+          else if (data.booking_policy && data.booking_policy.includes('[EXTRA_BED_RATE:')) {
+            const match = data.booking_policy.match(/\[EXTRA_BED_RATE:(\d+)\]/);
+            if (match && match[1]) {
+              serverRate = parseInt(match[1], 10);
+            }
+          }
+          // 3. Fallback: Check inventory_items for 'Tarif Ekstra Bed Resmi'
+          else {
+            try {
+              const { data: inv } = await supabase
+                .from('inventory_items')
+                .select('purchase_price')
+                .eq('name', 'Tarif Ekstra Bed Resmi')
+                .maybeSingle();
+              if (inv && typeof inv.purchase_price === 'number' && inv.purchase_price >= 0) {
+                serverRate = inv.purchase_price;
+              }
+            } catch (e) {}
+          }
 
-          property = { ...property, ...data, extra_bed_rate: activeRate };
+          // Clean human-facing booking_policy text
+          const cleanBookingPolicy = data.booking_policy 
+            ? data.booking_policy.replace(/\s*\[EXTRA_BED_RATE:\d+\]/g, '').trim()
+            : (property.booking_policy || '');
+
+          property = { 
+            ...property, 
+            ...data, 
+            booking_policy: cleanBookingPolicy,
+            extra_bed_rate: serverRate 
+          };
           savePropertyToFile(property);
-          saveExtraBedRateToFile(activeRate);
+          saveExtraBedRateToFile(serverRate);
         }
       } catch (e) {}
     }
@@ -129,37 +158,84 @@ export async function POST(req: NextRequest) {
 
     savePropertyToFile(updatedProperty);
 
-    // 2. Persist to Supabase safely
+    // 2. Persist to Supabase across all available storage vectors
     if (isSupabaseConfigured()) {
       try {
         const supabase = getSupabaseClient();
-        // First try update directly with all fields
-        const { data, error } = await supabase
-          .from('properties')
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq('id', updatedProperty.id)
-          .select()
-          .maybeSingle();
+        
+        // Base booking policy to preserve
+        let basePolicy = updates.booking_policy || currentProperty.booking_policy || '';
+        basePolicy = basePolicy.replace(/\s*\[EXTRA_BED_RATE:\d+\]/g, '').trim();
+        const taggedBookingPolicy = `${basePolicy}\n[EXTRA_BED_RATE:${newExtraBedRate}]`;
 
-        if (error) {
-          // If error occurs (e.g. extra_bed_rate column not in Supabase properties table),
-          // update without extra_bed_rate so remaining fields save successfully
-          const { extra_bed_rate, ...cleanUpdates } = updates;
-          if (Object.keys(cleanUpdates).length > 0) {
+        // Vector A: Try native update on properties table
+        const payloadToTry = {
+          ...updates,
+          booking_policy: taggedBookingPolicy,
+          extra_bed_rate: newExtraBedRate,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: nativeError } = await supabase
+          .from('properties')
+          .update(payloadToTry)
+          .eq('id', updatedProperty.id);
+
+        if (nativeError) {
+          // If properties table doesn't have extra_bed_rate column yet,
+          // save with tagged booking_policy so it is permanently in Supabase!
+          const { extra_bed_rate, ...safePayload } = payloadToTry;
+          await supabase
+            .from('properties')
+            .update(safePayload)
+            .eq('id', updatedProperty.id);
+        }
+
+        // Vector B: Store in inventory_items in Supabase for additional resilience
+        try {
+          const { data: existingInv } = await supabase
+            .from('inventory_items')
+            .select('id')
+            .eq('name', 'Tarif Ekstra Bed Resmi')
+            .maybeSingle();
+
+          if (existingInv) {
             await supabase
-              .from('properties')
-              .update({ ...cleanUpdates, updated_at: new Date().toISOString() })
-              .eq('id', updatedProperty.id);
+              .from('inventory_items')
+              .update({
+                purchase_price: newExtraBedRate,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingInv.id);
+          } else {
+            await supabase
+              .from('inventory_items')
+              .insert([{
+                name: 'Tarif Ekstra Bed Resmi',
+                category: 'perlengkapan_kamar',
+                purchase_price: newExtraBedRate,
+                current_stock: 10,
+                unit: 'unit',
+                min_stock_alert: 1,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }]);
           }
-        } else if (data) {
-          savePropertyToFile({ ...updatedProperty, ...data, extra_bed_rate: newExtraBedRate });
+        } catch (invErr) {
+          console.warn('Inventory sync error:', invErr);
         }
       } catch (e) {
         console.error('Supabase property update error:', e);
       }
     }
 
-    return NextResponse.json({ success: true, property: updatedProperty });
+    return NextResponse.json({ 
+      success: true, 
+      property: {
+        ...updatedProperty,
+        booking_policy: updatedProperty.booking_policy?.replace(/\s*\[EXTRA_BED_RATE:\d+\]/g, '').trim()
+      } 
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

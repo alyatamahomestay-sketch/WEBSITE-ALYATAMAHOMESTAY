@@ -108,6 +108,16 @@ export default function WalkInReservationPage() {
           setExtraBedRate(Number(prop.extra_bed_rate));
         }
 
+        try {
+          const res = await fetch('/api/panel/properties', { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.property?.extra_bed_rate !== undefined && Number(json.property.extra_bed_rate) >= 0) {
+              setExtraBedRate(Number(json.property.extra_bed_rate));
+            }
+          }
+        } catch (e) {}
+
         // Auto select first available room if none selected
         if (!selectedRoomId && rooms.length > 0) {
           const firstAvail = rooms.find((r) => {
@@ -125,6 +135,20 @@ export default function WalkInReservationPage() {
       }
     }
     loadData();
+
+    const onRateSync = (e: any) => {
+      if (e?.detail && Number(e.detail) >= 0) {
+        setExtraBedRate(Number(e.detail));
+      } else {
+        loadData();
+      }
+    };
+    window.addEventListener('storage', onRateSync);
+    window.addEventListener('extra-bed-updated', onRateSync);
+    return () => {
+      window.removeEventListener('storage', onRateSync);
+      window.removeEventListener('extra-bed-updated', onRateSync);
+    };
   }, [checkinDate]);
 
   // Calculate pricing based on selected room, rental type, & extra bed

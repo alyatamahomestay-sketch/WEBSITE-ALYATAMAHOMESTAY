@@ -104,6 +104,29 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {}
 
+    if (isSupabaseConfigured()) {
+      try {
+        const adminClient = createAdminClient();
+        if (adminClient) {
+          const { data: propData } = await adminClient
+            .from('properties')
+            .select('booking_policy, extra_bed_rate')
+            .limit(1)
+            .maybeSingle();
+          if (propData) {
+            if (propData.extra_bed_rate !== undefined && propData.extra_bed_rate !== null) {
+              extraBedRate = Number(propData.extra_bed_rate);
+            } else if (propData.booking_policy && propData.booking_policy.includes('[EXTRA_BED_RATE:')) {
+              const match = propData.booking_policy.match(/\[EXTRA_BED_RATE:(\d+)\]/);
+              if (match && match[1]) {
+                extraBedRate = parseInt(match[1], 10);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
     const extraBedCount = data.extraBedQty || 0;
     const calculatedExtraCharges = extraBedCount > 0 ? (extraBedCount * extraBedRate * nights) : (data.extraCharges || 0);
 

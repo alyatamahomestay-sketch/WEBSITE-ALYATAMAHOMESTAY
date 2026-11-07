@@ -114,19 +114,23 @@ export default function KamarManagementPage() {
         localStorage.setItem('alyatama_extra_bed_rate', String(tempExtraBedRate));
       }
 
+      // 1. Post to unified server API (updates Supabase & local persistent storage)
+      const res = await fetch('/api/panel/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updates: { extra_bed_rate: tempExtraBedRate },
+        }),
+      });
+
+      if (!res.ok) {
+        console.warn('Server property API returned status:', res.status);
+      }
+
+      // 2. Sync to client memory & storage via PmsService
       await PmsService.updatePropertySettings({
         extra_bed_rate: tempExtraBedRate,
       });
-
-      try {
-        await fetch('/api/panel/properties', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            updates: { extra_bed_rate: tempExtraBedRate },
-          }),
-        });
-      } catch (err) {}
 
       setExtraBedRate(tempExtraBedRate);
       setEditingExtraBed(false);
@@ -147,6 +151,21 @@ export default function KamarManagementPage() {
   useEffect(() => {
     loadRooms();
     loadExtraBedRate();
+
+    const onRateSync = (e: any) => {
+      if (e?.detail && Number(e.detail) >= 0) {
+        setExtraBedRate(Number(e.detail));
+        setTempExtraBedRate(Number(e.detail));
+      } else {
+        loadExtraBedRate();
+      }
+    };
+    window.addEventListener('storage', onRateSync);
+    window.addEventListener('extra-bed-updated', onRateSync);
+    return () => {
+      window.removeEventListener('storage', onRateSync);
+      window.removeEventListener('extra-bed-updated', onRateSync);
+    };
   }, []);
 
   const openAddModal = () => {
