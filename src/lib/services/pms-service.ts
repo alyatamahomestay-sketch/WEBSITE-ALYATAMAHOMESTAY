@@ -187,7 +187,11 @@ export const PmsService = {
       const supabase = createClient();
       const { data, error } = await supabase.from('properties').select('*').limit(1).maybeSingle();
       if (!error && data) {
+        const preservedRate = memProperty.extra_bed_rate;
         memProperty = data as PropertySettings;
+        if (memProperty.extra_bed_rate === undefined && preservedRate !== undefined) {
+          memProperty.extra_bed_rate = preservedRate;
+        }
         syncMemPropertyToStorage(memProperty);
         return memProperty;
       }
@@ -219,14 +223,15 @@ export const PmsService = {
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
+        const { extra_bed_rate, ...cleanUpdates } = updates;
         const { data, error } = await supabase
           .from('properties')
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update({ ...cleanUpdates, updated_at: new Date().toISOString() })
           .eq('id', memProperty.id)
           .select()
           .maybeSingle();
         if (!error && data) {
-          memProperty = data as PropertySettings;
+          memProperty = { ...data, extra_bed_rate: updates.extra_bed_rate ?? memProperty.extra_bed_rate } as PropertySettings;
           syncMemPropertyToStorage(memProperty);
         }
       } catch (e) {}

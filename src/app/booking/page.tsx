@@ -66,21 +66,43 @@ function BookingContent() {
   useEffect(() => {
     async function fetchPropertySettings() {
       try {
+        if (typeof window !== 'undefined') {
+          const localVal = localStorage.getItem('alyatama_extra_bed_rate');
+          if (localVal && Number(localVal) >= 0) {
+            setExtraBedRate(Number(localVal));
+          }
+        }
+
         const res = await fetch('/api/panel/properties', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json.success && json.property?.extra_bed_rate !== undefined) {
-            setExtraBedRate(Number(json.property.extra_bed_rate));
+          if (json.success && json.property?.extra_bed_rate !== undefined && Number(json.property.extra_bed_rate) >= 0) {
+            const rate = Number(json.property.extra_bed_rate);
+            setExtraBedRate(rate);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('alyatama_extra_bed_rate', String(rate));
+            }
             return;
           }
         }
         const prop = await PmsService.getPropertySettings();
-        if (prop && prop.extra_bed_rate !== undefined) {
+        if (prop && prop.extra_bed_rate !== undefined && Number(prop.extra_bed_rate) >= 0) {
           setExtraBedRate(Number(prop.extra_bed_rate));
         }
       } catch (e) {}
     }
     fetchPropertySettings();
+
+    const onRateSync = (e: any) => {
+      if (e?.detail) setExtraBedRate(Number(e.detail));
+      else fetchPropertySettings();
+    };
+    window.addEventListener('storage', onRateSync);
+    window.addEventListener('extra-bed-updated', onRateSync);
+    return () => {
+      window.removeEventListener('storage', onRateSync);
+      window.removeEventListener('extra-bed-updated', onRateSync);
+    };
   }, []);
 
   useEffect(() => {

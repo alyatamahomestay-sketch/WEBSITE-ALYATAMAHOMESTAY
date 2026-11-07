@@ -51,6 +51,7 @@ ALTER TABLE public.properties
     ADD COLUMN IF NOT EXISTS announcement_banner TEXT DEFAULT 'Penginapan Syariah: “Nikmati Kenyamanan, Raih Ibadah Jariyah” • Pilihan Sewa Harian & Bulanan',
     ADD COLUMN IF NOT EXISTS is_announcement_active BOOLEAN DEFAULT true,
     ADD COLUMN IF NOT EXISTS landmark TEXT DEFAULT 'Di Belakang SPBU Bangkinang Kota, Samping Rumah Sakit Norpa Husada',
+    ADD COLUMN IF NOT EXISTS extra_bed_rate NUMERIC(12,2) DEFAULT 50000,
     ADD COLUMN IF NOT EXISTS syariah_policy TEXT DEFAULT 'Sebagai penginapan syariah, pasangan yang menginap dalam satu kamar wajib menunjukkan bukti identitas pernikahan yang sah (KTP beralamat sama / Buku Nikah). Tamu wajib menjaga adab, kesopanan, dan ketenangan lingkungan Islami.';
 
 -- 5. PERBAIKI KOLOM-KOLOM PADA TABEL ROOMS

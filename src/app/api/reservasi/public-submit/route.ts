@@ -87,11 +87,19 @@ export async function POST(req: NextRequest) {
     // Server-side safe price calculation according to rentalType & extra bed
     let extraBedRate = 50000;
     try {
-      const propFilePath = path.join(process.cwd(), '.server-property.json');
-      if (fs.existsSync(propFilePath)) {
-        const propData = JSON.parse(fs.readFileSync(propFilePath, 'utf8'));
-        if (propData && propData.extra_bed_rate !== undefined && Number(propData.extra_bed_rate) >= 0) {
-          extraBedRate = Number(propData.extra_bed_rate);
+      const extraBedFile = path.join(process.cwd(), '.server-extra-bed.json');
+      if (fs.existsSync(extraBedFile)) {
+        const extraData = JSON.parse(fs.readFileSync(extraBedFile, 'utf8'));
+        if (extraData && typeof extraData.extra_bed_rate === 'number' && extraData.extra_bed_rate >= 0) {
+          extraBedRate = Number(extraData.extra_bed_rate);
+        }
+      } else {
+        const propFilePath = path.join(process.cwd(), '.server-property.json');
+        if (fs.existsSync(propFilePath)) {
+          const propData = JSON.parse(fs.readFileSync(propFilePath, 'utf8'));
+          if (propData && propData.extra_bed_rate !== undefined && Number(propData.extra_bed_rate) >= 0) {
+            extraBedRate = Number(propData.extra_bed_rate);
+          }
         }
       }
     } catch (e) {}

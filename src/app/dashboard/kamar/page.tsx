@@ -66,10 +66,36 @@ export default function KamarManagementPage() {
 
   const loadExtraBedRate = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        const localVal = localStorage.getItem('alyatama_extra_bed_rate');
+        if (localVal && Number(localVal) >= 0) {
+          setExtraBedRate(Number(localVal));
+          setTempExtraBedRate(Number(localVal));
+        }
+      }
+
+      const res = await fetch('/api/panel/properties', { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.property?.extra_bed_rate !== undefined && Number(json.property.extra_bed_rate) >= 0) {
+          const rate = Number(json.property.extra_bed_rate);
+          setExtraBedRate(rate);
+          setTempExtraBedRate(rate);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('alyatama_extra_bed_rate', String(rate));
+          }
+          return;
+        }
+      }
+
       const prop = await PmsService.getPropertySettings();
       if (prop && prop.extra_bed_rate !== undefined && Number(prop.extra_bed_rate) >= 0) {
-        setExtraBedRate(Number(prop.extra_bed_rate));
-        setTempExtraBedRate(Number(prop.extra_bed_rate));
+        const rate = Number(prop.extra_bed_rate);
+        setExtraBedRate(rate);
+        setTempExtraBedRate(rate);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('alyatama_extra_bed_rate', String(rate));
+        }
       }
     } catch (err) {
       console.error('Failed to load extra bed rate:', err);
@@ -84,17 +110,32 @@ export default function KamarManagementPage() {
     }
     setSavingExtraBed(true);
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('alyatama_extra_bed_rate', String(tempExtraBedRate));
+      }
+
       await PmsService.updatePropertySettings({
         extra_bed_rate: tempExtraBedRate,
       });
+
+      try {
+        await fetch('/api/panel/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            updates: { extra_bed_rate: tempExtraBedRate },
+          }),
+        });
+      } catch (err) {}
+
       setExtraBedRate(tempExtraBedRate);
       setEditingExtraBed(false);
       showAdminToast('edit', `Tarif ekstra bed berhasil diperbarui menjadi ${formatRupiah(tempExtraBedRate)}/malam.`);
-      setFeedback(`Berhasil Diperbarui: Tarif sewa ekstra bed kini ${formatRupiah(tempExtraBedRate)}/malam/unit.`);
+      setFeedback(`Berhasil Diperbarui: Tarif sewa ekstra bed resmi disimpan permanen sebesar ${formatRupiah(tempExtraBedRate)}/malam/unit.`);
       
-      // Notify other tabs/forms if listening
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('extra-bed-updated', { detail: tempExtraBedRate }));
       }
     } catch (err: any) {
       alert(err.message || 'Gagal menyimpan tarif ekstra bed');

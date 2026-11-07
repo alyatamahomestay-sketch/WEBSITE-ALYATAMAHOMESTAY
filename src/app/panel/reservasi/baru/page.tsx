@@ -98,6 +98,12 @@ export default function WalkInReservationPage() {
         setAllRooms(rooms.filter(r => !r.is_archived));
         setAllReservations(reservations);
         setPaymentMethods(methods);
+        if (typeof window !== 'undefined') {
+          const localVal = localStorage.getItem('alyatama_extra_bed_rate');
+          if (localVal && Number(localVal) >= 0) {
+            setExtraBedRate(Number(localVal));
+          }
+        }
         if (prop && prop.extra_bed_rate !== undefined && Number(prop.extra_bed_rate) >= 0) {
           setExtraBedRate(Number(prop.extra_bed_rate));
         }
