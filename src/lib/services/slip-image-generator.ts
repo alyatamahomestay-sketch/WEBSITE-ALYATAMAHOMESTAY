@@ -14,10 +14,10 @@ export async function downloadReservationSlipJpg(
     throw new Error('Hanya dapat dijalankan di browser');
   }
 
-  // Target high-resolution canvas: 1000 x 1490 (Retina-quality 2x)
+  // Target high-resolution canvas: 1000 x 1240 (Retina-quality 2x)
   const canvas = document.createElement('canvas');
   const width = 1000;
-  const height = 1490;
+  const height = 1240;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
@@ -276,92 +276,28 @@ export async function downloadReservationSlipJpg(
   ctx.fillText(`Sisa Saat Tiba: ${formatRupiah(balanceDueNum)}`, width - 90, nextRowY + 28);
   ctx.textAlign = 'left';
 
-  // --- Section 3: Rekening Pembayaran & Instruksi WhatsApp ---
+  // --- Catatan Kepatuhan Syariah & Ketentuan Homestay ---
   curY = curY + sec2Height + 20;
 
-  const sec3Height = 295;
+  const syariahHeight = 78;
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 44, curY, width - 88, sec3Height, 14);
-  ctx.fill();
-  ctx.strokeStyle = '#E5DCD0';
-  ctx.stroke();
-
-  // Section Header
-  ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 44, curY, width - 88, 40, [14, 14, 0, 0]);
-  ctx.fill();
-  ctx.fillStyle = '#806044';
-  ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText('3. SISTEM PEMBAYARAN (CASH/TRANSFER) DAN KONFIRMASI WHATSAPP ADMIN', 65, curY + 25);
-
-  // Bank & Cash Info Card (Left Box)
-  const bankMethod = paymentMethods.find((pm) => pm.code === 'bank_transfer' && pm.is_active);
-  const bankAccount = (bankMethod?.account_number && bankMethod.account_number.trim()) || '712-854-7200 (BSI)';
-  const bankOwner = (bankMethod?.account_name && bankMethod.account_name.trim()) || 'ALYATAMA HOMESTAY';
-  const isPrefTransfer = reservation.payment_preference === 'transfer' || String(reservation.special_requests || '').toLowerCase().includes('transfer');
-
-  ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 55, 410, 125, 10);
-  ctx.fill();
-  ctx.strokeStyle = '#E5DCD0';
-  ctx.stroke();
-
-  ctx.fillStyle = '#392B21';
-  ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText(isPrefTransfer ? 'Pilihan Tamu: Transfer Bank Resmi (BSI)' : 'Sistem Pembayaran: Tunai (Cash) / Transfer', 85, curY + 76);
-  ctx.font = 'bold 17px monospace';
-  ctx.fillStyle = '#806044';
-  ctx.fillText(bankAccount, 85, curY + 102);
-  ctx.font = '12px system-ui, sans-serif';
-  ctx.fillStyle = '#756A5F';
-  ctx.fillText(`a.n. ${bankOwner}`, 85, curY + 122);
-  ctx.font = '11px system-ui, sans-serif';
-  ctx.fillStyle = '#806044';
-  ctx.fillText('• Bayar Tunai di Resepsionis / Transfer sebelum terima kunci.', 85, curY + 144);
-  ctx.fillStyle = '#9ca3af';
-  ctx.fillText('• Sertakan No. Reservasi pada berita transfer bank.', 85, curY + 162);
-
-  // WhatsApp Instructions Card (Right Box)
-  ctx.fillStyle = '#F0FDF4';
-  roundRect(ctx, 505, curY + 55, 430, 125, 10);
-  ctx.fill();
-  ctx.strokeStyle = '#BBF7D0';
-  ctx.stroke();
-
-  ctx.fillStyle = '#166534';
-  ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText('WhatsApp Konfirmasi Admin Homestay:', 525, curY + 76);
-  ctx.font = 'bold 18px monospace';
-  ctx.fillStyle = '#15803d';
-  ctx.fillText(wa, 525, curY + 102);
-  ctx.font = '12px system-ui, sans-serif';
-  ctx.fillStyle = '#166534';
-  ctx.fillText('Petugas bertugas melayani verifikasi 24 Jam', 525, curY + 124);
-  ctx.font = '11px system-ui, sans-serif';
-  ctx.fillStyle = '#15803d';
-  ctx.fillText('• Kirimkan gambar bukti (.jpg) ini via WhatsApp admin.', 525, curY + 144);
-  ctx.fillText('• Admin memverifikasi reservasi & kunci kamar Anda.', 525, curY + 162);
-
-  // Instructions Note Box (Clean and comfortably spaced)
-  ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 195, width - 130, 85, 8);
+  roundRect(ctx, 44, curY, width - 88, syariahHeight, 12);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
 
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 11px system-ui, sans-serif';
-  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH:', 85, curY + 216);
+  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH & KETENTUAN HOMESTAY:', 65, curY + 24);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#756A5F';
-  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 85, curY + 236);
-  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 85, curY + 252);
-  ctx.fillText('• Waktu Check-in mulai 14:00 WIB, Check-out maksimal 12:00 WIB. Pelunasan di tempat sebelum serah kunci.', 85, curY + 268);
+  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 65, curY + 44);
+  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 65, curY + 62);
 
-  // --- Section 4: Footer Stamp & Verification Seal (Flows dynamically, never overlaps) ---
-  curY = curY + sec3Height + 20;
+  // --- Segel & Stempel Dokumen Resmi PMS ALYATAMA ---
+  curY = curY + syariahHeight + 20;
 
-  const sec4Height = 115;
+  const sec4Height = 110;
   ctx.fillStyle = '#FFFFFF';
   roundRect(ctx, 44, curY, width - 88, sec4Height, 14);
   ctx.fill();
@@ -371,25 +307,25 @@ export async function downloadReservationSlipJpg(
   // Seal Graphic
   ctx.fillStyle = '#15803d';
   ctx.beginPath();
-  ctx.arc(85, curY + 57, 24, 0, Math.PI * 2);
+  ctx.arc(85, curY + 55, 24, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#FFFFFF';
   ctx.font = 'bold 20px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✓', 85, curY + 65);
+  ctx.fillText('✓', 85, curY + 63);
 
   ctx.textAlign = 'left';
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 14px system-ui, sans-serif';
-  ctx.fillText('DOKUMEN RESMI TERCATAT DALAM SISTEM PMS ALYATAMA', 125, curY + 48);
+  ctx.fillText('DOKUMEN RESMI TERCATAT DALAM SISTEM PMS ALYATAMA', 125, curY + 45);
 
   ctx.fillStyle = '#756A5F';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Kampar, Riau', 125, curY + 70);
+  ctx.fillText('Jl. Mayor Ali Rasyid No 19 Bangkinang Kota, Panti Asuhan Putra Muhammadiyah, Kampar, Riau', 125, curY + 67);
   ctx.font = '11px monospace';
   ctx.fillStyle = '#9ca3af';
-  ctx.fillText(`Hash Validasi: SHA256-${reservation.id.slice(0, 12)} | Generator: PMS-ALYATAMA-CLIENT`, 125, curY + 90);
+  ctx.fillText(`Hash Validasi: SHA256-${reservation.id.slice(0, 12)} | Generator: PMS-ALYATAMA-CLIENT`, 125, curY + 87);
 
   // Bottom Notice
   curY = curY + sec4Height + 25;

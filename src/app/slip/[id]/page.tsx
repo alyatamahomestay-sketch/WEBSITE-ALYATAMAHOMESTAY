@@ -290,7 +290,7 @@ export default async function SlipPage({ params }: SlipPageProps) {
                       2. Transfer Rekening Bank
                     </strong>
                     <div className="p-3 bg-stone-50 rounded border border-stone-200 font-mono text-[11px] text-stone-800 whitespace-pre-line leading-relaxed">
-                      {bankMethod.instructions || 'Bank BCA: 123-456-7890 a.n ALYATAMA HOMESTAY'}
+                      {bankMethod.instructions || 'Bank Syariah Indonesia (BSI): 712-854-7200 a.n ALYATAMA HOMESTAY'}
                     </div>
                     <p className="text-[11px] text-stone-500 leading-tight">
                       Mohon cantumkan No. Reservasi <strong>{reservation.reservation_number}</strong> pada berita transfer.
