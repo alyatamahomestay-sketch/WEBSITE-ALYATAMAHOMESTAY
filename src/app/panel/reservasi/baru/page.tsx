@@ -16,7 +16,10 @@ import {
   ShieldCheck,
   Printer,
   Clock,
-  UserCheck
+  UserCheck,
+  Building2,
+  Copy,
+  Check
 } from 'lucide-react';
 import { PmsService } from '@/lib/services/pms-service';
 import { Room, StaffShift, Reservation, PaymentMethod } from '@/lib/types';
@@ -56,10 +59,12 @@ export default function WalkInReservationPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
 
-  // Payment & QRIS verification
+  // Payment & QRIS/Transfer verification
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState('Tunai / Kasir');
   const [qrisVerified, setQrisVerified] = useState(false);
+  const [transferVerified, setTransferVerified] = useState(false);
+  const [copiedRekening, setCopiedRekening] = useState(false);
   const [notes, setNotes] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -174,10 +179,28 @@ export default function WalkInReservationPage() {
     }
   }, [calculatedTotal]);
 
-  // QRIS image check
+  // QRIS & Bank Transfer check
   const isQrisSelected = paymentMethod.toLowerCase().includes('qris');
-  const qrisMethod = paymentMethods.find((m) => m.code === 'qris');
+  const isTransferSelected = paymentMethod.toLowerCase().includes('transfer') || paymentMethod.toLowerCase().includes('bank');
+
+  const qrisMethod = paymentMethods.find((m) => m.code === 'qris' || m.name?.toLowerCase().includes('qris'));
   const qrisImageUrl = qrisMethod?.qris_image_url || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80';
+  const qrisMerchantName = qrisMethod?.account_name || 'ALYATAMA HOMESTAY';
+
+  const bankMethod = paymentMethods.find((m) => m.code === 'bank_transfer' || m.code?.includes('transfer') || m.name?.toLowerCase().includes('transfer'));
+  const bankAccountName = bankMethod?.account_name || 'ALYATAMA HOMESTAY';
+  const bankAccountNumber = bankMethod?.account_number || '712-854-7200 (BSI)';
+  const bankName = bankMethod?.name || 'Bank Syariah Indonesia (BSI)';
+  const bankInstructions = bankMethod?.instructions || 'Transfer ke rekening resmi Bank Syariah Indonesia (BSI): 712-854-7200 a.n ALYATAMA HOMESTAY.\nSertakan nomor reservasi resmi pada berita transfer.';
+
+  const handleCopyRekening = () => {
+    const cleanNumber = bankAccountNumber.replace(/\s*\(.*?\)/g, '').trim();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(cleanNumber || bankAccountNumber);
+      setCopiedRekening(true);
+      setTimeout(() => setCopiedRekening(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +219,11 @@ export default function WalkInReservationPage() {
       return;
     }
 
+    if (isTransferSelected && !transferVerified) {
+      alert('Wajib mencentang kotak konfirmasi bahwa mutasi / struk transfer bank tamu telah berhasil diverifikasi masuk ke rekening resmi ALYATAMA HOMESTAY.');
+      return;
+    }
+
     setLoading(true);
     try {
       const extraBreakdown = extraBedQty > 0 ? [{
@@ -207,6 +235,7 @@ export default function WalkInReservationPage() {
         notes.trim(),
         extraBedQty > 0 ? `[Ekstra Bed: +${extraBedQty} Unit x Rp ${extraBedRate.toLocaleString('id-ID')}]` : '',
         isQrisSelected ? '[Pembayaran Terverifikasi via QRIS]' : '',
+        isTransferSelected ? '[Pembayaran Terverifikasi via Transfer Bank]' : '',
       ].filter(Boolean).join('\n');
 
       const res = await PmsService.createWalkInReservation({
@@ -653,9 +682,13 @@ export default function WalkInReservationPage() {
                 <select
                   value={paymentMethod}
                   onChange={(e) => {
-                    setPaymentMethod(e.target.value);
-                    if (!e.target.value.toLowerCase().includes('qris')) {
+                    const val = e.target.value;
+                    setPaymentMethod(val);
+                    if (!val.toLowerCase().includes('qris')) {
                       setQrisVerified(false);
+                    }
+                    if (!val.toLowerCase().includes('transfer') && !val.toLowerCase().includes('bank')) {
+                      setTransferVerified(false);
                     }
                   }}
                   className="w-full p-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#355C46] bg-white font-medium text-stone-800"
@@ -693,7 +726,10 @@ export default function WalkInReservationPage() {
                     className="w-56 h-56 object-contain mx-auto rounded-lg border border-stone-100"
                   />
                   <div className="text-[11px] text-stone-500 font-mono">
-                    NMID / Merchant: ALYATAMA HOMESTAY
+                    NMID / Merchant: {qrisMerchantName}
+                  </div>
+                  <div className="inline-block px-3 py-1 bg-emerald-50 text-emerald-800 font-bold text-xs rounded-full border border-emerald-200">
+                    Nominal: {formatRupiah(paymentAmount)}
                   </div>
                 </div>
 
@@ -708,6 +744,86 @@ export default function WalkInReservationPage() {
                   />
                   <label htmlFor="qrisVerifiedCheckbox" className="text-xs text-stone-800 font-semibold leading-relaxed cursor-pointer select-none">
                     Saya mengonfirmasi bahwa tamu telah memindai QRIS dan pembayaran sejumlah <span className="text-[#355C46] font-bold">{formatRupiah(paymentAmount)}</span> telah berhasil masuk dan terverifikasi pada rekening kasir ALYATAMA HOMESTAY. <span className="text-rose-600">*</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Bank Transfer Details & Verification Checklist (Tampil jika Metode Transfer Dipilih) */}
+            {isTransferSelected && (
+              <div className="p-4 bg-blue-50/70 border-2 border-blue-300 rounded-2xl space-y-4 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-blue-700 text-white">
+                    <Building2 className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-stone-900 text-xs sm:text-sm">
+                      Rekening Resmi Transfer Bank ALYATAMA HOMESTAY
+                    </h4>
+                    <p className="text-[11px] text-stone-600">
+                      Pastikan bukti transfer tamu ditujukan ke nomor rekening resmi homestay dan nominal tepat {formatRupiah(paymentAmount)}.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bank Account Display Container */}
+                <div className="bg-white p-4 rounded-xl border border-blue-200 space-y-3 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-blue-700 tracking-wider block">
+                        Nomor Rekening Tujuan ({bankName})
+                      </span>
+                      <span className="text-base sm:text-lg font-mono font-bold text-stone-900 select-all tracking-wide">
+                        {bankAccountNumber}
+                      </span>
+                      <span className="text-[11px] text-stone-600 block mt-0.5">
+                        Atas Nama: <strong className="text-stone-800 font-semibold">{bankAccountName}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyRekening}
+                      className="self-start sm:self-center px-3 py-1.5 rounded-lg bg-white border border-blue-300 hover:bg-blue-50 text-blue-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+                    >
+                      {copiedRekening ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Salin No. Rek</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {bankInstructions && (
+                    <div className="text-[11px] text-stone-600 bg-stone-50 p-2.5 rounded-lg border border-stone-200 leading-relaxed whitespace-pre-line">
+                      <span className="font-semibold text-stone-700 block mb-0.5">Petunjuk Transfer:</span>
+                      {bankInstructions}
+                    </div>
+                  )}
+
+                  <div className="text-center">
+                    <div className="inline-block px-3 py-1 bg-blue-50 text-blue-900 font-bold text-xs rounded-full border border-blue-200">
+                      Nominal Transfer: {formatRupiah(paymentAmount)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Checklist Konfirmasi Transfer Bank (Wajib Dicentang) */}
+                <div className="p-3.5 bg-white border-2 border-blue-500/60 rounded-xl flex items-start gap-3 shadow-2xs">
+                  <input
+                    type="checkbox"
+                    id="transferVerifiedCheckboxWalkin"
+                    checked={transferVerified}
+                    onChange={(e) => setTransferVerified(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300 text-blue-700 focus:ring-blue-700 cursor-pointer shrink-0"
+                  />
+                  <label htmlFor="transferVerifiedCheckboxWalkin" className="text-xs text-stone-800 font-semibold leading-relaxed cursor-pointer select-none">
+                    Saya mengonfirmasi bahwa tamu telah mentransfer pembayaran sejumlah <span className="text-blue-800 font-bold">{formatRupiah(paymentAmount)}</span> dan mutasi / struk transfer telah berhasil diverifikasi masuk ke rekening resmi ALYATAMA HOMESTAY. <span className="text-rose-600">*</span>
                   </label>
                 </div>
               </div>
@@ -730,13 +846,15 @@ export default function WalkInReservationPage() {
             <span className="text-stone-500 text-[11px]">
               {isQrisSelected && !qrisVerified ? (
                 <span className="text-amber-700 font-medium">*Centang konfirmasi pembayaran QRIS untuk mengaktifkan tombol simpan.</span>
+              ) : isTransferSelected && !transferVerified ? (
+                <span className="text-amber-700 font-medium">*Centang konfirmasi mutasi transfer bank untuk mengaktifkan tombol simpan.</span>
               ) : (
                 'Otomatis mengunci unit kamar & mencatat staf penerima.'
               )}
             </span>
             <button
               type="submit"
-              disabled={loading || allRooms.length === 0 || (isQrisSelected && !qrisVerified)}
+              disabled={loading || allRooms.length === 0 || (isQrisSelected && !qrisVerified) || (isTransferSelected && !transferVerified)}
               className="w-full sm:w-auto bg-[#355C46] hover:bg-[#284635] text-white px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
             >
               {loading ? (
