@@ -234,10 +234,10 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                   )}
 
                   <Link
-                    href={`/cek-ketersediaan?room_id=${room.id}`}
+                    href="/kamar"
                     className="w-full text-center bg-white hover:bg-stone-50 text-[#756A5F] font-semibold text-xs py-2 px-4 rounded-xl border border-[#E5DCD0] transition block"
                   >
-                    Cek Tanggal & Ketersediaan
+                    &larr; Lihat Pilihan Kamar Lainnya
                   </Link>
                 </div>
 

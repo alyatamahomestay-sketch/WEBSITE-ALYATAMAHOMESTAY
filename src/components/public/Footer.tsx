@@ -138,8 +138,8 @@ export default function PublicFooter() {
                 </Link>
               </li>
               <li className="pt-2 border-t border-[#4d3b2e]">
-                <Link href="/cek-ketersediaan" className="hover:text-white transition-colors">
-                  Cek Ketersediaan Kamar
+                <Link href="/kamar" className="hover:text-white transition-colors">
+                  Pilihan Kamar & Status Ketersediaan
                 </Link>
               </li>
               <li>

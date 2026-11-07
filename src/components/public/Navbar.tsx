@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, Phone, Menu, X, Heart, Image as ImageIcon } from 'lucide-react';
+import { Phone, Menu, X, Heart, Image as ImageIcon } from 'lucide-react';
 import AlyatamaLogo from '@/components/common/AlyatamaLogo';
 
 export default function PublicNavbar() {
@@ -62,7 +62,6 @@ export default function PublicNavbar() {
     { label: 'Beranda', href: '/', exact: true },
     { label: 'Pilihan Kamar', href: '/kamar' },
     { label: 'Galeri & Iklan', href: '/galeri', icon: ImageIcon },
-    { label: 'Cek Ketersediaan', href: '/cek-ketersediaan', icon: Calendar },
     { label: 'Tentang & Nilai Syariah', href: '/tentang' },
     { label: 'Tata Tertib', href: '/kebijakan' },
     { label: 'Lokasi Bangkinang', href: '/kontak' },
