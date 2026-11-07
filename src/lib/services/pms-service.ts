@@ -114,11 +114,116 @@ function loadMemReservationsFromStorage(): Reservation[] | null {
       const saved = localStorage.getItem('alyatama_reservations_data');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(normalizeReservationRecord);
       }
     } catch (e) {}
   }
   return null;
+}
+
+function normalizeReservationRecord(r: any): Reservation {
+  if (!r) return r;
+  let mappedRooms: Room[] = [];
+  if (Array.isArray(r.rooms)) {
+    mappedRooms = r.rooms.map((rm: any) => {
+      if (rm && rm.room) return rm.room;
+      return rm;
+    }).filter(Boolean);
+  } else if (r.rooms && typeof r.rooms === 'object' && !Array.isArray(r.rooms)) {
+    mappedRooms = [r.rooms?.room || r.rooms];
+  }
+
+  let mappedSnapshot = r.price_snapshot;
+  if (Array.isArray(mappedSnapshot)) {
+    mappedSnapshot = mappedSnapshot[0] || null;
+  }
+
+  let extraBedCount = 0;
+  const specReq = String(r.special_requests || '');
+  const extraBedMatch = specReq.match(/\[(?:Permintaan:\s*)?\+(\d+)\s*Unit\s*Ekstra\s*Bed\]/i) || specReq.match(/\[Ekstra\s*Bed:\s*\+(\d+)\s*Unit/i);
+  if (extraBedMatch && extraBedMatch[1]) {
+    extraBedCount = parseInt(extraBedMatch[1], 10);
+  }
+
+  const defaultRoomRate = mappedRooms[0]?.base_rate || 200000;
+  const nights = r.duration_units || mappedSnapshot?.total_nights || 1;
+
+  if (!mappedSnapshot) {
+    const extraTotal = extraBedCount * 50000 * nights;
+    const baseSubtotal = defaultRoomRate * nights;
+    const totalAmount = baseSubtotal + extraTotal;
+    mappedSnapshot = {
+      id: 'snp-fb-' + (r.id || Date.now()),
+      reservation_id: r.id,
+      total_nights: nights,
+      base_subtotal: baseSubtotal,
+      nightly_breakdown: [],
+      discount_amount: 0,
+      discount_reason: null,
+      promo_code: null,
+      promo_snapshot: null,
+      extra_charges: extraTotal,
+      extra_charges_breakdown: extraBedCount > 0 ? [{
+        description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
+        amount: extraTotal,
+      }] : [],
+      deposit_required: Math.round(totalAmount * 0.5),
+      total_amount: totalAmount,
+      total_paid: r.payment_status === 'paid' ? totalAmount : 0,
+      balance_due: r.payment_status === 'paid' ? 0 : totalAmount,
+      created_at: r.created_at || new Date().toISOString(),
+      updated_at: r.updated_at || new Date().toISOString(),
+    };
+  } else {
+    const baseSubtotal = Number(mappedSnapshot.base_subtotal) || (defaultRoomRate * nights);
+    let extraCharges = Number(mappedSnapshot.extra_charges) || 0;
+    let extraBreakdown = Array.isArray(mappedSnapshot.extra_charges_breakdown) ? mappedSnapshot.extra_charges_breakdown : [];
+
+    if (extraCharges === 0 && extraBedCount > 0) {
+      extraCharges = extraBedCount * 50000 * nights;
+      if (extraBreakdown.length === 0) {
+        extraBreakdown = [{
+          description: `Ekstra Bed / Kasur Tambahan (${extraBedCount} Unit x ${nights} Malam @ Rp 50.000)`,
+          amount: extraCharges,
+        }];
+      }
+    }
+
+    const discountAmount = Number(mappedSnapshot.discount_amount) || 0;
+    const computedTotal = (baseSubtotal - discountAmount) + extraCharges;
+    const totalAmount = Number(mappedSnapshot.total_amount) || computedTotal;
+    const totalPaid = Number(mappedSnapshot.total_paid) || (r.payment_status === 'paid' ? totalAmount : 0);
+    const balanceDue = r.payment_status === 'paid' ? 0 : (mappedSnapshot.balance_due != null ? Number(mappedSnapshot.balance_due) : Math.max(0, totalAmount - totalPaid));
+
+    mappedSnapshot = {
+      ...mappedSnapshot,
+      base_subtotal: baseSubtotal,
+      extra_charges: extraCharges,
+      extra_charges_breakdown: extraBreakdown,
+      discount_amount: discountAmount,
+      total_amount: totalAmount,
+      total_paid: totalPaid,
+      balance_due: balanceDue,
+    };
+  }
+
+  let mappedDeposit = r.deposit;
+  if (Array.isArray(mappedDeposit)) {
+    mappedDeposit = mappedDeposit[0] || null;
+  }
+
+  let mappedGuest = r.guest;
+  if (Array.isArray(mappedGuest)) {
+    mappedGuest = mappedGuest[0] || null;
+  }
+
+  return {
+    ...r,
+    guest: mappedGuest,
+    rooms: mappedRooms,
+    price_snapshot: mappedSnapshot,
+    deposit: mappedDeposit,
+  };
 }
 
 function syncMemStaffUsersToStorage(users: StaffUser[]) {
@@ -527,7 +632,7 @@ export const PmsService = {
       }
       const { data, error } = await query;
       if (!error && data && data.length > 0) {
-        memReservations = data as unknown as Reservation[];
+        memReservations = (data as any[]).map(normalizeReservationRecord);
         syncMemReservationsToStorage(memReservations);
         return memReservations;
       }
@@ -549,7 +654,7 @@ export const PmsService = {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.reservation) {
-            return json.reservation;
+            return normalizeReservationRecord(json.reservation);
           }
         }
       } catch (e) {}
@@ -558,7 +663,7 @@ export const PmsService = {
     // Check in-memory / storage
     const list = await this.getReservations();
     const found = list.find(r => (r.id && r.id.toUpperCase() === cleanId) || (r.reservation_number && r.reservation_number.toUpperCase() === cleanId));
-    if (found) return found;
+    if (found) return normalizeReservationRecord(found);
 
     if (isSupabaseConfigured()) {
       try {
@@ -585,7 +690,7 @@ export const PmsService = {
         const { data, error } = await query.maybeSingle();
 
         if (!error && data) {
-          return data as unknown as Reservation;
+          return normalizeReservationRecord(data);
         }
       } catch (e) {}
     }

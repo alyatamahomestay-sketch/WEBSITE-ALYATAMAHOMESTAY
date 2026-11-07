@@ -399,6 +399,20 @@ function StatusReservasiContent() {
                           <span className="text-stone-500">Kapasitas Tamu:</span>
                           <span className="text-[#392B21]">{reservation.adults} Dewasa{reservation.children > 0 ? `, ${reservation.children} Anak` : ''}</span>
                         </div>
+                        {(() => {
+                          const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
+                          const extraCharges = Number(snap?.extra_charges) || 0;
+                          const extraBreakdown = Array.isArray(snap?.extra_charges_breakdown) ? snap.extra_charges_breakdown : [];
+                          if (extraCharges <= 0 && (!reservation.special_requests || !reservation.special_requests.includes('Ekstra Bed'))) return null;
+                          return (
+                            <div className="flex justify-between items-center text-amber-800 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200 text-xs">
+                              <span className="font-medium text-[11px]">Tambahan Kasur:</span>
+                              <strong className="font-bold text-[11px]">
+                                {extraBreakdown[0]?.description ? extraBreakdown[0].description.split('(')[0].trim() : 'Ekstra Bed Tambahan'}
+                              </strong>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -456,35 +470,52 @@ function StatusReservasiContent() {
                   {/* Rincian Biaya */}
                   {(() => {
                     const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
-                    const discountAmt = snap?.discount_amount || 0;
-                    const baseSubtotal = snap?.base_subtotal || ((snap?.total_amount || 0) + discountAmt) || ((reservation.rooms?.[0]?.base_rate || 150000) * (reservation.duration_units || 1));
-                    const totalAmt = snap?.total_amount || Math.max(0, baseSubtotal - discountAmt);
-                    const totalPaid = snap?.total_paid || 0;
+                    const nights = reservation.duration_units || snap?.total_nights || 1;
+                    const unitLabel = reservation.rental_type === 'monthly' ? 'Bulan' : reservation.rental_type === 'yearly' ? 'Tahun' : 'Malam';
+                    const discountAmt = Number(snap?.discount_amount) || 0;
+                    const extraCharges = Number(snap?.extra_charges) || 0;
+                    const extraBreakdown = Array.isArray(snap?.extra_charges_breakdown) ? snap.extra_charges_breakdown : [];
+                    const baseSubtotal = Number(snap?.base_subtotal) || ((reservation.rooms?.[0]?.base_rate || 150000) * nights);
+                    const totalAmt = Number(snap?.total_amount) || Math.max(0, (baseSubtotal - discountAmt) + extraCharges);
+                    const totalPaid = Number(snap?.total_paid) || 0;
                     const isPaid = reservation.payment_status === 'paid';
-                    const balDue = isPaid ? 0 : (totalPaid > 0 ? Math.max(0, totalAmt - totalPaid) : totalAmt);
+                    const balDue = isPaid ? 0 : (snap?.balance_due != null ? Number(snap.balance_due) : Math.max(0, totalAmt - totalPaid));
                     return (
                       <div className="p-5 bg-[#392B21] text-[#E7D8C5] rounded-2xl space-y-3 text-xs border border-[#4d3b2e]">
-                        {discountAmt > 0 && (
-                          <>
-                            <div className="flex justify-between items-center text-stone-300">
-                              <span>Harga Normal ({reservation.duration_units ? `${reservation.duration_units} ${reservation.rental_type === 'monthly' ? 'Bulan' : 'Malam'}` : '1 Periode'}):</span>
-                              <span className="font-medium text-stone-200">
-                                {formatRupiah(baseSubtotal)}
-                              </span>
-                            </div>
+                        <div className="flex justify-between items-center text-stone-300">
+                          <span>Sewa Pokok Kamar ({nights} {unitLabel}):</span>
+                          <span className="font-medium text-stone-200">
+                            {formatRupiah(baseSubtotal)}
+                          </span>
+                        </div>
 
-                            <div className="flex justify-between items-center text-emerald-400 bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/40">
-                              <span>Potongan Promo ({snap.discount_reason || snap.promo_code || 'Promo'}):</span>
-                              <span className="font-bold">
-                                -{formatRupiah(discountAmt)}
-                              </span>
+                        {extraCharges > 0 && (
+                          <div className="flex justify-between items-center text-amber-300 bg-amber-950/40 p-2.5 rounded-lg border border-amber-800/40">
+                            <div className="flex flex-col">
+                              <span className="font-bold">{extraBreakdown[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}</span>
+                              <span className="text-[10px] text-amber-200/70">Layanan kasur resmi ALYATAMA</span>
                             </div>
-                          </>
+                            <span className="font-bold text-amber-300 text-sm">
+                              +{formatRupiah(extraCharges)}
+                            </span>
+                          </div>
                         )}
 
-                        <div className="flex justify-between items-center text-stone-300">
-                          <span>{discountAmt > 0 ? 'Total Biaya Setelah Diskon:' : `Total Biaya Sewa (${reservation.duration_units ? `${reservation.duration_units} ${reservation.rental_type === 'monthly' ? 'Bulan' : 'Malam'}` : '1 Periode'}):`}</span>
-                          <span className="font-bold text-white text-base">
+                        {discountAmt > 0 && (
+                          <div className="flex justify-between items-center text-emerald-400 bg-emerald-950/40 p-2.5 rounded-lg border border-emerald-800/40">
+                            <span>Potongan Promo ({snap?.discount_reason || snap?.promo_code || 'Promo'}):</span>
+                            <span className="font-bold">
+                              -{formatRupiah(discountAmt)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-[#4d3b2e] flex justify-between items-center">
+                          <div>
+                            <span className="font-bold text-white text-sm block">Total Biaya Sewa Resmi:</span>
+                            <span className="text-[10px] text-stone-400">Total terhitung sama dengan estimasi formulir pemesanan</span>
+                          </div>
+                          <span className="font-bold text-[#E7D8C5] text-lg">
                             {formatRupiah(totalAmt)}
                           </span>
                         </div>

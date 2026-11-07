@@ -54,9 +54,15 @@ export function prepareManualWhatsAppMessage(params: {
   const roomName = reservation.rooms?.[0]?.name || 'Kamar Homestay';
   const checkinStr = formatDateIndo(reservation.checkin_date);
   const checkoutStr = formatDateIndo(reservation.checkout_date);
-  const totalStr = formatRupiah(reservation.price_snapshot?.total_amount);
-  const depositStr = formatRupiah(reservation.price_snapshot?.deposit_required);
-  const balanceStr = formatRupiah(reservation.price_snapshot?.balance_due);
+  const snap = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
+  const totalStr = formatRupiah(snap?.total_amount);
+  const depositStr = formatRupiah(snap?.deposit_required);
+  const balanceStr = formatRupiah(snap?.balance_due);
+  const extraCharges = Number(snap?.extra_charges) || 0;
+  const extraBreakdown = Array.isArray(snap?.extra_charges_breakdown) ? snap.extra_charges_breakdown : [];
+  const extraBedLine = extraCharges > 0 
+    ? `• Ekstra Bed: ${extraBreakdown[0]?.description || `+Kasur Tambahan (${formatRupiah(extraCharges)})`}\n` 
+    : '';
 
   let messageText = '';
 
@@ -64,6 +70,7 @@ export function prepareManualWhatsAppMessage(params: {
     messageText = `Halo ${guestName},\n\nTerima kasih telah mengajukan pemesanan di *${homestayName}*.\n\nPermintaan reservasi Anda telah *DISETUJUI* oleh admin homestay:\n` +
       `• No. Reservasi: *${resNumber}*\n` +
       `• Unit Kamar: ${roomName}\n` +
+      extraBedLine +
       `• Periode: ${checkinStr} s/d ${checkoutStr}\n` +
       `• Total Biaya: ${totalStr}\n` +
       `• Uang Muka (Deposit): ${depositStr}\n\n` +
@@ -73,6 +80,7 @@ export function prepareManualWhatsAppMessage(params: {
     messageText = `Halo ${guestName},\n\nKabar baik! Pembayaran untuk reservasi Anda di *${homestayName}* telah diverifikasi dan *TERKONFIRMASI*.\n\n` +
       `• No. Reservasi: *${resNumber}*\n` +
       `• Unit Kamar: ${roomName}\n` +
+      extraBedLine +
       `• Jadwal Check-in: ${checkinStr} (Mulai 14:00 WIB)\n` +
       `• Jadwal Check-out: ${checkoutStr} (Maksimal 12:00 WIB)\n` +
       `• Sisa Tagihan: ${balanceStr}\n\n` +

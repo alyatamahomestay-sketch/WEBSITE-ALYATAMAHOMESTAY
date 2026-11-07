@@ -84,16 +84,17 @@ export default function ReservationDetailPage({ params }: Props) {
 
   const getBaseSubtotal = (res: Reservation | null): number => {
     if (!res) return 0;
-    const snap = res.price_snapshot;
-    if (snap?.base_subtotal && snap.base_subtotal > 0) {
-      return snap.base_subtotal;
-    }
+    const snap = Array.isArray(res.price_snapshot) ? res.price_snapshot[0] : res.price_snapshot;
     if (snap?.total_amount && snap.total_amount > 0) {
-      return snap.total_amount + (snap.discount_amount || 0);
+      return Number(snap.total_amount) + Number(snap.discount_amount || 0);
+    }
+    const extraCharges = Number(snap?.extra_charges) || 0;
+    if (snap?.base_subtotal && snap.base_subtotal > 0) {
+      return Number(snap.base_subtotal) + extraCharges;
     }
     const rate = res.rooms?.[0]?.base_rate || 150000;
     const nights = res.duration_units || snap?.total_nights || 1;
-    return rate * nights;
+    return (rate * nights) + extraCharges;
   };
 
   const handlePromoSelect = (promoId: string) => {
@@ -437,6 +438,16 @@ export default function ReservationDetailPage({ params }: Props) {
                       </td>
                     </tr>
                   ))}
+                  {Boolean(reservation.price_snapshot?.extra_charges && reservation.price_snapshot.extra_charges > 0) && (
+                    <tr className="text-amber-900 bg-amber-50/70">
+                      <td className="py-2 px-3">
+                        {reservation.price_snapshot?.extra_charges_breakdown?.[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}
+                      </td>
+                      <td className="py-2 px-3 text-right font-bold text-amber-900">
+                        +{formatRupiah(reservation.price_snapshot?.extra_charges || 0)}
+                      </td>
+                    </tr>
+                  )}
                   {reservation.price_snapshot?.discount_amount ? (
                     <tr className="text-emerald-700 bg-emerald-50/50">
                       <td className="py-2 px-3">Potongan Diskon ({reservation.price_snapshot.discount_reason})</td>

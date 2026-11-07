@@ -31,9 +31,25 @@ export default async function SlipPage({ params }: SlipPageProps) {
   const qrisMethod = paymentMethods.find((pm) => pm.code === 'qris' && pm.is_active);
   const bankMethod = paymentMethods.find((pm) => pm.code === 'bank_transfer' && pm.is_active);
 
-  const priceSnapshot = reservation.price_snapshot;
+  const priceSnapshot = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
   const isPaid = reservation.payment_status === 'paid';
   const isApproved = reservation.status === 'confirmed' || reservation.status === 'approved_pending_payment' || reservation.status === 'checked_in' || reservation.status === 'checked_out';
+
+  const room = reservation.rooms?.[0];
+  const roomName = room?.name || 'Unit Kamar Homestay';
+  const roomNumber = room?.room_number ? ` (No. ${room.room_number})` : '';
+  const roomType = room?.room_type || 'Standar';
+
+  const nights = reservation.duration_units || priceSnapshot?.total_nights || 1;
+  const unitLabel = reservation.rental_type === 'monthly' ? 'Bulan' : reservation.rental_type === 'yearly' ? 'Tahun' : 'Malam';
+
+  const baseSubtotal = Number(priceSnapshot?.base_subtotal) || ((room?.base_rate || 200000) * nights);
+  const extraCharges = Number(priceSnapshot?.extra_charges) || 0;
+  const extraBreakdown = Array.isArray(priceSnapshot?.extra_charges_breakdown) ? priceSnapshot.extra_charges_breakdown : [];
+  const discountAmt = Number(priceSnapshot?.discount_amount) || 0;
+  const totalAmount = Number(priceSnapshot?.total_amount) || ((baseSubtotal - discountAmt) + extraCharges);
+  const totalPaid = Number(priceSnapshot?.total_paid) || (isPaid ? totalAmount : 0);
+  const balanceDue = isPaid ? 0 : (priceSnapshot?.balance_due != null ? Number(priceSnapshot.balance_due) : Math.max(0, totalAmount - totalPaid));
 
   return (
     <div className="min-h-screen bg-stone-100 py-6 sm:py-12 print:bg-white print:py-0 text-stone-900 font-sans">
@@ -91,7 +107,10 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 Detail Menginap:
               </span>
               <div className="text-stone-700">
-                Unit: <strong className="text-stone-900">{reservation.rooms?.[0]?.name || 'Kamar'}</strong> ({reservation.rooms?.[0]?.room_type})
+                Unit: <strong className="text-stone-900">{roomName}{roomNumber}</strong> ({roomType})
+              </div>
+              <div className="text-stone-700">
+                Pilihan Masa Sewa: <strong className="text-stone-900">{reservation.rental_type === 'monthly' ? 'Sewa Bulanan' : reservation.rental_type === 'yearly' ? 'Sewa Tahunan' : 'Sewa Harian'}</strong>
               </div>
               <div className="text-stone-700">
                 Check-in: <strong className="text-stone-900">{formatDateIndo(reservation.checkin_date)}</strong> (14:00)
@@ -100,7 +119,7 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 Check-out: <strong className="text-stone-900">{formatDateIndo(reservation.checkout_date)}</strong> (12:00)
               </div>
               <div className="text-stone-700">
-                Durasi: <strong>{priceSnapshot?.total_nights || 1} Malam</strong> • Tamu: {reservation.adults} Dws{reservation.children > 0 ? `, ${reservation.children} Anak` : ''}
+                Durasi: <strong>{nights} {unitLabel}</strong> • Tamu: {reservation.adults} Dws{reservation.children > 0 ? `, ${reservation.children} Anak` : ''}
               </div>
             </div>
           </div>
@@ -110,50 +129,62 @@ export default async function SlipPage({ params }: SlipPageProps) {
             <table className="w-full text-xs text-left">
               <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 uppercase text-[10px]">
                 <tr>
-                  <th className="py-2.5 px-4 font-semibold">Deskripsi Layanan</th>
+                  <th className="py-2.5 px-4 font-semibold">Deskripsi Layanan &amp; Pemesanan</th>
                   <th className="py-2.5 px-4 font-semibold text-center">Durasi</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Tarif Rata-Rata</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Tarif Satuan</th>
                   <th className="py-2.5 px-4 font-semibold text-right">Subtotal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
+                {/* 1. Sewa Kamar Pokok */}
                 <tr>
                   <td className="py-3 px-4">
-                    <strong className="text-stone-900 block">{reservation.rooms?.[0]?.name || 'Sewa Kamar Homestay'}</strong>
+                    <strong className="text-stone-900 block">{roomName}{roomNumber} ({roomType})</strong>
                     <span className="text-stone-500 text-[11px]">
-                      Periode {formatDateIndo(reservation.checkin_date)} s/d {formatDateIndo(reservation.checkout_date)}
+                      Sewa Pokok Homestay • Periode {formatDateIndo(reservation.checkin_date)} s/d {formatDateIndo(reservation.checkout_date)}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-center">{priceSnapshot?.total_nights || 1} Malam</td>
+                  <td className="py-3 px-4 text-center">{nights} {unitLabel}</td>
                   <td className="py-3 px-4 text-right">
-                    {formatRupiah((priceSnapshot?.base_subtotal || ((priceSnapshot?.total_amount || 0) + (priceSnapshot?.discount_amount || 0))) / (priceSnapshot?.total_nights || 1))}
+                    {formatRupiah(Math.round(baseSubtotal / Math.max(1, nights)))} / {unitLabel}
                   </td>
-                  <td className="py-3 px-4 text-right font-medium">
-                    {formatRupiah(priceSnapshot?.base_subtotal || ((priceSnapshot?.total_amount || 0) + (priceSnapshot?.discount_amount || 0)))}
+                  <td className="py-3 px-4 text-right font-semibold text-stone-900">
+                    {formatRupiah(baseSubtotal)}
                   </td>
                 </tr>
 
-                {priceSnapshot?.discount_amount ? (
+                {/* 2. Rincian Ekstra Bed / Kasur Tambahan jika memesan */}
+                {extraCharges > 0 && (
+                  <tr className="bg-amber-50/40">
+                    <td className="py-3 px-4">
+                      <strong className="text-stone-900 block">
+                        {extraBreakdown[0]?.description || 'Penambahan Ekstra Bed (Kasur Tambahan)'}
+                      </strong>
+                      <span className="text-stone-500 text-[11px]">
+                        Layanan kasur tambahan resmi ALYATAMA (termasuk bantal empuk &amp; sprei bersih)
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">{nights} {unitLabel}</td>
+                    <td className="py-3 px-4 text-right text-stone-700">
+                      +{formatRupiah(Math.round(extraCharges / Math.max(1, nights)))} / {unitLabel}
+                    </td>
+                    <td className="py-3 px-4 text-right font-bold text-[#806044]">
+                      +{formatRupiah(extraCharges)}
+                    </td>
+                  </tr>
+                )}
+
+                {/* 3. Potongan Diskon Promo jika ada */}
+                {discountAmt > 0 && (
                   <tr className="text-emerald-700 bg-emerald-50/40">
                     <td colSpan={3} className="py-2 px-4 text-left font-medium">
-                      Potongan Diskon Promo ({priceSnapshot.discount_reason || priceSnapshot.promo_code || 'Promo'})
+                      Potongan Diskon Promo ({priceSnapshot?.discount_reason || priceSnapshot?.promo_code || 'Promo Homestay'})
                     </td>
                     <td className="py-2 px-4 text-right font-bold text-emerald-700">
-                      -{formatRupiah(priceSnapshot.discount_amount)}
+                      -{formatRupiah(discountAmt)}
                     </td>
                   </tr>
-                ) : null}
-
-                {priceSnapshot?.extra_charges ? (
-                  <tr>
-                    <td colSpan={3} className="py-2 px-4 text-left text-stone-600">
-                      Biaya Tambahan Lainnya
-                    </td>
-                    <td className="py-2 px-4 text-right font-medium text-stone-900">
-                      +{formatRupiah(priceSnapshot.extra_charges)}
-                    </td>
-                  </tr>
-                ) : null}
+                )}
               </tbody>
             </table>
           </div>
@@ -165,41 +196,48 @@ export default async function SlipPage({ params }: SlipPageProps) {
                 Catatan Penting:
               </span>
               <p className="leading-relaxed">
-                Tamu wajib mematuhi waktu check-in (14:00) dan check-out (12:00). Pembayaran penuh (Tunai/Transfer) diselesaikan di tempat sebelum serah terima kunci. Dokumen ini diterbitkan resmi oleh sistem ALYATAMA HOMESTAY.
+                Tamu wajib mematuhi waktu check-in (14:00) dan check-out (12:00). Pembayaran penuh (Tunai/Transfer/QRIS) diselesaikan di tempat sebelum serah terima kunci. Dokumen ini diterbitkan resmi oleh sistem ALYATAMA HOMESTAY.
               </p>
             </div>
 
-            <div className="w-full sm:w-72 space-y-2 text-xs">
-              {priceSnapshot?.discount_amount ? (
-                <>
-                  <div className="flex justify-between py-1 text-stone-600">
-                    <span>Subtotal Harga Normal:</span>
-                    <span className="font-medium text-stone-800">
-                      {formatRupiah(priceSnapshot.base_subtotal || ((priceSnapshot.total_amount || 0) + priceSnapshot.discount_amount))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 text-emerald-700 bg-emerald-50/50 px-2 rounded-lg">
-                    <span>Diskon Promo ({priceSnapshot.discount_reason || priceSnapshot.promo_code || 'Promo'}):</span>
-                    <span className="font-bold">-{formatRupiah(priceSnapshot.discount_amount)}</span>
-                  </div>
-                </>
-              ) : null}
+            <div className="w-full sm:w-80 space-y-2 text-xs bg-stone-50/70 p-4 rounded-xl border border-stone-200">
               <div className="flex justify-between py-1 text-stone-600">
-                <span>Total Biaya Akhir:</span>
-                <span className="font-semibold text-stone-900">{formatRupiah(priceSnapshot?.total_amount)}</span>
+                <span>Subtotal Sewa Kamar:</span>
+                <span className="font-semibold text-stone-900">
+                  {formatRupiah(baseSubtotal)}
+                </span>
               </div>
-              <div className="flex justify-between py-1 text-stone-600">
-                <span>Pembayaran Diterima:</span>
-                <span className="font-medium text-emerald-700">{formatRupiah(priceSnapshot?.total_paid || 0)}</span>
+
+              {extraCharges > 0 && (
+                <div className="flex justify-between py-1 text-[#806044]">
+                  <span>Tambahan Ekstra Bed:</span>
+                  <span className="font-bold">
+                    +{formatRupiah(extraCharges)}
+                  </span>
+                </div>
+              )}
+
+              {discountAmt > 0 && (
+                <div className="flex justify-between py-1 text-emerald-700 bg-emerald-50 px-2 rounded-lg border border-emerald-200/60">
+                  <span>Diskon Promo:</span>
+                  <span className="font-bold">-{formatRupiah(discountAmt)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between py-1.5 border-t border-stone-200 font-bold text-stone-900 text-sm">
+                <span>Total Biaya yang Harus Dibayar:</span>
+                <span className="text-[#806044]">{formatRupiah(totalAmount)}</span>
               </div>
+
+              <div className="flex justify-between py-1 text-stone-600 text-[11px]">
+                <span>Pembayaran Diterima Kasir:</span>
+                <span className="font-medium text-emerald-700">{formatRupiah(totalPaid)}</span>
+              </div>
+
               <div className="flex justify-between py-2 border-t border-stone-200 text-sm font-bold text-stone-900">
-                <span>Sisa Tagihan:</span>
-                <span className={priceSnapshot?.balance_due === 0 ? 'text-emerald-700' : 'text-stone-900'}>
-                  {formatRupiah(
-                    reservation.payment_status === 'paid' 
-                      ? 0 
-                      : (priceSnapshot?.balance_due != null && priceSnapshot.balance_due > 0 ? priceSnapshot.balance_due : (priceSnapshot?.total_amount || 0))
-                  )}
+                <span>Sisa Tagihan Saat Kedatangan:</span>
+                <span className={balanceDue === 0 ? 'text-emerald-700' : 'text-[#806044]'}>
+                  {formatRupiah(balanceDue)}
                 </span>
               </div>
             </div>

@@ -14,10 +14,10 @@ export async function downloadReservationSlipJpg(
     throw new Error('Hanya dapat dijalankan di browser');
   }
 
-  // Target high-resolution canvas: 1000 x 1460 (Retina-quality 2x)
+  // Target high-resolution canvas: 1000 x 1560 (Retina-quality 2x)
   const canvas = document.createElement('canvas');
   const width = 1000;
-  const height = 1460;
+  const height = 1560;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
@@ -121,8 +121,42 @@ export async function downloadReservationSlipJpg(
   // --- Section 1: Data Tamu & Rincian Kamar ---
   let curY = 385;
 
+  const priceSnapshot = Array.isArray(reservation.price_snapshot) ? reservation.price_snapshot[0] : reservation.price_snapshot;
+  const room = reservation.rooms?.[0];
+  const roomName = room?.name || 'Unit Kamar Homestay';
+  const roomType = room?.room_type || 'Syariah';
+  const roomNo = room?.room_number ? ` (No. ${room.room_number})` : '';
+  const rentalLabel = reservation.rental_type === 'monthly' ? 'Sewa Bulanan' : reservation.rental_type === 'yearly' ? 'Sewa Tahunan' : 'Sewa Harian';
+
+  const checkinStr = `${formatDateIndo(reservation.checkin_date)} (14:00 WIB)`;
+  const checkoutStr = `${formatDateIndo(reservation.checkout_date)} (12:00 WIB)`;
+  const nights = reservation.duration_units || priceSnapshot?.total_nights || 1;
+  const unitLabel = reservation.rental_type === 'monthly' ? 'Bulan' : reservation.rental_type === 'yearly' ? 'Tahun' : 'Malam';
+  const durationStr = `${nights} ${unitLabel}`;
+  const guestsCount = `${reservation.adults} Dewasa${reservation.children > 0 ? `, ${reservation.children} Anak` : ''}`;
+
+  // Extract extra bed info
+  let extraBedCount = 0;
+  const specReq = String(reservation.special_requests || '');
+  const extraBedMatch = specReq.match(/\[(?:Permintaan:\s*)?\+(\d+)\s*Unit\s*Ekstra\s*Bed\]/i) || specReq.match(/\[Ekstra\s*Bed:\s*\+(\d+)\s*Unit/i);
+  if (extraBedMatch && extraBedMatch[1]) {
+    extraBedCount = parseInt(extraBedMatch[1], 10);
+  }
+
+  const defaultRoomRate = room?.base_rate || 200000;
+  const baseSubtotalNum = Number(priceSnapshot?.base_subtotal) || (defaultRoomRate * nights);
+  let extraChargesNum = Number(priceSnapshot?.extra_charges) || (extraBedCount > 0 ? (extraBedCount * 50000 * nights) : 0);
+  const discountAmt = Number(priceSnapshot?.discount_amount) || 0;
+  const totalAmountNum = Number(priceSnapshot?.total_amount) || ((baseSubtotalNum - discountAmt) + extraChargesNum);
+  const totalPaidNum = Number(priceSnapshot?.total_paid) || (reservation.payment_status === 'paid' ? totalAmountNum : 0);
+  const isPaid = reservation.payment_status === 'paid';
+  const balanceDueNum = isPaid ? 0 : (priceSnapshot?.balance_due != null ? Number(priceSnapshot.balance_due) : Math.max(0, totalAmountNum - totalPaidNum));
+
+  const hasExtraBed = extraChargesNum > 0 || extraBedCount > 0;
+  const sec1Height = hasExtraBed ? 295 : 245;
+
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 44, curY, width - 88, 250, 14);
+  roundRect(ctx, 44, curY, width - 88, sec1Height, 14);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
@@ -139,37 +173,32 @@ export async function downloadReservationSlipJpg(
   // Row 1: Nama Tamu & Kontak
   const guestName = reservation.guest?.full_name || '-';
   const guestPhone = reservation.guest?.phone || '-';
-  const guestEmail = reservation.guest?.email || '-';
 
   drawField(ctx, 65, curY + 65, 'Nama Lengkap Tamu', guestName);
   drawField(ctx, 520, curY + 65, 'Nomor WhatsApp / HP', guestPhone);
 
   // Row 2: Unit Kamar & Tipe
-  const roomName = reservation.rooms?.[0]?.name || 'Unit Kamar Homestay';
-  const roomType = reservation.rooms?.[0]?.room_type || 'Syariah';
-  const roomNo = reservation.rooms?.[0]?.room_number ? ` (No. ${reservation.rooms[0].room_number})` : '';
-  const rentalLabel = reservation.rental_type === 'monthly' ? 'Sewa Bulanan' : reservation.rental_type === 'yearly' ? 'Sewa Tahunan' : 'Sewa Harian';
-
   drawField(ctx, 65, curY + 125, 'Unit Kamar Dipilih', `${roomName}${roomNo} [${roomType}]`);
   drawField(ctx, 520, curY + 125, 'Pilihan Masa Sewa', rentalLabel);
 
   // Row 3: Jadwal Menginap & Durasi
-  const checkinStr = `${formatDateIndo(reservation.checkin_date)} (14:00 WIB)`;
-  const checkoutStr = `${formatDateIndo(reservation.checkout_date)} (12:00 WIB)`;
-  const durationStr = reservation.duration_units
-    ? `${reservation.duration_units} ${reservation.rental_type === 'monthly' ? 'Bulan' : 'Malam'}`
-    : `${reservation.price_snapshot?.total_nights || 1} Malam`;
-  const guestsCount = `${reservation.adults} Dewasa${reservation.children > 0 ? `, ${reservation.children} Anak` : ''}`;
-
   drawField(ctx, 65, curY + 185, 'Jadwal Check-in', checkinStr);
   drawField(ctx, 360, curY + 185, 'Jadwal Check-out', checkoutStr);
   drawField(ctx, 680, curY + 185, 'Durasi & Tamu', `${durationStr} (${guestsCount})`);
 
+  // Row 4: Ekstra Bed jika memesan
+  if (hasExtraBed) {
+    drawField(ctx, 65, curY + 245, 'Penambahan Ekstra Bed', `+${extraBedCount || 1} Unit Kasur Tambahan (+${formatRupiah(extraChargesNum)})`);
+    drawField(ctx, 520, curY + 245, 'Fasilitas Ekstra Bed', 'Termasuk Bantal Empuk & Sprei Bersih Homestay');
+  }
+
   // --- Section 2: Rincian Biaya & Tagihan ---
-  curY = 655;
+  curY = curY + sec1Height + 20;
+
+  const sec2Height = hasExtraBed ? 250 : 210;
 
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 44, curY, width - 88, 205, 14);
+  roundRect(ctx, 44, curY, width - 88, sec2Height, 14);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
@@ -182,60 +211,68 @@ export async function downloadReservationSlipJpg(
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.fillText('2. RINCIAN BIAYA & STATUS PEMBAYARAN', 65, curY + 25);
 
-  const priceSnapshot = reservation.price_snapshot;
-  const totalAmountNum = priceSnapshot?.total_amount || ((reservation.rooms?.[0]?.base_rate || 150000) * (reservation.duration_units || 1));
-  const totalPaidNum = priceSnapshot?.total_paid || 0;
-  const isPaid = reservation.payment_status === 'paid';
-  const balanceDueNum = isPaid ? 0 : (totalPaidNum > 0 ? Math.max(0, totalAmountNum - totalPaidNum) : totalAmountNum);
-
-  const totalAmount = formatRupiah(totalAmountNum);
-  const totalPaid = formatRupiah(totalPaidNum);
-  const balanceDue = formatRupiah(balanceDueNum);
+  const boxHeight = hasExtraBed ? 175 : 140;
 
   // Financial Grid Box
   ctx.fillStyle = '#392B21';
-  roundRect(ctx, 65, curY + 55, width - 130, 130, 10);
+  roundRect(ctx, 65, curY + 55, width - 130, boxHeight, 10);
   ctx.fill();
 
-  const discountAmt = priceSnapshot?.discount_amount || 0;
-
-  // Total Biaya
+  // Subtotal Sewa Kamar Pokok
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText(discountAmt > 0 ? 'TOTAL BIAYA (SETELAH DISKON)' : 'TOTAL BIAYA SEWA', 90, curY + 80);
+  ctx.fillText(`Subtotal Sewa Pokok (${durationStr}):`, 90, curY + 82);
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText(totalAmount, 90, curY + 105);
-  if (discountAmt > 0) {
-    ctx.font = 'bold 10px system-ui, sans-serif';
-    ctx.fillStyle = '#4ade80';
-    ctx.fillText(`Hemat ${formatRupiah(discountAmt)} (${priceSnapshot?.discount_reason || priceSnapshot?.promo_code || 'Promo'})`, 90, curY + 123);
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText(formatRupiah(baseSubtotalNum), 420, curY + 82);
+
+  let nextRowY = curY + 106;
+
+  // Tambahan Ekstra Bed jika ada
+  if (hasExtraBed) {
+    ctx.fillStyle = '#FDE047';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText(`+ Ekstra Bed (${extraBedCount || 1} Unit x ${nights} Malam):`, 90, nextRowY);
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText(`+${formatRupiah(extraChargesNum)}`, 420, nextRowY);
+    nextRowY += 24;
   }
 
-  // Pembayaran Terverifikasi
-  ctx.fillStyle = '#E7D8C5';
-  ctx.font = '12px system-ui, sans-serif';
-  ctx.fillText('PEMBAYARAN DITERIMA', 480, curY + 80);
-  ctx.fillStyle = isPaid ? '#4ade80' : '#E7D8C5';
-  ctx.font = 'bold 18px monospace';
-  ctx.fillText(totalPaid, 480, curY + 105);
+  // Diskon Promo jika ada
+  if (discountAmt > 0) {
+    ctx.fillStyle = '#4ade80';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText(`- Diskon Promo (${priceSnapshot?.discount_reason || priceSnapshot?.promo_code || 'Promo'}):`, 90, nextRowY);
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText(`-${formatRupiah(discountAmt)}`, 420, nextRowY);
+    nextRowY += 24;
+  }
 
-  // Bottom Line of Financial Grid
+  // Divider line
   ctx.strokeStyle = '#5a4638';
   ctx.beginPath();
-  ctx.moveTo(90, curY + 135);
-  ctx.lineTo(width - 90, curY + 135);
+  ctx.moveTo(90, nextRowY - 4);
+  ctx.lineTo(width - 90, nextRowY - 4);
   ctx.stroke();
 
+  // Total Biaya yang Harus Dibayar
+  ctx.fillStyle = '#C9A84C';
+  ctx.font = 'bold 13px system-ui, sans-serif';
+  ctx.fillText('TOTAL BIAYA SEWA RESMI:', 90, nextRowY + 20);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(formatRupiah(totalAmountNum), 380, nextRowY + 22);
+
+  // Status & Sisa Pembayaran (Right side / bottom)
   ctx.fillStyle = '#E7D8C5';
-  ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.fillText('SISA PEMBAYARAN SAAT TIBA (SEBELUM TERIMA KUNCI):', 90, curY + 162);
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillText(`Diterima Kasir: ${formatRupiah(totalPaidNum)}  |  Sisa Saat Tiba: `, 660, nextRowY + 20);
   ctx.fillStyle = balanceDueNum === 0 ? '#4ade80' : '#FDE047';
-  ctx.font = 'bold 16px monospace';
-  ctx.fillText(balanceDue, 520, curY + 162);
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText(formatRupiah(balanceDueNum), 875, nextRowY + 20);
 
   // --- Section 3: Rekening Pembayaran & Instruksi WhatsApp ---
-  curY = 880;
+  curY = curY + sec2Height + 20;
 
   ctx.fillStyle = '#FFFFFF';
   roundRect(ctx, 44, curY, width - 88, 290, 14);
