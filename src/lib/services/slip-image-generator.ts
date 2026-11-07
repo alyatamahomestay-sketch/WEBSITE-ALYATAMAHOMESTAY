@@ -14,10 +14,10 @@ export async function downloadReservationSlipJpg(
     throw new Error('Hanya dapat dijalankan di browser');
   }
 
-  // Target high-resolution canvas: 1000 x 1480 (Retina-quality 2x)
+  // Target high-resolution canvas: 1000 x 1490 (Retina-quality 2x)
   const canvas = document.createElement('canvas');
   const width = 1000;
-  const height = 1480;
+  const height = 1490;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
@@ -256,26 +256,30 @@ export async function downloadReservationSlipJpg(
   ctx.lineTo(width - 90, nextRowY - 4);
   ctx.stroke();
 
-  // Total Biaya yang Harus Dibayar
+  // Left side: TOTAL BIAYA SEWA RESMI
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#C9A84C';
-  ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('TOTAL BIAYA SEWA RESMI:', 90, nextRowY + 20);
+  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.fillText('TOTAL BIAYA SEWA RESMI:', 90, nextRowY + 16);
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 22px monospace';
-  ctx.fillText(formatRupiah(totalAmountNum), 380, nextRowY + 22);
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText(formatRupiah(totalAmountNum), 275, nextRowY + 18);
 
-  // Status & Sisa Pembayaran (Right side / bottom)
+  // Right side: Diterima & Sisa Tagihan (Right-aligned inside box, NEVER overflows past border)
+  ctx.textAlign = 'right';
   ctx.fillStyle = '#E7D8C5';
   ctx.font = '11px system-ui, sans-serif';
-  ctx.fillText(`Diterima Kasir: ${formatRupiah(totalPaidNum)}  |  Sisa Saat Tiba: `, 660, nextRowY + 20);
+  ctx.fillText(`Diterima Kasir: ${formatRupiah(totalPaidNum)}`, width - 90, nextRowY + 10);
+
   ctx.fillStyle = balanceDueNum === 0 ? '#4ade80' : '#FDE047';
-  ctx.font = 'bold 14px monospace';
-  ctx.fillText(formatRupiah(balanceDueNum), 875, nextRowY + 20);
+  ctx.font = 'bold 13px system-ui, sans-serif';
+  ctx.fillText(`Sisa Saat Tiba: ${formatRupiah(balanceDueNum)}`, width - 90, nextRowY + 28);
+  ctx.textAlign = 'left';
 
   // --- Section 3: Rekening Pembayaran & Instruksi WhatsApp ---
   curY = curY + sec2Height + 20;
 
-  const sec3Height = 285;
+  const sec3Height = 295;
   ctx.fillStyle = '#FFFFFF';
   roundRect(ctx, 44, curY, width - 88, sec3Height, 14);
   ctx.fill();
@@ -290,65 +294,69 @@ export async function downloadReservationSlipJpg(
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.fillText('3. SISTEM PEMBAYARAN (CASH/TRANSFER) DAN KONFIRMASI WHATSAPP ADMIN', 65, curY + 25);
 
-  // Bank Info Card
+  // Bank & Cash Info Card (Left Box)
   const bankMethod = paymentMethods.find((pm) => pm.code === 'bank_transfer' && pm.is_active);
-  const bankAccount = bankMethod?.account_number || '123-456-7890';
-  const bankOwner = bankMethod?.account_name || 'ALYATAMA HOMESTAY';
+  const bankAccount = (bankMethod?.account_number && bankMethod.account_number.trim()) || '712-854-7200 (BSI)';
+  const bankOwner = (bankMethod?.account_name && bankMethod.account_name.trim()) || 'ALYATAMA HOMESTAY';
+  const isPrefTransfer = reservation.payment_preference === 'transfer' || String(reservation.special_requests || '').toLowerCase().includes('transfer');
 
   ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 55, 410, 115, 10);
+  roundRect(ctx, 65, curY + 55, 410, 125, 10);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
 
   ctx.fillStyle = '#392B21';
-  ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('Rekening Transfer Bank Resmi:', 85, curY + 78);
-  ctx.font = 'bold 18px monospace';
+  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.fillText(isPrefTransfer ? 'Pilihan Tamu: Transfer Bank Resmi (BSI)' : 'Sistem Pembayaran: Tunai (Cash) / Transfer', 85, curY + 76);
+  ctx.font = 'bold 17px monospace';
   ctx.fillStyle = '#806044';
-  ctx.fillText(bankAccount, 85, curY + 105);
+  ctx.fillText(bankAccount, 85, curY + 102);
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#756A5F';
-  ctx.fillText(`a.n. ${bankOwner}`, 85, curY + 128);
+  ctx.fillText(`a.n. ${bankOwner}`, 85, curY + 122);
   ctx.font = '11px system-ui, sans-serif';
+  ctx.fillStyle = '#806044';
+  ctx.fillText('• Bayar Tunai di Resepsionis / Transfer sebelum terima kunci.', 85, curY + 144);
   ctx.fillStyle = '#9ca3af';
-  ctx.fillText('Sertakan No. Reservasi pada berita transfer.', 85, curY + 150);
+  ctx.fillText('• Sertakan No. Reservasi pada berita transfer bank.', 85, curY + 162);
 
-  // WhatsApp Instructions Card
+  // WhatsApp Instructions Card (Right Box)
   ctx.fillStyle = '#F0FDF4';
-  roundRect(ctx, 505, curY + 55, 430, 115, 10);
+  roundRect(ctx, 505, curY + 55, 430, 125, 10);
   ctx.fill();
   ctx.strokeStyle = '#BBF7D0';
   ctx.stroke();
 
   ctx.fillStyle = '#166534';
-  ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('WhatsApp Konfirmasi Admin Homestay:', 525, curY + 78);
+  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.fillText('WhatsApp Konfirmasi Admin Homestay:', 525, curY + 76);
   ctx.font = 'bold 18px monospace';
   ctx.fillStyle = '#15803d';
-  ctx.fillText(wa, 525, curY + 105);
+  ctx.fillText(wa, 525, curY + 102);
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#166534';
-  ctx.fillText('Petugas bertugas melayani verifikasi 24 Jam', 525, curY + 128);
+  ctx.fillText('Petugas bertugas melayani verifikasi 24 Jam', 525, curY + 124);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#15803d';
-  ctx.fillText('Kirimkan gambar bukti ini via chat WhatsApp admin.', 525, curY + 150);
+  ctx.fillText('• Kirimkan gambar bukti (.jpg) ini via WhatsApp admin.', 525, curY + 144);
+  ctx.fillText('• Admin memverifikasi reservasi & kunci kamar Anda.', 525, curY + 162);
 
   // Instructions Note Box (Clean and comfortably spaced)
   ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, 65, curY + 185, width - 130, 85, 8);
+  roundRect(ctx, 65, curY + 195, width - 130, 85, 8);
   ctx.fill();
   ctx.strokeStyle = '#E5DCD0';
   ctx.stroke();
 
   ctx.fillStyle = '#392B21';
   ctx.font = 'bold 11px system-ui, sans-serif';
-  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH:', 85, curY + 206);
+  ctx.fillText('CATATAN PENTING KEPATUHAN SYARIAH:', 85, curY + 216);
   ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#756A5F';
-  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 85, curY + 226);
-  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 85, curY + 242);
-  ctx.fillText('• Waktu Check-in mulai 14:00 WIB, Check-out maksimal 12:00 WIB. Pelunasan di tempat sebelum serah kunci.', 85, curY + 258);
+  ctx.fillText('• Pasangan yang menginap wajib menunjukkan identitas pernikahan sah (KTP beralamat sama / Buku Nikah).', 85, curY + 236);
+  ctx.fillText('• Dilarang membawa minuman keras, narkoba, hewan peliharaan, serta menjaga ketenangan adab Islami.', 85, curY + 252);
+  ctx.fillText('• Waktu Check-in mulai 14:00 WIB, Check-out maksimal 12:00 WIB. Pelunasan di tempat sebelum serah kunci.', 85, curY + 268);
 
   // --- Section 4: Footer Stamp & Verification Seal (Flows dynamically, never overlaps) ---
   curY = curY + sec3Height + 20;
