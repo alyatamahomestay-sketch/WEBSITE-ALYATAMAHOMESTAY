@@ -860,6 +860,19 @@ export const PmsService = {
 
   // --- PAYMENT METHODS ---
   async getPaymentMethods(): Promise<PaymentMethod[]> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/panel/payment-methods', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.methods) && json.methods.length > 0) {
+            memPaymentMethods = json.methods;
+            return memPaymentMethods;
+          }
+        }
+      } catch (e) {}
+    }
+
     if (!isSupabaseConfigured()) return memPaymentMethods;
     const supabase = createClient();
     const { data, error } = await supabase.from('payment_methods').select('*').order('created_at', { ascending: true });
@@ -880,6 +893,33 @@ export const PmsService = {
     const { data, error } = await supabase.from('payment_methods').update(updates).eq('id', id).select().single();
     if (error) throw new Error(error.message);
     return data as PaymentMethod;
+  },
+
+  async updatePaymentMethodsSecurely(payload: {
+    identifier: string;
+    password: string;
+    methods: Partial<PaymentMethod>[];
+  }): Promise<{ success: boolean; message: string; methods: PaymentMethod[] }> {
+    const res = await fetch('/api/panel/payment-methods', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal menyimpan pengaturan pembayaran');
+    }
+
+    if (Array.isArray(data.methods)) {
+      memPaymentMethods = data.methods;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('payment-methods-updated', { detail: data.methods }));
+      }
+    }
+
+    return data;
   },
 
   // --- EXPENSES ---

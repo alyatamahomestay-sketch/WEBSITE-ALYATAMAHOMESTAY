@@ -220,11 +220,14 @@ export default function DashboardSidebar({ currentRole, onRoleChange }: SidebarP
                     Profil Homestay Bangkinang
                   </Link>
                   <Link
-                    href={`/dashboard/pengaturan/pembayaran${activeRole ? `?role=${activeRole}` : ''}`}
+                    href={`/dashboard/pengaturan/setup-pembayaran${activeRole ? `?role=${activeRole}` : ''}`}
                     onClick={() => setMobileOpen(false)}
-                    className="block py-1.5 text-xs text-stone-300 hover:text-white"
+                    className="block py-1.5 text-xs text-[#C9A84C] hover:text-white font-semibold flex items-center justify-between"
                   >
-                    Metode & Gambar QRIS
+                    <span>Setup Pembayaran</span>
+                    <span className="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 font-mono">
+                      Terkunci
+                    </span>
                   </Link>
                   <Link
                     href={`/dashboard/pengaturan/audit${activeRole ? `?role=${activeRole}` : ''}`}

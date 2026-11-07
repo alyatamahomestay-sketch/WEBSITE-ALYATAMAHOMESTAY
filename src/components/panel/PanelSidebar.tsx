@@ -378,6 +378,16 @@ export default function PanelSidebar({
                       Setup Fasilitas Homestay
                     </Link>
                     <Link
+                      href="/panel/pengaturan/setup-pembayaran"
+                      onClick={handleNavClick}
+                      className="block py-1 text-xs hover:text-[#C6A47B] font-semibold text-stone-200 flex items-center justify-between"
+                    >
+                      <span>Setup Pembayaran</span>
+                      <span className="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 font-mono">
+                        Terkunci
+                      </span>
+                    </Link>
+                    <Link
                       href="/panel/pengaturan/tampilan"
                       onClick={handleNavClick}
                       className="block py-1 text-xs hover:text-[#C6A47B]"
